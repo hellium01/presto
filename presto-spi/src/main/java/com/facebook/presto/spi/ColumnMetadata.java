@@ -16,6 +16,7 @@ package com.facebook.presto.spi;
 import com.facebook.presto.spi.type.Type;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import static java.util.Locale.ENGLISH;
 
@@ -25,19 +26,27 @@ public class ColumnMetadata
     private final Type type;
     private final String comment;
     private final String extraInfo;
+    private final boolean nullable;
+    private final Optional<Object> defaultValue;
+
     private final boolean hidden;
 
     public ColumnMetadata(String name, Type type)
     {
-        this(name, type, null, false);
+        this(name, type, null, null, false, Optional.empty(), false);
     }
 
     public ColumnMetadata(String name, Type type, String comment, boolean hidden)
     {
-        this(name, type, comment, null, hidden);
+        this(name, type, comment, null, false, Optional.empty(), hidden);
     }
 
     public ColumnMetadata(String name, Type type, String comment, String extraInfo, boolean hidden)
+    {
+        this(name, type, comment, extraInfo, false, Optional.empty(), hidden);
+    }
+
+    public ColumnMetadata(String name, Type type, String comment, String extraInfo, boolean nullable, Optional<Object> defaultValue, boolean hidden)
     {
         if (name == null || name.isEmpty()) {
             throw new NullPointerException("name is null or empty");
@@ -51,6 +60,8 @@ public class ColumnMetadata
         this.comment = comment;
         this.extraInfo = extraInfo;
         this.hidden = hidden;
+        this.nullable = nullable;
+        this.defaultValue = defaultValue;
     }
 
     public String getName()

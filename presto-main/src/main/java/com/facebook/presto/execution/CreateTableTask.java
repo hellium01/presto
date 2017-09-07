@@ -23,11 +23,15 @@ import com.facebook.presto.security.AccessControl;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ConnectorTableMetadata;
 import com.facebook.presto.spi.PrestoException;
+import com.facebook.presto.spi.block.BlockBuilder;
+import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.analyzer.SemanticException;
+import com.facebook.presto.sql.planner.ParameterRewriter;
 import com.facebook.presto.sql.tree.ColumnDefinition;
 import com.facebook.presto.sql.tree.CreateTable;
 import com.facebook.presto.sql.tree.Expression;
+import com.facebook.presto.sql.tree.ExpressionTreeRewriter;
 import com.facebook.presto.sql.tree.LikeClause;
 import com.facebook.presto.sql.tree.TableElement;
 import com.facebook.presto.transaction.TransactionManager;
@@ -49,15 +53,18 @@ import static com.facebook.presto.spi.StandardErrorCode.ALREADY_EXISTS;
 import static com.facebook.presto.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static com.facebook.presto.spi.StandardErrorCode.NOT_FOUND;
 import static com.facebook.presto.spi.type.TypeSignature.parseTypeSignature;
+import static com.facebook.presto.spi.type.TypeUtils.writeNativeValue;
 import static com.facebook.presto.sql.analyzer.SemanticErrorCode.DUPLICATE_COLUMN_NAME;
 import static com.facebook.presto.sql.analyzer.SemanticErrorCode.MISSING_CATALOG;
 import static com.facebook.presto.sql.analyzer.SemanticErrorCode.MISSING_TABLE;
 import static com.facebook.presto.sql.analyzer.SemanticErrorCode.NOT_SUPPORTED;
 import static com.facebook.presto.sql.analyzer.SemanticErrorCode.TABLE_ALREADY_EXISTS;
 import static com.facebook.presto.sql.analyzer.SemanticErrorCode.TYPE_MISMATCH;
+import static com.facebook.presto.sql.planner.ExpressionInterpreter.evaluateConstantExpression;
 import static com.facebook.presto.type.UnknownType.UNKNOWN;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
+import static java.lang.String.format;
 
 public class CreateTableTask
         implements DataDefinitionTask<CreateTable>
@@ -94,6 +101,9 @@ public class CreateTableTask
             return immediateFuture(null);
         }
 
+        ConnectorId connectorId = metadata.getCatalogHandle(session, tableName.getCatalogName())
+                .orElseThrow(() -> new PrestoException(NOT_FOUND, "Catalog does not exist: " + tableName.getCatalogName()));
+
         LinkedHashMap<String, ColumnMetadata> columns = new LinkedHashMap<>();
         Map<String, Object> inheritedProperties = ImmutableMap.of();
         boolean includingProperties = false;
@@ -103,12 +113,16 @@ public class CreateTableTask
                 String name = column.getName().getValue().toLowerCase(Locale.ENGLISH);
                 Type type = metadata.getType(parseTypeSignature(column.getType()));
                 if ((type == null) || type.equals(UNKNOWN)) {
-                    throw new SemanticException(TYPE_MISMATCH, column, "Unknown type for column '%s' ", column.getName());
+                    throw new SemanticException(TYPE_MISMATCH, column, "Unknown type for column '%s'", column.getName());
                 }
                 if (columns.containsKey(name)) {
                     throw new SemanticException(DUPLICATE_COLUMN_NAME, column, "Column name '%s' specified more than once", column.getName());
                 }
-                columns.put(name, new ColumnMetadata(name, type, column.getComment().orElse(null), false));
+                Optional<Object> defaultValue = Optional.empty();
+                if (column.getDefaultValue().isPresent()) {
+                    defaultValue = Optional.ofNullable(evaluateDefaultValue(column.getName().getValue(), column.getDefaultValue().get(), type, session, metadata, parameters));
+                }
+                columns.put(name, new ColumnMetadata(name, type, column.getComment().orElse(null), null, column.isNullable(), defaultValue, false));
             }
             else if (element instanceof LikeClause) {
                 LikeClause likeClause = (LikeClause) element;
@@ -149,9 +163,6 @@ public class CreateTableTask
 
         accessControl.checkCanCreateTable(session.getRequiredTransactionId(), session.getIdentity(), tableName);
 
-        ConnectorId connectorId = metadata.getCatalogHandle(session, tableName.getCatalogName())
-                .orElseThrow(() -> new PrestoException(NOT_FOUND, "Catalog does not exist: " + tableName.getCatalogName()));
-
         Map<String, Object> properties = metadata.getTablePropertyManager().getProperties(
                 connectorId,
                 tableName.getCatalogName(),
@@ -186,5 +197,28 @@ public class CreateTableTask
             }
         }
         return finalProperties;
+    }
+
+    private Object evaluateDefaultValue(String column, Expression literalExpression, Type expectedType, Session session, Metadata metadata, List<Expression> parameters)
+    {
+        Object sqlObjectValue;
+        try {
+            Expression rewritten = ExpressionTreeRewriter.rewriteWith(new ParameterRewriter(parameters), literalExpression);
+            Object value = evaluateConstantExpression(rewritten, expectedType, metadata, session, parameters);
+
+            // convert to object value type of SQL type
+            BlockBuilder blockBuilder = expectedType.createBlockBuilder(new BlockBuilderStatus(), 1);
+            writeNativeValue(expectedType, blockBuilder, value);
+            sqlObjectValue = expectedType.getObjectValue(session.toConnectorSession(), blockBuilder, 0);
+
+//            if (sqlObjectValue == null) {
+//                throw new SemanticException(INVALID_DEFAULT_VALUE, literalExpression, format("Invalid null value for %s column", column));
+//            }
+        }
+        catch (SemanticException e) {
+            throw new PrestoException(GENERIC_INTERNAL_ERROR,
+                    format("Invalid value '%s' for column '%s': Cannot convert to %s", literalExpression.toString(), column, expectedType.toString()), e);
+        }
+        return sqlObjectValue;
     }
 }

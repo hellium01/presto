@@ -136,6 +136,12 @@ public class TestMySqlIntegrationSmokeTest
         assertUpdate("DROP TABLE mysql_test_tinyint1");
     }
 
+    @Test
+    public void testCreateTable()
+    {
+        assertUpdate("CREATE TABLE IF NOT EXISTS");
+    }
+
     private void execute(String sql)
             throws SQLException
     {

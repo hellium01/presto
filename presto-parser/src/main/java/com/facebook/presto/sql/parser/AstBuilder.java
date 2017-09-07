@@ -1409,15 +1409,47 @@ class AstBuilder
     @Override
     public Node visitColumnDefinition(SqlBaseParser.ColumnDefinitionContext context)
     {
-        Optional<String> comment = Optional.empty();
-        if (context.COMMENT() != null) {
-            comment = Optional.of(((StringLiteral) visit(context.string())).getValue());
-        }
+        Optional<String> comment = getComment(context.columnConstraint());
+
         return new ColumnDefinition(
                 getLocation(context),
                 (Identifier) visit(context.identifier()),
                 getType(context.type()),
-                comment);
+                comment,
+                getNullable(context.columnConstraint()),
+                getDefaultValue(context.columnConstraint()));
+    }
+
+    private boolean getNullable(List<SqlBaseParser.ColumnConstraintContext> contexts)
+    {
+        Optional<SqlBaseParser.ColumnConstraintContext> nulable = contexts.stream().filter(context -> context.null_not_null() != null).findFirst();
+        if (nulable.isPresent()) {
+            return nulable.get().null_not_null().NOT() == null;
+        }
+        return false;
+    }
+
+    private Optional<String> getComment(List<SqlBaseParser.ColumnConstraintContext> contexts)
+    {
+        Optional<SqlBaseParser.ColumnConstraintContext> comment = contexts.stream().filter(context -> context.COMMENT() != null).findFirst();
+        if (comment.isPresent()) {
+            return Optional.of(((StringLiteral) visit(comment.get().comment())).getValue());
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Expression> getDefaultValue(List<SqlBaseParser.ColumnConstraintContext> contexts)
+    {
+        Optional<SqlBaseParser.ColumnConstraintContext> defaultValue = contexts.stream().filter(context -> context.DEFAULT() != null).findFirst();
+        if (defaultValue.isPresent()) {
+            if (defaultValue.get().default_value().NULL() != null) {
+                return Optional.of(new NullLiteral(getLocation(defaultValue.get().default_value().NULL())));
+            }
+            else {
+                return Optional.of((Expression) visit(defaultValue.get().default_value().expression()));
+            }
+        }
+        return Optional.empty();
     }
 
     @Override

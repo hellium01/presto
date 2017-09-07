@@ -109,7 +109,27 @@ tableElement
     ;
 
 columnDefinition
-    : identifier type (COMMENT string)?
+    : identifier type columnConstraint*
+    ;
+
+columnConstraint
+    : null_not_null
+    |DEFAULT default_value
+    |COMMENT comment
+    ;
+
+null_not_null
+    : NULL
+    | NOT NULL
+    ;
+
+default_value
+    : NULL
+    | expression
+    ;
+
+comment
+    : string
     ;
 
 likeClause
@@ -469,6 +489,7 @@ nonReserved
     | WORK | WRITE
     | YEAR
     | ZONE
+    | DEFAULT
     ;
 
 ADD: 'ADD';
@@ -507,6 +528,7 @@ DATA: 'DATA';
 DATE: 'DATE';
 DAY: 'DAY';
 DEALLOCATE: 'DEALLOCATE';
+DEFAULT: 'DEFAULT';
 DELETE: 'DELETE';
 DESC: 'DESC';
 DESCRIBE: 'DESCRIBE';

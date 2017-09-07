@@ -28,23 +28,32 @@ public final class ColumnDefinition
     private final Identifier name;
     private final String type;
     private final Optional<String> comment;
+    private final boolean nullable;
+    private final Optional<Expression> defaultValue;
 
     public ColumnDefinition(Identifier name, String type, Optional<String> comment)
     {
-        this(Optional.empty(), name, type, comment);
+        this(Optional.empty(), name, type, comment, false, Optional.empty());
     }
 
     public ColumnDefinition(NodeLocation location, Identifier name, String type, Optional<String> comment)
     {
-        this(Optional.of(location), name, type, comment);
+        this(Optional.of(location), name, type, comment, false, Optional.empty());
     }
 
-    private ColumnDefinition(Optional<NodeLocation> location, Identifier name, String type, Optional<String> comment)
+    public ColumnDefinition(NodeLocation location, Identifier name, String type, Optional<String> comment, boolean nullable, Optional<Expression> defaultValue)
+    {
+        this(Optional.of(location), name, type, comment, nullable, defaultValue);
+    }
+
+    private ColumnDefinition(Optional<NodeLocation> location, Identifier name, String type, Optional<String> comment, boolean nullable, Optional<Expression> defaultValue)
     {
         super(location);
         this.name = requireNonNull(name, "name is null");
         this.type = requireNonNull(type, "type is null");
         this.comment = requireNonNull(comment, "comment is null");
+        this.nullable = nullable;
+        this.defaultValue = requireNonNull(defaultValue, "defaultValue is null");
     }
 
     public Identifier getName()
@@ -60,6 +69,16 @@ public final class ColumnDefinition
     public Optional<String> getComment()
     {
         return comment;
+    }
+
+    public boolean isNullable()
+    {
+        return nullable;
+    }
+
+    public Optional<Expression> getDefaultValue()
+    {
+        return defaultValue;
     }
 
     @Override

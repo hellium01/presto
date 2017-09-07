@@ -61,7 +61,7 @@ public class TestRaptorIntegrationSmokeTest
     public TestRaptorIntegrationSmokeTest()
             throws Exception
     {
-        this(() -> createRaptorQueryRunner(ImmutableMap.of(), true, false));
+        this(() -> createRaptorQueryRunner(ImmutableMap.of(), false, false));
     }
 
     protected TestRaptorIntegrationSmokeTest(QueryRunnerSupplier supplier)
@@ -73,6 +73,8 @@ public class TestRaptorIntegrationSmokeTest
     public void testCreateArrayTable()
             throws Exception
     {
+        assertUpdate("CREATE TABLE test1 ( col1 bigint NULL DEFAULT 1 COMMENT '123'," +
+                "col2 double )", 1);
         assertUpdate("CREATE TABLE array_test AS SELECT ARRAY [1, 2, 3] AS c", 1);
         assertQuery("SELECT cardinality(c) FROM array_test", "SELECT 3");
         assertUpdate("DROP TABLE array_test");
