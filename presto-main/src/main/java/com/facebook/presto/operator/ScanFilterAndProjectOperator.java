@@ -74,6 +74,7 @@ public class ScanFilterAndProjectOperator
 
     private long completedBytes;
     private long readTimeNanos;
+    private final boolean updatable;
 
     protected ScanFilterAndProjectOperator(
             OperatorContext operatorContext,
@@ -83,7 +84,8 @@ public class ScanFilterAndProjectOperator
             PageProcessor pageProcessor,
             Iterable<ColumnHandle> columns,
             Iterable<Type> types,
-            MergingPageOutput mergingOutput)
+            MergingPageOutput mergingOutput,
+            boolean updatable)
     {
         this.cursorProcessor = requireNonNull(cursorProcessor, "cursorProcessor is null");
         this.pageProcessor = requireNonNull(pageProcessor, "pageProcessor is null");
@@ -97,6 +99,7 @@ public class ScanFilterAndProjectOperator
         this.mergingOutput = requireNonNull(mergingOutput, "mergingOutput is null");
 
         this.pageBuilder = new PageBuilder(getTypes());
+        this.updatable = updatable;
     }
 
     @Override
@@ -221,7 +224,13 @@ public class ScanFilterAndProjectOperator
         }
 
         if (!finishing && pageSource == null && cursor == null) {
-            ConnectorPageSource source = pageSourceProvider.createPageSource(operatorContext.getSession(), split, columns);
+            ConnectorPageSource source;
+            if (updatable) {
+                source = pageSourceProvider.createUpdatablePageSource(operatorContext.getSession(), split, columns);
+            }
+            else {
+                source = pageSourceProvider.createPageSource(operatorContext.getSession(), split, columns);
+            }
             if (source instanceof RecordPageSource) {
                 cursor = ((RecordPageSource) source).getCursor();
             }
@@ -311,6 +320,7 @@ public class ScanFilterAndProjectOperator
         private final DataSize minOutputPageSize;
         private final int minOutputPageRowCount;
         private boolean closed;
+        private final boolean updatable;
 
         public ScanFilterAndProjectOperatorFactory(
                 int operatorId,
@@ -322,7 +332,8 @@ public class ScanFilterAndProjectOperator
                 Iterable<ColumnHandle> columns,
                 List<Type> types,
                 DataSize minOutputPageSize,
-                int minOutputPageRowCount)
+                int minOutputPageRowCount,
+                boolean updatable)
         {
             this.operatorId = operatorId;
             this.planNodeId = requireNonNull(planNodeId, "planNodeId is null");
@@ -334,6 +345,7 @@ public class ScanFilterAndProjectOperator
             this.types = requireNonNull(types, "types is null");
             this.minOutputPageSize = requireNonNull(minOutputPageSize, "minOutputPageSize is null");
             this.minOutputPageRowCount = minOutputPageRowCount;
+            this.updatable = updatable;
         }
 
         @Override
@@ -361,7 +373,8 @@ public class ScanFilterAndProjectOperator
                     pageProcessor.get(),
                     columns,
                     types,
-                    new MergingPageOutput(types, minOutputPageSize.toBytes(), minOutputPageRowCount));
+                    new MergingPageOutput(types, minOutputPageSize.toBytes(), minOutputPageRowCount),
+                    updatable);
         }
 
         @Override

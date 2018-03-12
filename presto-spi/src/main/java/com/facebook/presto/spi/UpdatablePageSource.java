@@ -13,16 +13,16 @@
  */
 package com.facebook.presto.spi;
 
-import com.facebook.presto.spi.block.Block;
 import io.airlift.slice.Slice;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface UpdatablePageSource
         extends ConnectorPageSource
 {
-    void deleteRows(Block rowIds);
+    void deleteRows(List<String> symbols, Page rowIds);
 
     CompletableFuture<Collection<Slice>> finish();
 

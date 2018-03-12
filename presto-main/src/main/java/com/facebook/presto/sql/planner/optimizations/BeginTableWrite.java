@@ -108,7 +108,7 @@ public class BeginTableWrite
                     node.getId(),
                     rewriteDeleteTableScan(node.getSource(), deleteHandle.getHandle()),
                     deleteHandle,
-                    node.getRowId(),
+                    node.getRowIds(),
                     node.getOutputSymbols());
         }
 
@@ -182,7 +182,8 @@ public class BeginTableWrite
                         scan.getAssignments(),
                         Optional.of(layout),
                         scan.getCurrentConstraint(),
-                        scan.getOriginalConstraint());
+                        scan.getOriginalConstraint(),
+                        true);
             }
 
             if (node instanceof FilterNode) {

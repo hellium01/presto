@@ -199,7 +199,14 @@ public class OrcPageSource
     }
 
     @Override
-    public void deleteRows(Block rowIds)
+    public void deleteRows(List<String> columns, Page rowIds)
+    {
+        checkArgument(columns.size() == 1, "must have only one columns");
+        checkArgument(rowIds.getChannelCount() == 1, "must have only one columns");
+        deleteRowsInternal(rowIds.getBlock(0));
+    }
+
+    private void deleteRowsInternal(Block rowIds)
     {
         for (int i = 0; i < rowIds.getPositionCount(); i++) {
             long rowId = BIGINT.getLong(rowIds, i);

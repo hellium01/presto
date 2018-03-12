@@ -199,8 +199,6 @@ class QueryPlanner
     {
         RelationType descriptor = analysis.getOutputDescriptor(node.getTable());
         TableHandle handle = analysis.getTableHandle(node.getTable());
-        ColumnHandle rowIdHandle = metadata.getUpdateRowIdColumnHandle(session, handle);
-        Type rowIdType = metadata.getColumnMetadata(session, handle, rowIdHandle).getType();
 
         // add table columns
         ImmutableList.Builder<Symbol> outputSymbols = ImmutableList.builder();
@@ -213,15 +211,20 @@ class QueryPlanner
             fields.add(field);
         }
 
-        // add rowId column
-        Field rowIdField = Field.newUnqualified(Optional.empty(), rowIdType);
-        Symbol rowIdSymbol = symbolAllocator.newSymbol("$rowId", rowIdField.getType());
-        outputSymbols.add(rowIdSymbol);
-        columns.put(rowIdSymbol, rowIdHandle);
-        fields.add(rowIdField);
+        // add rowId columns
+        List<Field> rowIdFields = new ArrayList<>();
+        for (ColumnHandle rowIdHandle : metadata.getUpdateRowIdColumnHandle(session, handle)) {
+            Type rowIdType = metadata.getColumnMetadata(session, handle, rowIdHandle).getType();
+            Field rowIdField = Field.newUnqualified(Optional.empty(), rowIdType);
+            Symbol rowIdSymbol = symbolAllocator.newSymbol("$rowId", rowIdField.getType());
+            outputSymbols.add(rowIdSymbol);
+            columns.put(rowIdSymbol, rowIdHandle);
+            fields.add(rowIdField);
+            rowIdFields.add(rowIdField);
+        }
 
         // create table scan
-        PlanNode tableScan = new TableScanNode(idAllocator.getNextId(), handle, outputSymbols.build(), columns.build(), Optional.empty(), TupleDomain.all(), null);
+        PlanNode tableScan = new TableScanNode(idAllocator.getNextId(), handle, outputSymbols.build(), columns.build(), Optional.empty(), TupleDomain.all(), null, true);
         Scope scope = Scope.builder().withRelationType(RelationId.anonymous(), new RelationType(fields.build())).build();
         RelationPlan relationPlan = new RelationPlan(tableScan, scope, outputSymbols.build());
 
@@ -235,12 +238,15 @@ class QueryPlanner
         }
 
         // create delete node
-        Symbol rowId = builder.translate(new FieldReference(relationPlan.getDescriptor().indexOf(rowIdField)));
+        ImmutableList.Builder<Symbol> rowIds = ImmutableList.builder();
+        for (Field rowIdField : rowIdFields) {
+            rowIds.add(builder.translate(new FieldReference(relationPlan.getDescriptor().indexOf(rowIdField))));
+        }
         List<Symbol> outputs = ImmutableList.of(
                 symbolAllocator.newSymbol("partialrows", BIGINT),
                 symbolAllocator.newSymbol("fragment", VARBINARY));
 
-        return new DeleteNode(idAllocator.getNextId(), builder.getRoot(), new DeleteHandle(handle, metadata.getTableMetadata(session, handle).getTable()), rowId, outputs);
+        return new DeleteNode(idAllocator.getNextId(), builder.getRoot(), new DeleteHandle(handle, metadata.getTableMetadata(session, handle).getTable()), rowIds.build(), outputs);
     }
 
     private static List<Symbol> computeOutputs(PlanBuilder builder, List<Expression> outputExpressions)

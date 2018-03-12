@@ -1278,14 +1278,14 @@ public class PrestoResultSet
     public RowId getRowId(int columnIndex)
             throws SQLException
     {
-        throw new SQLFeatureNotSupportedException("getRowId");
+        throw new SQLFeatureNotSupportedException("getRowIds");
     }
 
     @Override
     public RowId getRowId(String columnLabel)
             throws SQLException
     {
-        throw new SQLFeatureNotSupportedException("getRowId");
+        throw new SQLFeatureNotSupportedException("getRowIds");
     }
 
     @Override

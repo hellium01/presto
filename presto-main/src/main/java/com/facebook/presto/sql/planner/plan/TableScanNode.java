@@ -58,6 +58,7 @@ public class TableScanNode
     // To make this work, the originalConstraint should be set exactly once after the first predicate push down and never adjusted after that.
     // In this way, we are always guaranteed to have a readable predicate that provides some kind of upper bound on the constraints.
     private final Expression originalConstraint;
+    private final boolean updatable;
 
     @JsonCreator
     public TableScanNode(
@@ -67,7 +68,8 @@ public class TableScanNode
             @JsonProperty("assignments") Map<Symbol, ColumnHandle> assignments,
             @JsonProperty("layout") Optional<TableLayoutHandle> tableLayout,
             @JsonProperty("currentConstraint") TupleDomain<ColumnHandle> currentConstraint,
-            @JsonProperty("originalConstraint") @Nullable Expression originalConstraint)
+            @JsonProperty("originalConstraint") @Nullable Expression originalConstraint,
+            @JsonProperty("updatable") boolean updatable)
     {
         super(id);
         requireNonNull(table, "table is null");
@@ -84,6 +86,12 @@ public class TableScanNode
         this.originalConstraint = originalConstraint;
         this.tableLayout = tableLayout;
         this.currentConstraint = currentConstraint;
+        this.updatable = updatable;
+    }
+
+    public TableScanNode(PlanNodeId id, TableHandle table, List<Symbol> outputSymbols, Map<Symbol, ColumnHandle> assignments, Optional<TableLayoutHandle> tableLayout, TupleDomain<ColumnHandle> currentConstraint, Expression originalConstraint)
+    {
+        this(id, table, outputSymbols, assignments, tableLayout, currentConstraint, originalConstraint, false);
     }
 
     @JsonProperty("table")
@@ -122,6 +130,12 @@ public class TableScanNode
     public TupleDomain<ColumnHandle> getCurrentConstraint()
     {
         return currentConstraint;
+    }
+
+    @JsonProperty("updatable")
+    public boolean isUpdatable()
+    {
+        return updatable;
     }
 
     @Override

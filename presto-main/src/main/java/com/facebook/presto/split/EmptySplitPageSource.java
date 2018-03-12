@@ -15,11 +15,11 @@ package com.facebook.presto.split;
 
 import com.facebook.presto.spi.Page;
 import com.facebook.presto.spi.UpdatablePageSource;
-import com.facebook.presto.spi.block.Block;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -28,7 +28,7 @@ public class EmptySplitPageSource
         implements UpdatablePageSource
 {
     @Override
-    public void deleteRows(Block rowIds)
+    public void deleteRows(List<String> symbols, Page rowIds)
     {
         throw new UnsupportedOperationException("deleteRows called on EmptySplitPageSource");
     }

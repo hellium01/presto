@@ -32,7 +32,7 @@ public class DeleteNode
 {
     private final PlanNode source;
     private final DeleteHandle target;
-    private final Symbol rowId;
+    private final List<Symbol> rowIds;
     private final List<Symbol> outputs;
 
     @JsonCreator
@@ -40,14 +40,14 @@ public class DeleteNode
             @JsonProperty("id") PlanNodeId id,
             @JsonProperty("source") PlanNode source,
             @JsonProperty("target") DeleteHandle target,
-            @JsonProperty("rowId") Symbol rowId,
+            @JsonProperty("rowIds") List<Symbol> rowIds,
             @JsonProperty("outputs") List<Symbol> outputs)
     {
         super(id);
 
         this.source = requireNonNull(source, "source is null");
         this.target = requireNonNull(target, "target is null");
-        this.rowId = requireNonNull(rowId, "rowId is null");
+        this.rowIds = requireNonNull(rowIds, "rowIds is null");
         this.outputs = ImmutableList.copyOf(requireNonNull(outputs, "outputs is null"));
     }
 
@@ -64,9 +64,9 @@ public class DeleteNode
     }
 
     @JsonProperty
-    public Symbol getRowId()
+    public List<Symbol> getRowIds()
     {
-        return rowId;
+        return rowIds;
     }
 
     @JsonProperty("outputs")
@@ -91,6 +91,6 @@ public class DeleteNode
     @Override
     public PlanNode replaceChildren(List<PlanNode> newChildren)
     {
-        return new DeleteNode(getId(), Iterables.getOnlyElement(newChildren), target, rowId, outputs);
+        return new DeleteNode(getId(), Iterables.getOnlyElement(newChildren), target, rowIds, outputs);
     }
 }

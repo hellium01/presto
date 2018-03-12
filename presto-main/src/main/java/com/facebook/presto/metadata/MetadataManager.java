@@ -671,7 +671,7 @@ public class MetadataManager
     }
 
     @Override
-    public ColumnHandle getUpdateRowIdColumnHandle(Session session, TableHandle tableHandle)
+    public List<ColumnHandle> getUpdateRowIdColumnHandle(Session session, TableHandle tableHandle)
     {
         ConnectorId connectorId = tableHandle.getConnectorId();
         ConnectorMetadata metadata = getMetadata(session, connectorId);

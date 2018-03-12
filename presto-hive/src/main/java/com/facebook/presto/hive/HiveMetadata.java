@@ -1112,9 +1112,9 @@ public class HiveMetadata
     }
 
     @Override
-    public ColumnHandle getUpdateRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle)
+    public List<ColumnHandle> getUpdateRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
-        return updateRowIdHandle();
+        return ImmutableList.of(updateRowIdHandle());
     }
 
     @Override

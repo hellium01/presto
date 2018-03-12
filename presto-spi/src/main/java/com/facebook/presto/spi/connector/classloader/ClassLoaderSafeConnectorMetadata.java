@@ -330,7 +330,7 @@ public class ClassLoaderSafeConnectorMetadata
     }
 
     @Override
-    public ColumnHandle getUpdateRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle)
+    public List<ColumnHandle> getUpdateRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
             return delegate.getUpdateRowIdColumnHandle(session, tableHandle);

@@ -17,10 +17,16 @@ import com.facebook.presto.Session;
 import com.facebook.presto.metadata.Split;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorPageSource;
+import com.facebook.presto.spi.UpdatablePageSource;
 
 import java.util.List;
 
 public interface PageSourceProvider
 {
     ConnectorPageSource createPageSource(Session session, Split split, List<ColumnHandle> columns);
+
+    default UpdatablePageSource createUpdatablePageSource(Session session, Split split, List<ColumnHandle> columns)
+    {
+        throw new UnsupportedOperationException();
+    }
 }

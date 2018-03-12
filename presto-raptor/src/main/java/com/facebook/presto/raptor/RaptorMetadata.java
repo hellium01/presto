@@ -743,9 +743,9 @@ public class RaptorMetadata
     }
 
     @Override
-    public ColumnHandle getUpdateRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle)
+    public List<ColumnHandle> getUpdateRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
-        return shardRowIdHandle(connectorId);
+        return ImmutableList.of(shardRowIdHandle(connectorId));
     }
 
     @Override

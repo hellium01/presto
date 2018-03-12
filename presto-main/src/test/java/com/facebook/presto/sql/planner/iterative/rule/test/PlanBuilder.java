@@ -383,7 +383,7 @@ public class PlanBuilder
                 originalConstraint);
     }
 
-    public TableFinishNode tableDelete(SchemaTableName schemaTableName, PlanNode deleteSource, Symbol deleteRowId)
+    public TableFinishNode tableDelete(SchemaTableName schemaTableName, PlanNode deleteSource, List<Symbol> deleteRowId)
     {
         TableWriterNode.DeleteHandle deleteHandle = new TableWriterNode.DeleteHandle(
                 new TableHandle(
@@ -398,11 +398,11 @@ public class PlanBuilder
                                 deleteSource,
                                 deleteHandle,
                                 deleteRowId,
-                                ImmutableList.of(deleteRowId)))
+                                deleteRowId))
                         .addInputsSet(deleteRowId)
                         .singleDistributionPartitioningScheme(deleteRowId)),
                 deleteHandle,
-                ImmutableList.of(deleteRowId));
+                deleteRowId);
     }
 
     public ExchangeNode gatheringExchange(ExchangeNode.Scope scope, PlanNode child)

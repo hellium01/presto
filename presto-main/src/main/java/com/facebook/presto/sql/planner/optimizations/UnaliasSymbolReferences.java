@@ -240,7 +240,8 @@ public class UnaliasSymbolReferences
                     node.getAssignments(),
                     node.getLayout(),
                     node.getCurrentConstraint(),
-                    originalConstraint);
+                    originalConstraint,
+                    node.isUpdatable());
         }
 
         @Override
@@ -358,7 +359,7 @@ public class UnaliasSymbolReferences
         @Override
         public PlanNode visitDelete(DeleteNode node, RewriteContext<Void> context)
         {
-            return new DeleteNode(node.getId(), context.rewrite(node.getSource()), node.getTarget(), canonicalize(node.getRowId()), node.getOutputSymbols());
+            return new DeleteNode(node.getId(), context.rewrite(node.getSource()), node.getTarget(), canonicalize(node.getRowIds()), node.getOutputSymbols());
         }
 
         @Override
@@ -682,6 +683,13 @@ public class UnaliasSymbolReferences
             return symbols.stream()
                     .map(this::canonicalize)
                     .collect(toImmutableSet());
+        }
+
+        private List<Symbol> canonicalize(List<Symbol> symbols)
+        {
+            return symbols.stream()
+                    .map(this::canonicalize)
+                    .collect(toImmutableList());
         }
 
         private List<JoinNode.EquiJoinClause> canonicalizeJoinCriteria(List<JoinNode.EquiJoinClause> criteria)

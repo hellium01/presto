@@ -19,6 +19,7 @@ import com.facebook.presto.spi.UpdatablePageSource;
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.type.Type;
+import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.planner.plan.PlanNodeId;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -26,6 +27,7 @@ import io.airlift.slice.Slice;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -46,14 +48,14 @@ public class DeleteOperator
     {
         private final int operatorId;
         private final PlanNodeId planNodeId;
-        private final int rowIdChannel;
+        private final Map<Symbol, Integer> rowIdChannels;
         private boolean closed;
 
-        public DeleteOperatorFactory(int operatorId, PlanNodeId planNodeId, int rowIdChannel)
+        public DeleteOperatorFactory(int operatorId, PlanNodeId planNodeId, Map<Symbol, Integer> rowIdChannels)
         {
             this.operatorId = operatorId;
             this.planNodeId = requireNonNull(planNodeId, "planNodeId is null");
-            this.rowIdChannel = rowIdChannel;
+            this.rowIdChannels = rowIdChannels;
         }
 
         @Override
@@ -67,7 +69,7 @@ public class DeleteOperator
         {
             checkState(!closed, "Factory is already closed");
             OperatorContext context = driverContext.addOperatorContext(operatorId, planNodeId, DeleteOperator.class.getSimpleName());
-            return new DeleteOperator(context, rowIdChannel);
+            return new DeleteOperator(context, rowIdChannels);
         }
 
         @Override
@@ -79,7 +81,7 @@ public class DeleteOperator
         @Override
         public OperatorFactory duplicate()
         {
-            return new DeleteOperatorFactory(operatorId, planNodeId, rowIdChannel);
+            return new DeleteOperatorFactory(operatorId, planNodeId, rowIdChannels);
         }
     }
 
@@ -89,7 +91,7 @@ public class DeleteOperator
     }
 
     private final OperatorContext operatorContext;
-    private final int rowIdChannel;
+    private final Map<Symbol, Integer> rowIdChannels;
 
     private State state = State.RUNNING;
     private long rowCount;
@@ -97,10 +99,10 @@ public class DeleteOperator
     private ListenableFuture<Collection<Slice>> finishFuture;
     private Supplier<Optional<UpdatablePageSource>> pageSource = Optional::empty;
 
-    public DeleteOperator(OperatorContext operatorContext, int rowIdChannel)
+    public DeleteOperator(OperatorContext operatorContext, Map<Symbol, Integer> rowIdChannels)
     {
         this.operatorContext = requireNonNull(operatorContext, "operatorContext is null");
-        this.rowIdChannel = rowIdChannel;
+        this.rowIdChannels = rowIdChannels;
     }
 
     @Override
@@ -142,9 +144,17 @@ public class DeleteOperator
         requireNonNull(page, "page is null");
         checkState(state == State.RUNNING, "Operator is %s", state);
 
-        Block rowIds = page.getBlock(rowIdChannel);
-        pageSource().deleteRows(rowIds);
-        rowCount += rowIds.getPositionCount();
+        ImmutableList.Builder<String> symbols = ImmutableList.builder();
+        Block[] blocks = new Block[rowIdChannels.size()];
+        int i = 0;
+        for (Map.Entry<Symbol, Integer> entry : rowIdChannels.entrySet()) {
+            symbols.add(entry.getKey().getName());
+            blocks[i] = page.getBlock(entry.getValue());
+            i++;
+        }
+        Page rowsToDelete = new Page(blocks);
+        pageSource().deleteRows(symbols.build(), rowsToDelete);
+        rowCount += rowsToDelete.getPositionCount();
     }
 
     @Override

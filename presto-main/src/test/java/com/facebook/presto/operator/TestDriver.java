@@ -159,7 +159,8 @@ public class TestDriver
                     }
                 },
                 types,
-                ImmutableList.of());
+                ImmutableList.of(),
+                false);
 
         PageConsumerOperator sink = createSinkOperator(source);
         Driver driver = Driver.createDriver(driverContext, source, sink);
@@ -473,7 +474,7 @@ public class TestDriver
                 List<Type> types,
                 Iterable<ColumnHandle> columns)
         {
-            super(operatorContext, planNodeId, pageSourceProvider, types, columns);
+            super(operatorContext, planNodeId, pageSourceProvider, types, columns, false);
         }
 
         @Override
@@ -498,7 +499,7 @@ public class TestDriver
                 List<Type> types,
                 Iterable<ColumnHandle> columns)
         {
-            super(operatorContext, planNodeId, pageSourceProvider, types, columns);
+            super(operatorContext, planNodeId, pageSourceProvider, types, columns, false);
         }
 
         @Override

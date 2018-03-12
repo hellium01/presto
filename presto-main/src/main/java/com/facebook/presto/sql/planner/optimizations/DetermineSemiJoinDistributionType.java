@@ -81,7 +81,7 @@ public class DetermineSemiJoinDistributionType
                     node.getId(),
                     rewrittenSource,
                     node.getTarget(),
-                    node.getRowId(),
+                    node.getRowIds(),
                     node.getOutputSymbols());
         }
 

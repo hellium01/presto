@@ -110,7 +110,8 @@ public class TestScanFilterAndProjectOperator
                 ImmutableList.of(),
                 ImmutableList.of(VARCHAR),
                 new DataSize(0, BYTE),
-                0);
+                0,
+                false);
 
         SourceOperator operator = factory.createOperator(driverContext);
         operator.addSplit(new Split(new ConnectorId("test"), TestingTransactionHandle.create(), TestingSplit.createLocalSplit()));
@@ -152,7 +153,8 @@ public class TestScanFilterAndProjectOperator
                 ImmutableList.of(),
                 ImmutableList.of(BIGINT),
                 new DataSize(64, KILOBYTE),
-                2);
+                2,
+                false);
 
         SourceOperator operator = factory.createOperator(newDriverContext());
         operator.addSplit(new Split(new ConnectorId("test"), TestingTransactionHandle.create(), TestingSplit.createLocalSplit()));
@@ -195,7 +197,8 @@ public class TestScanFilterAndProjectOperator
                 ImmutableList.of(),
                 ImmutableList.of(BIGINT),
                 new DataSize(0, BYTE),
-                0);
+                0,
+                false);
 
         SourceOperator operator = factory.createOperator(driverContext);
         operator.addSplit(new Split(new ConnectorId("test"), TestingTransactionHandle.create(), TestingSplit.createLocalSplit()));
@@ -228,7 +231,8 @@ public class TestScanFilterAndProjectOperator
                 ImmutableList.of(),
                 ImmutableList.of(VARCHAR),
                 new DataSize(0, BYTE),
-                0);
+                0,
+                false);
 
         SourceOperator operator = factory.createOperator(driverContext);
         operator.addSplit(new Split(new ConnectorId("test"), TestingTransactionHandle.create(), TestingSplit.createLocalSplit()));
@@ -279,7 +283,8 @@ public class TestScanFilterAndProjectOperator
                 ImmutableList.of(),
                 ImmutableList.of(BIGINT),
                 new DataSize(0, BYTE),
-                0);
+                0,
+                false);
 
         SourceOperator operator = factory.createOperator(driverContext);
         operator.addSplit(new Split(new ConnectorId("test"), TestingTransactionHandle.create(), TestingSplit.createLocalSplit()));
@@ -338,7 +343,8 @@ public class TestScanFilterAndProjectOperator
                 ImmutableList.of(),
                 ImmutableList.of(BIGINT),
                 new DataSize(0, BYTE),
-                0);
+                0,
+                false);
 
         SourceOperator operator = factory.createOperator(driverContext);
         operator.addSplit(new Split(new ConnectorId("test"), TestingTransactionHandle.create(), TestingSplit.createLocalSplit()));

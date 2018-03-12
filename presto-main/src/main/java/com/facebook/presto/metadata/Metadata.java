@@ -214,7 +214,7 @@ public interface Metadata
     /**
      * Get the row ID column handle used with UpdatablePageSource.
      */
-    ColumnHandle getUpdateRowIdColumnHandle(Session session, TableHandle tableHandle);
+    List<ColumnHandle> getUpdateRowIdColumnHandle(Session session, TableHandle tableHandle);
 
     /**
      * @return whether delete without table scan is supported

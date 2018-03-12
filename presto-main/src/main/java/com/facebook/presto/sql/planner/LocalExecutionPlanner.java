@@ -1081,8 +1081,10 @@ public class LocalExecutionPlanner
             Map<Integer, Type> sourceTypes;
             List<ColumnHandle> columns = null;
             PhysicalOperation source = null;
+            boolean updatable = false;
             if (sourceNode instanceof TableScanNode) {
                 TableScanNode tableScanNode = (TableScanNode) sourceNode;
+                updatable = tableScanNode.isUpdatable();
 
                 // extract the column handles and channel to type mapping
                 sourceLayout = new LinkedHashMap<>();
@@ -1153,7 +1155,8 @@ public class LocalExecutionPlanner
                             columns,
                             getTypes(rewrittenProjections, expressionTypes),
                             getFilterAndProjectMinOutputPageSize(session),
-                            getFilterAndProjectMinOutputPageRowCount(session));
+                            getFilterAndProjectMinOutputPageRowCount(session),
+                            updatable);
 
                     return new PhysicalOperation(operatorFactory, outputMappings, groupEnumerable ? GROUPED_EXECUTION : UNGROUPED_EXECUTION);
                 }
@@ -1200,7 +1203,7 @@ public class LocalExecutionPlanner
             }
 
             List<Type> types = getSourceOperatorTypes(node, context.getTypes());
-            OperatorFactory operatorFactory = new TableScanOperatorFactory(context.getNextOperatorId(), node.getId(), pageSourceProvider, types, columns);
+            OperatorFactory operatorFactory = new TableScanOperatorFactory(context.getNextOperatorId(), node.getId(), pageSourceProvider, types, columns, node.isUpdatable());
             return new PhysicalOperation(operatorFactory, makeLayout(node), groupEnumerable ? GROUPED_EXECUTION : UNGROUPED_EXECUTION);
         }
 
@@ -2059,7 +2062,9 @@ public class LocalExecutionPlanner
         {
             PhysicalOperation source = node.getSource().accept(this, context);
 
-            OperatorFactory operatorFactory = new DeleteOperatorFactory(context.getNextOperatorId(), node.getId(), source.getLayout().get(node.getRowId()));
+            OperatorFactory operatorFactory = new DeleteOperatorFactory(context.getNextOperatorId(),
+                    node.getId(),
+                    node.getRowIds().stream().collect(toImmutableMap(rowId -> rowId, rowId -> source.getLayout().get(rowId))));
 
             Map<Symbol, Integer> layout = ImmutableMap.<Symbol, Integer>builder()
                     .put(node.getOutputSymbols().get(0), 0)

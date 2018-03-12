@@ -52,19 +52,22 @@ public class TableScanOperator
         private final List<Type> types;
         private final List<ColumnHandle> columns;
         private boolean closed;
+        private boolean updatable;
 
         public TableScanOperatorFactory(
                 int operatorId,
                 PlanNodeId sourceId,
                 PageSourceProvider pageSourceProvider,
                 List<Type> types,
-                Iterable<ColumnHandle> columns)
+                Iterable<ColumnHandle> columns,
+                boolean updatable)
         {
             this.operatorId = operatorId;
             this.sourceId = requireNonNull(sourceId, "sourceId is null");
             this.types = requireNonNull(types, "types is null");
             this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
             this.columns = ImmutableList.copyOf(requireNonNull(columns, "columns is null"));
+            this.updatable = updatable;
         }
 
         @Override
@@ -89,7 +92,8 @@ public class TableScanOperator
                     sourceId,
                     pageSourceProvider,
                     types,
-                    columns);
+                    columns,
+                    updatable);
         }
 
         @Override
@@ -114,13 +118,15 @@ public class TableScanOperator
 
     private long completedBytes;
     private long readTimeNanos;
+    private boolean updatable;
 
     public TableScanOperator(
             OperatorContext operatorContext,
             PlanNodeId planNodeId,
             PageSourceProvider pageSourceProvider,
             List<Type> types,
-            Iterable<ColumnHandle> columns)
+            Iterable<ColumnHandle> columns,
+            boolean updatable)
     {
         this.operatorContext = requireNonNull(operatorContext, "operatorContext is null");
         this.planNodeId = requireNonNull(planNodeId, "planNodeId is null");
@@ -128,6 +134,7 @@ public class TableScanOperator
         this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
         this.columns = ImmutableList.copyOf(requireNonNull(columns, "columns is null"));
         this.systemMemoryContext = operatorContext.newLocalSystemMemoryContext();
+        this.updatable = updatable;
     }
 
     @Override
@@ -256,7 +263,12 @@ public class TableScanOperator
             return null;
         }
         if (source == null) {
-            source = pageSourceProvider.createPageSource(operatorContext.getSession(), split, columns);
+            if (updatable) {
+                source = pageSourceProvider.createUpdatablePageSource(operatorContext.getSession(), split, columns);
+            }
+            else {
+                source = pageSourceProvider.createPageSource(operatorContext.getSession(), split, columns);
+            }
         }
 
         Page page = source.getNextPage();

@@ -272,7 +272,7 @@ public abstract class AbstractMockMetadata
     }
 
     @Override
-    public ColumnHandle getUpdateRowIdColumnHandle(Session session, TableHandle tableHandle)
+    public List<ColumnHandle> getUpdateRowIdColumnHandle(Session session, TableHandle tableHandle)
     {
         throw new UnsupportedOperationException();
     }
