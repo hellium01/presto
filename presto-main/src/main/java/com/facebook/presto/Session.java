@@ -86,6 +86,7 @@ public final class Session
             Optional<String> remoteUserAddress,
             Optional<String> userAgent,
             Optional<String> clientInfo,
+            Optional<String> traceToken,
             Set<String> clientTags,
             ResourceEstimates resourceEstimates,
             long startTime,
@@ -109,6 +110,7 @@ public final class Session
         this.userAgent = requireNonNull(userAgent, "userAgent is null");
         this.clientInfo = requireNonNull(clientInfo, "clientInfo is null");
         this.clientTags = ImmutableSet.copyOf(requireNonNull(clientTags, "clientTags is null"));
+        this.traceToken = requireNonNull(traceToken, "traceToken is null");
         this.resourceEstimates = requireNonNull(resourceEstimates, "resourceEstimates is null");
         this.startTime = startTime;
         this.systemProperties = ImmutableMap.copyOf(requireNonNull(systemProperties, "systemProperties is null"));
@@ -315,6 +317,7 @@ public final class Session
                 remoteUserAddress,
                 userAgent,
                 clientInfo,
+                traceToken,
                 clientTags,
                 resourceEstimates,
                 startTime,
@@ -384,6 +387,7 @@ public final class Session
                 .add("userAgent", userAgent.orElse(null))
                 .add("clientInfo", clientInfo.orElse(null))
                 .add("clientTags", clientTags)
+                .add("traceToken", traceToken.orElse(null))
                 .add("resourceEstimates", resourceEstimates)
                 .add("startTime", startTime)
                 .omitNullValues()
@@ -416,6 +420,7 @@ public final class Session
         private String remoteUserAddress;
         private String userAgent;
         private String clientInfo;
+        private Optional<String> traceToken;
         private Set<String> clientTags = ImmutableSet.of();
         private ResourceEstimates resourceEstimates;
         private long startTime = System.currentTimeMillis();
@@ -447,6 +452,7 @@ public final class Session
             this.remoteUserAddress = session.remoteUserAddress.orElse(null);
             this.userAgent = session.userAgent.orElse(null);
             this.clientInfo = session.clientInfo.orElse(null);
+            this.traceToken = session.traceToken;
             this.clientTags = ImmutableSet.copyOf(session.clientTags);
             this.startTime = session.startTime;
             this.systemProperties.putAll(session.systemProperties);
@@ -545,6 +551,12 @@ public final class Session
             return this;
         }
 
+        public SessionBuilder setTraceToken(String traceToken)
+        {
+            this.traceToken = Optional.ofNullable(traceToken);
+            return this;
+        }
+
         public SessionBuilder setResourceEstimates(ResourceEstimates resourceEstimates)
         {
             this.resourceEstimates = resourceEstimates;
@@ -594,6 +606,7 @@ public final class Session
                     Optional.ofNullable(remoteUserAddress),
                     Optional.ofNullable(userAgent),
                     Optional.ofNullable(clientInfo),
+                    traceToken,
                     clientTags,
                     Optional.ofNullable(resourceEstimates).orElse(new ResourceEstimateBuilder().build()),
                     startTime,

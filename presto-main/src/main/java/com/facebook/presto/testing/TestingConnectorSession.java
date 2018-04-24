@@ -157,6 +157,7 @@ public class TestingConnectorSession
                 .add("traceToken", traceToken.orElse(null))
                 .add("timeZoneKey", timeZoneKey)
                 .add("locale", locale)
+                .add("traceToken", traceToken.orElse(null))
                 .add("startTime", startTime)
                 .add("properties", propertyValues)
                 .omitNullValues()

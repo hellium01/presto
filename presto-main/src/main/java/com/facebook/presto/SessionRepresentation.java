@@ -41,6 +41,7 @@ public final class SessionRepresentation
     private final String user;
     private final Optional<String> principal;
     private final Optional<String> source;
+    private final Optional<String> traceToken;
     private final Optional<String> catalog;
     private final Optional<String> schema;
     private final Optional<String> traceToken;
@@ -64,6 +65,7 @@ public final class SessionRepresentation
             @JsonProperty("user") String user,
             @JsonProperty("principal") Optional<String> principal,
             @JsonProperty("source") Optional<String> source,
+            @JsonProperty("traceToken") Optional<String> traceToken,
             @JsonProperty("catalog") Optional<String> catalog,
             @JsonProperty("schema") Optional<String> schema,
             @JsonProperty("traceToken") Optional<String> traceToken,
@@ -85,6 +87,7 @@ public final class SessionRepresentation
         this.user = requireNonNull(user, "user is null");
         this.principal = requireNonNull(principal, "principal is null");
         this.source = requireNonNull(source, "source is null");
+        this.traceToken = requireNonNull(traceToken, "traceToken is null");
         this.catalog = requireNonNull(catalog, "catalog is null");
         this.schema = requireNonNull(schema, "schema is null");
         this.traceToken = requireNonNull(traceToken, "traceToken is null");
@@ -242,6 +245,7 @@ public final class SessionRepresentation
                 remoteUserAddress,
                 userAgent,
                 clientInfo,
+                traceToken,
                 clientTags,
                 resourceEstimate,
                 startTime,
