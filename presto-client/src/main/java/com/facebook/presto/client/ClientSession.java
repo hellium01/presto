@@ -35,6 +35,7 @@ public class ClientSession
     private final URI server;
     private final String user;
     private final String source;
+    private final String traceToken;
     private final Set<String> clientTags;
     private final String clientInfo;
     private final String catalog;
@@ -63,6 +64,7 @@ public class ClientSession
             URI server,
             String user,
             String source,
+            String traceToken,
             Set<String> clientTags,
             String clientInfo,
             String catalog,
@@ -78,6 +80,7 @@ public class ClientSession
         this.server = requireNonNull(server, "server is null");
         this.user = user;
         this.source = source;
+        this.traceToken = traceToken;
         this.clientTags = ImmutableSet.copyOf(requireNonNull(clientTags, "clientTags is null"));
         this.clientInfo = clientInfo;
         this.catalog = catalog;
@@ -124,6 +127,11 @@ public class ClientSession
     public String getSource()
     {
         return source;
+    }
+
+    public String getTraceToken()
+    {
+        return traceToken;
     }
 
     public Set<String> getClientTags()
@@ -196,6 +204,7 @@ public class ClientSession
                 .add("clientInfo", clientInfo)
                 .add("catalog", catalog)
                 .add("schema", schema)
+                .add("traceToken", traceToken)
                 .add("timeZone", timeZone)
                 .add("locale", locale)
                 .add("properties", properties)
@@ -208,6 +217,7 @@ public class ClientSession
         private URI server;
         private String user;
         private String source;
+        private String traceToken;
         private Set<String> clientTags;
         private String clientInfo;
         private String catalog;
@@ -226,6 +236,7 @@ public class ClientSession
             server = clientSession.getServer();
             user = clientSession.getUser();
             source = clientSession.getSource();
+            traceToken = clientSession.getTraceToken();
             clientTags = clientSession.getClientTags();
             clientInfo = clientSession.getClientInfo();
             catalog = clientSession.getCatalog();
@@ -281,6 +292,7 @@ public class ClientSession
                     server,
                     user,
                     source,
+                    traceToken,
                     clientTags,
                     clientInfo,
                     catalog,

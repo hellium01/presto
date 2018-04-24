@@ -86,6 +86,7 @@ public class TestQueryRunner
                         server.url("/").uri(),
                         "user",
                         "source",
+                        null,
                         ImmutableSet.of(),
                         "clientInfo",
                         "catalog",

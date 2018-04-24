@@ -54,6 +54,7 @@ import static com.facebook.presto.client.PrestoHeaders.PRESTO_SCHEMA;
 import static com.facebook.presto.client.PrestoHeaders.PRESTO_SESSION;
 import static com.facebook.presto.client.PrestoHeaders.PRESTO_SOURCE;
 import static com.facebook.presto.client.PrestoHeaders.PRESTO_TIME_ZONE;
+import static com.facebook.presto.client.PrestoHeaders.PRESTO_TRACE_TOKEN;
 import static com.facebook.presto.client.PrestoHeaders.PRESTO_TRANSACTION_ID;
 import static com.facebook.presto.client.PrestoHeaders.PRESTO_USER;
 import static com.facebook.presto.sql.parser.ParsingOptions.DecimalLiteralTreatment.AS_DOUBLE;
@@ -81,6 +82,7 @@ public final class HttpRequestSessionContext
     private final String language;
     private final Set<String> clientTags;
     private final ResourceEstimates resourceEstimates;
+    private final Optional<String> traceToken;
 
     private final Map<String, String> systemProperties;
     private final Map<String, Map<String, String>> catalogSessionProperties;
@@ -108,6 +110,7 @@ public final class HttpRequestSessionContext
         timeZoneId = servletRequest.getHeader(PRESTO_TIME_ZONE);
         language = servletRequest.getHeader(PRESTO_LANGUAGE);
         clientInfo = servletRequest.getHeader(PRESTO_CLIENT_INFO);
+        traceToken = Optional.ofNullable(servletRequest.getHeader(PRESTO_TRACE_TOKEN));
         clientTags = parseClientTags(servletRequest);
         resourceEstimates = parseResourceEstimate(servletRequest);
 
@@ -245,6 +248,12 @@ public final class HttpRequestSessionContext
     public boolean supportClientTransaction()
     {
         return clientTransactionSupport;
+    }
+
+    @Override
+    public Optional<String> getTraceToken()
+    {
+        return traceToken;
     }
 
     private static List<String> splitSessionHeader(Enumeration<String> headers)

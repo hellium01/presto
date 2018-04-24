@@ -154,6 +154,7 @@ public class ClientOptions
                 parseServer(server),
                 user,
                 source,
+                null,
                 parseClientTags(clientTags),
                 clientInfo,
                 catalog,

@@ -46,6 +46,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -633,7 +634,7 @@ public class PrestoConnection
     StatementClient startQuery(String sql, Map<String, String> sessionPropertiesOverride)
     {
         String source = firstNonNull(clientInfo.get("ApplicationName"), "presto-jdbc");
-
+        String traceToken = firstNonNull(clientInfo.get("TraceToken"), generateTraceToken());
         Iterable<String> clientTags = Splitter.on(',').trimResults().omitEmptyStrings()
                 .split(nullToEmpty(clientInfo.get("ClientTags")));
 
@@ -648,6 +649,7 @@ public class PrestoConnection
                 httpUri,
                 user,
                 source,
+                traceToken,
                 ImmutableSet.copyOf(clientTags),
                 clientInfo.get("ClientInfo"),
                 catalog.get(),
@@ -723,5 +725,10 @@ public class PrestoConnection
                 return "SERIALIZABLE";
         }
         throw new SQLException("Invalid transaction isolation level: " + level);
+    }
+
+    private static String generateTraceToken()
+    {
+        return UUID.randomUUID().toString();
     }
 }

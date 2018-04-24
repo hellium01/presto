@@ -136,6 +136,10 @@ public class QuerySessionSupplier
             sessionBuilder.setLocale(Locale.forLanguageTag(context.getLanguage()));
         }
 
+        if (context.getTraceToken().isPresent()) {
+            sessionBuilder.setTraceToken(context.getTraceToken().get());
+        }
+
         if (sessionPropertyConfigurationManager.get() != null) {
             SessionConfigurationContext configContext = new SessionConfigurationContext(
                     context.getIdentity().getUser(),

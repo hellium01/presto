@@ -91,6 +91,7 @@ public class BenchmarkDriverOptions
                 parseServer(server),
                 user,
                 "presto-benchmark",
+                null,
                 ImmutableSet.of(),
                 null,
                 catalog,

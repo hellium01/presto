@@ -4931,6 +4931,7 @@ public abstract class AbstractTestQueries
                 getSession().isClientTransactionSupport(),
                 getSession().getIdentity(),
                 getSession().getSource(),
+                getSession().getTraceToken(),
                 getSession().getCatalog(),
                 getSession().getSchema(),
                 getSession().getTimeZoneKey(),

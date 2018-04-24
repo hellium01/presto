@@ -399,6 +399,7 @@ public class LocalQueryRunner
                 defaultSession.isClientTransactionSupport(),
                 defaultSession.getIdentity(),
                 defaultSession.getSource(),
+                defaultSession.getTraceToken(),
                 defaultSession.getCatalog(),
                 defaultSession.getSchema(),
                 defaultSession.getTimeZoneKey(),
