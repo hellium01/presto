@@ -43,4 +43,9 @@ public class DatabaseChunkRecorder
         shardDao.get(ThreadLocalRandom.current().nextInt(shardDao.size()))
                 .insertCreatedChunk(chunkId, transactionId, size);
     }
+
+    @Override
+    public void recordReadChunk(long tableId, long chuckIdA)
+    {
+    }
 }

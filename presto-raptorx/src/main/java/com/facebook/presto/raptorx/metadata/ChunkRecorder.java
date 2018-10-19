@@ -16,4 +16,6 @@ package com.facebook.presto.raptorx.metadata;
 public interface ChunkRecorder
 {
     void recordCreatedChunk(long transactionId, long tableId, long chunkId, long size);
+
+    void recordReadChunk(long tableId, long chuckIdA);
 }

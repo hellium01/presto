@@ -127,6 +127,7 @@ public class OrcStorageManager
     private final TypeManager typeManager;
     private final ExecutorService deletionExecutor;
     private final ExecutorService commitExecutor;
+    private final ChunkAccessRecorder recorder;
 
     @Inject
     public OrcStorageManager(
@@ -219,6 +220,7 @@ public class OrcStorageManager
             OptionalLong transactionId,
             Map<Long, Type> chunkColumnTypes)
     {
+        chunkRecorder.recordReadChunk(tableId, chunkId);
         OrcDataSource dataSource = openChunk(tableId, chunkId, attributes);
 
         try {
