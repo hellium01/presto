@@ -64,6 +64,20 @@ public class Captures
         }
     }
 
+    @SuppressWarnings("unchecked cast")
+    public <T> T getUnchecked(Capture<T> capture)
+    {
+        if (this.equals(NIL)) {
+            return null;
+        }
+        else if (this.capture.equals(capture)) {
+            return (T) value;
+        }
+        else {
+            return tail.get(capture);
+        }
+    }
+
     @Override
     public boolean equals(Object o)
     {

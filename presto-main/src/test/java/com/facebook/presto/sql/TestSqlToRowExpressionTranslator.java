@@ -22,6 +22,7 @@ import com.facebook.presto.sql.analyzer.Scope;
 import com.facebook.presto.sql.planner.ExpressionInterpreter;
 import com.facebook.presto.sql.planner.LiteralEncoder;
 import com.facebook.presto.sql.planner.NoOpSymbolResolver;
+import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.relational.RowExpression;
 import com.facebook.presto.sql.relational.SqlToRowExpressionTranslator;
@@ -64,6 +65,14 @@ public class TestSqlToRowExpressionTranslator
     }
 
     @Test
+    public void testTranslator()
+    {
+        RowExpression result = translateAndOptimize2(expression("(c1+1)"), ImmutableMap.of(new Symbol("c1"), BIGINT));
+        result = translateAndOptimize2(expression("c1+ c2 * c3"), ImmutableMap.of(new Symbol("c1"), BIGINT,
+                new Symbol("c2"), BIGINT, new Symbol("c3"), BIGINT));
+    }
+
+    @Test
     public void testOptimizeDecimalLiteral()
     {
         // Short decimal
@@ -90,6 +99,11 @@ public class TestSqlToRowExpressionTranslator
         return translateAndOptimize(expression, getExpressionTypes(expression));
     }
 
+    private RowExpression translateAndOptimize2(Expression expression, Map<Symbol, Type> symbolTypeMap)
+    {
+        return translateAndOptimize(expression, getExpressionTypes(expression, symbolTypeMap));
+    }
+
     private RowExpression translateAndOptimize(Expression expression, Map<NodeRef<Expression>, Type> types)
     {
         return SqlToRowExpressionTranslator.translate(expression, SCALAR, types, metadata.getFunctionRegistry(), metadata.getTypeManager(), TEST_SESSION, true);
@@ -107,11 +121,16 @@ public class TestSqlToRowExpressionTranslator
 
     private Map<NodeRef<Expression>, Type> getExpressionTypes(Expression expression)
     {
+        return getExpressionTypes(expression, ImmutableMap.of());
+    }
+
+    private Map<NodeRef<Expression>, Type> getExpressionTypes(Expression expression, Map<Symbol, Type> symbolTypes)
+    {
         ExpressionAnalyzer expressionAnalyzer = ExpressionAnalyzer.createWithoutSubqueries(
                 metadata.getFunctionRegistry(),
                 metadata.getTypeManager(),
                 TEST_SESSION,
-                TypeProvider.empty(),
+                TypeProvider.copyOf(symbolTypes),
                 emptyList(),
                 node -> new IllegalStateException("Unexpected node: %s" + node),
                 WarningCollector.NOOP,

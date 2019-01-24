@@ -162,11 +162,11 @@ public class TestMySqlIntegrationSmokeTest
         execute("CREATE TABLE tpch.char_trailing_space (x char(10))");
         assertUpdate("INSERT INTO char_trailing_space VALUES ('test')", 1);
 
-        assertQuery("SELECT * FROM char_trailing_space WHERE x = char 'test'", "VALUES 'test'");
-        assertQuery("SELECT * FROM char_trailing_space WHERE x = char 'test  '", "VALUES 'test'");
-        assertQuery("SELECT * FROM char_trailing_space WHERE x = char 'test        '", "VALUES 'test'");
+        assertQuery("SELECT * FROM char_trailing_space WHERE x = CHAR 'test'", "VALUES 'test'");
+        assertQuery("SELECT * FROM char_trailing_space WHERE x = CHAR 'test  '", "VALUES 'test'");
+        assertQuery("SELECT * FROM char_trailing_space WHERE x = CHAR 'test        '", "VALUES 'test'");
 
-        assertEquals(getQueryRunner().execute("SELECT * FROM char_trailing_space WHERE x = char ' test'").getRowCount(), 0);
+        assertEquals(getQueryRunner().execute("SELECT * FROM char_trailing_space WHERE x = CHAR ' test'").getRowCount(), 0);
 
         Map<String, String> properties = ImmutableMap.of("deprecated.legacy-char-to-varchar-coercion", "true");
         Map<String, String> connectorProperties = ImmutableMap.of("connection-url", mysqlServer.getJdbcUrl());
@@ -175,16 +175,35 @@ public class TestMySqlIntegrationSmokeTest
             queryRunner.installPlugin(new MySqlPlugin());
             queryRunner.createCatalog("mysql", "mysql", connectorProperties);
 
-            assertEquals(queryRunner.execute("SELECT * FROM char_trailing_space WHERE x = char 'test'").getRowCount(), 0);
-            assertEquals(queryRunner.execute("SELECT * FROM char_trailing_space WHERE x = char 'test  '").getRowCount(), 0);
-            assertEquals(queryRunner.execute("SELECT * FROM char_trailing_space WHERE x = char 'test       '").getRowCount(), 0);
+            assertEquals(queryRunner.execute("SELECT * FROM char_trailing_space WHERE x = CHAR 'test'").getRowCount(), 0);
+            assertEquals(queryRunner.execute("SELECT * FROM char_trailing_space WHERE x = CHAR 'test  '").getRowCount(), 0);
+            assertEquals(queryRunner.execute("SELECT * FROM char_trailing_space WHERE x = CHAR 'test       '").getRowCount(), 0);
 
-            MaterializedResult result = queryRunner.execute("SELECT * FROM char_trailing_space WHERE x = char 'test      '");
+            MaterializedResult result = queryRunner.execute("SELECT * FROM char_trailing_space WHERE x = CHAR 'test      '");
             assertEquals(result.getRowCount(), 1);
             assertEquals(result.getMaterializedRows().get(0).getField(0), "test      ");
         }
 
         assertUpdate("DROP TABLE char_trailing_space");
+    }
+
+    @Test
+    public void testAggregationPushdown()
+            throws SQLException
+    {
+        execute("CREATE TABLE tpch.test_aggregation (\n" +
+                "c1 bigint,\n" +
+                "c2 bigint,\n" +
+                "c3 varchar(100),\n" +
+                "c4 double,\n" +
+                "c5 varchar(100))");
+        assertUpdate("INSERT INTO test_aggregation VALUES\n" +
+                " (1, 100, 'test', 1.0, 'test')", 1);
+        MaterializedResult actual = computeActual(
+                "SELECT c1+c2, IF(c1>c2, c3), sum(c4), approx_distinct(c5) \n" +
+                        "FROM test_aggregation\n" +
+                        "WHERE c1 > 100 AND c1+c2 > 100 AND c3 IN ('test')\n" +
+                        "GROUP BY 1,2");
     }
 
     private void execute(String sql)

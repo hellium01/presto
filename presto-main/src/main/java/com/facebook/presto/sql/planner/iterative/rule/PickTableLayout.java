@@ -36,8 +36,10 @@ import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.planner.SymbolsExtractor;
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.iterative.Rule;
+import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.FilterNode;
 import com.facebook.presto.sql.planner.plan.PlanNode;
+import com.facebook.presto.sql.planner.plan.ProjectNode;
 import com.facebook.presto.sql.planner.plan.TableScanNode;
 import com.facebook.presto.sql.planner.plan.ValuesNode;
 import com.facebook.presto.sql.tree.Expression;
@@ -61,7 +63,9 @@ import static com.facebook.presto.sql.ExpressionUtils.filterDeterministicConjunc
 import static com.facebook.presto.sql.ExpressionUtils.filterNonDeterministicConjuncts;
 import static com.facebook.presto.sql.analyzer.ExpressionAnalyzer.getExpressionTypes;
 import static com.facebook.presto.sql.planner.iterative.rule.PreconditionRules.checkRulesAreFiredBeforeAddExchangesRule;
+import static com.facebook.presto.sql.planner.plan.Patterns.aggregation;
 import static com.facebook.presto.sql.planner.plan.Patterns.filter;
+import static com.facebook.presto.sql.planner.plan.Patterns.project;
 import static com.facebook.presto.sql.planner.plan.Patterns.source;
 import static com.facebook.presto.sql.planner.plan.Patterns.tableScan;
 import static com.facebook.presto.sql.tree.BooleanLiteral.TRUE_LITERAL;
@@ -94,6 +98,7 @@ public class PickTableLayout
     {
         return ImmutableSet.of(
                 checkRulesAreFiredBeforeAddExchangesRule(),
+                pickTableLayoutForAggregation(),
                 pickTableLayoutForPredicate(),
                 pickTableLayoutWithoutPredicate());
     }
@@ -106,6 +111,11 @@ public class PickTableLayout
     public PickTableLayoutWithoutPredicate pickTableLayoutWithoutPredicate()
     {
         return new PickTableLayoutWithoutPredicate(metadata, parser, domainTranslator);
+    }
+
+    public PickTableLayoutForAggregation pickTableLayoutForAggregation()
+    {
+        return new PickTableLayoutForAggregation(metadata, parser, domainTranslator);
     }
 
     private static final class PickTableLayoutForPredicate
@@ -215,6 +225,46 @@ public class PickTableLayout
             }
 
             return Result.ofPlanNode(planTableScan(tableScanNode, TRUE_LITERAL, context.getSession(), context.getSymbolAllocator().getTypes(), context.getIdAllocator(), metadata, parser, domainTranslator));
+        }
+    }
+
+    private static final class PickTableLayoutForAggregation
+            implements Rule<AggregationNode>
+    {
+        private static final Capture<ProjectNode> PROJECT = newCapture();
+        private static final Capture<FilterNode> FILTER = newCapture();
+        private static final Capture<TableScanNode> SCAN = newCapture();
+        private static final Pattern<AggregationNode> PATTERN = aggregation()
+                .with(source().matching(project().capturedAs(PROJECT)
+                        .with(source().matching(filter().capturedAs(FILTER)
+                                .with(source().matching(tableScan().capturedAs(SCAN)))
+                        ))));
+
+        private final Metadata metadata;
+        private final SqlParser parser;
+        private final DomainTranslator domainTranslator;
+
+        public PickTableLayoutForAggregation(Metadata metadata, SqlParser parser, DomainTranslator domainTranslator)
+        {
+            this.metadata = metadata;
+            this.parser = parser;
+            this.domainTranslator = domainTranslator;
+        }
+
+        @Override
+        public Pattern<AggregationNode> getPattern()
+        {
+            return PATTERN;
+        }
+
+        @Override
+        public Result apply(AggregationNode node, Captures captures, Context context)
+        {
+            Optional<FilterNode> filterNode = Optional.ofNullable(captures.getUnchecked(FILTER));
+            Optional<TableScanNode> tableScanNode = Optional.ofNullable(captures.getUnchecked(SCAN));
+            Optional<ProjectNode> projectNode = Optional.ofNullable(captures.getUnchecked(PROJECT));
+            PlanNode rewritten = planTableScan(tableScanNode.get(), filterNode.get().getPredicate(), context.getSession(), context.getSymbolAllocator().getTypes(), context.getIdAllocator(), metadata, parser, domainTranslator);
+            return Result.empty();
         }
     }
 
