@@ -15,6 +15,13 @@ package com.facebook.presto.sql.relational;
 
 import com.facebook.presto.metadata.FunctionRegistry;
 import com.facebook.presto.spi.function.Signature;
+import com.facebook.presto.spi.relation.CallExpression;
+import com.facebook.presto.spi.relation.ConstantExpression;
+import com.facebook.presto.spi.relation.InputReferenceExpression;
+import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
+import com.facebook.presto.spi.relation.RowExpression;
+import com.facebook.presto.spi.relation.RowExpressionVisitor;
+import com.facebook.presto.spi.relation.VariableReferenceExpression;
 
 import static java.util.Objects.requireNonNull;
 

@@ -1,8 +1,8 @@
 package com.facebook.presto.sql.relational.rewriter;
 
 import com.facebook.presto.spi.ColumnHandle;
-import com.facebook.presto.sql.relational.ColumnReferenceExpression;
-import com.facebook.presto.sql.relational.RowExpression;
+import com.facebook.presto.spi.relation.ColumnReferenceExpression;
+import com.facebook.presto.spi.relation.RowExpression;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;

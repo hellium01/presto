@@ -11,10 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.sql.relational;
+package com.facebook.presto.spi.relation;
 
+import com.facebook.presto.spi.type.FunctionType;
 import com.facebook.presto.spi.type.Type;
-import com.facebook.presto.type.FunctionType;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
