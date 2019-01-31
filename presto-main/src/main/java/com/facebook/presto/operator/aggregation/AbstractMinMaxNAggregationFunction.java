@@ -34,7 +34,7 @@ import java.lang.invoke.MethodHandle;
 import java.util.List;
 import java.util.function.Function;
 
-import static com.facebook.presto.metadata.Signature.orderableTypeParameter;
+import static com.facebook.presto.spi.function.Signature.orderableTypeParameter;
 import static com.facebook.presto.operator.aggregation.AggregationMetadata.ParameterMetadata;
 import static com.facebook.presto.operator.aggregation.AggregationMetadata.ParameterMetadata.ParameterType.BLOCK_INDEX;
 import static com.facebook.presto.operator.aggregation.AggregationMetadata.ParameterMetadata.ParameterType.BLOCK_INPUT_CHANNEL;

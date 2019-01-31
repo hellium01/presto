@@ -14,9 +14,10 @@
 package com.facebook.presto.type;
 
 import com.facebook.presto.annotation.UsedByGeneratedCode;
+import com.facebook.presto.metadata.InternalFunction;
 import com.facebook.presto.metadata.PolymorphicScalarFunctionBuilder;
 import com.facebook.presto.metadata.PolymorphicScalarFunctionBuilder.SpecializeContext;
-import com.facebook.presto.metadata.Signature;
+import com.facebook.presto.spi.function.Signature;
 import com.facebook.presto.metadata.SignatureBuilder;
 import com.facebook.presto.metadata.SqlScalarFunction;
 import com.facebook.presto.spi.PrestoException;
@@ -37,8 +38,8 @@ import io.airlift.slice.XxHash64;
 import java.math.BigInteger;
 import java.util.List;
 
-import static com.facebook.presto.metadata.FunctionKind.SCALAR;
-import static com.facebook.presto.metadata.Signature.longVariableExpression;
+import static com.facebook.presto.spi.function.FunctionKind.SCALAR;
+import static com.facebook.presto.spi.function.Signature.longVariableExpression;
 import static com.facebook.presto.spi.StandardErrorCode.DIVISION_BY_ZERO;
 import static com.facebook.presto.spi.StandardErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
 import static com.facebook.presto.spi.function.OperatorType.ADD;
@@ -84,7 +85,7 @@ public final class DecimalOperators
         TypeSignature decimalRightSignature = parseTypeSignature("decimal(b_precision, b_scale)", ImmutableSet.of("b_precision", "b_scale"));
         TypeSignature decimalResultSignature = parseTypeSignature("decimal(r_precision, r_scale)", ImmutableSet.of("r_precision", "r_scale"));
 
-        Signature signature = Signature.builder()
+        Signature signature = InternalFunction.builder()
                 .kind(SCALAR)
                 .operatorType(ADD)
                 .longVariableConstraints(
@@ -166,7 +167,7 @@ public final class DecimalOperators
         TypeSignature decimalRightSignature = parseTypeSignature("decimal(b_precision, b_scale)", ImmutableSet.of("b_precision", "b_scale"));
         TypeSignature decimalResultSignature = parseTypeSignature("decimal(r_precision, r_scale)", ImmutableSet.of("r_precision", "r_scale"));
 
-        Signature signature = Signature.builder()
+        Signature signature = InternalFunction.builder()
                 .kind(SCALAR)
                 .operatorType(SUBTRACT)
                 .longVariableConstraints(
@@ -244,7 +245,7 @@ public final class DecimalOperators
         TypeSignature decimalRightSignature = parseTypeSignature("decimal(b_precision, b_scale)", ImmutableSet.of("b_precision", "b_scale"));
         TypeSignature decimalResultSignature = parseTypeSignature("decimal(r_precision, r_scale)", ImmutableSet.of("r_precision", "r_scale"));
 
-        Signature signature = Signature.builder()
+        Signature signature = InternalFunction.builder()
                 .kind(SCALAR)
                 .operatorType(MULTIPLY)
                 .longVariableConstraints(
@@ -309,7 +310,7 @@ public final class DecimalOperators
         // pessimistic case is a / 0.0000001
         // if scale of divisor is greater than scale of dividend we extend scale further as we
         // want result scale to be maximum of scales of divisor and dividend.
-        Signature signature = Signature.builder()
+        Signature signature = InternalFunction.builder()
                 .kind(SCALAR)
                 .operatorType(DIVIDE)
                 .longVariableConstraints(
@@ -475,7 +476,7 @@ public final class DecimalOperators
         TypeSignature decimalRightSignature = parseTypeSignature("decimal(b_precision, b_scale)", ImmutableSet.of("b_precision", "b_scale"));
         TypeSignature decimalResultSignature = parseTypeSignature("decimal(r_precision, r_scale)", ImmutableSet.of("r_precision", "r_scale"));
 
-        return Signature.builder()
+        return InternalFunction.builder()
                 .longVariableConstraints(
                         longVariableExpression("r_precision", "min(b_precision - b_scale, a_precision - a_scale) + max(a_scale, b_scale)"),
                         longVariableExpression("r_scale", "max(a_scale, b_scale)"))
