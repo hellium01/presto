@@ -24,4 +24,9 @@ public interface RowExpressionVisitor<R, C>
     R visitLambda(LambdaDefinitionExpression lambda, C context);
 
     R visitVariableReference(VariableReferenceExpression reference, C context);
+
+    default R visitColumnReference(ColumnReferenceExpression columnReferenceExpression, C context)
+    {
+        throw new UnsupportedOperationException();
+    }
 }

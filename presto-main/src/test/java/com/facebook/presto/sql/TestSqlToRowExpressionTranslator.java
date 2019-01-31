@@ -14,8 +14,10 @@
 package com.facebook.presto.sql;
 
 import com.facebook.presto.execution.warnings.WarningCollector;
+import com.facebook.presto.metadata.FunctionKind;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.MetadataManager;
+import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.analyzer.ExpressionAnalyzer;
 import com.facebook.presto.sql.analyzer.Scope;
@@ -64,13 +66,7 @@ public class TestSqlToRowExpressionTranslator
         translateAndOptimize(expression, types.build());
     }
 
-    @Test
-    public void testTranslator()
-    {
-        RowExpression result = translateAndOptimize2(expression("(c1+1)"), ImmutableMap.of(new Symbol("c1"), BIGINT));
-        result = translateAndOptimize2(expression("c1+ c2 * c3"), ImmutableMap.of(new Symbol("c1"), BIGINT,
-                new Symbol("c2"), BIGINT, new Symbol("c3"), BIGINT));
-    }
+
 
     @Test
     public void testOptimizeDecimalLiteral()
@@ -99,14 +95,19 @@ public class TestSqlToRowExpressionTranslator
         return translateAndOptimize(expression, getExpressionTypes(expression));
     }
 
-    private RowExpression translateAndOptimize2(Expression expression, Map<Symbol, Type> symbolTypeMap)
+    private RowExpression translateAndOptimize2(Expression expression, FunctionKind kind, Map<Symbol, Type> symbolTypeMap, Map<String, ColumnHandle> columns)
     {
-        return translateAndOptimize(expression, getExpressionTypes(expression, symbolTypeMap));
+        return translateAndOptimize(expression, kind, getExpressionTypes(expression, symbolTypeMap), columns);
     }
 
     private RowExpression translateAndOptimize(Expression expression, Map<NodeRef<Expression>, Type> types)
     {
         return SqlToRowExpressionTranslator.translate(expression, SCALAR, types, metadata.getFunctionRegistry(), metadata.getTypeManager(), TEST_SESSION, true);
+    }
+
+    private RowExpression translateAndOptimize(Expression expression, FunctionKind kind, Map<NodeRef<Expression>, Type> types, Map<String, ColumnHandle> columns)
+    {
+        return SqlToRowExpressionTranslator.translate(expression, kind, types, columns, metadata.getFunctionRegistry(), metadata.getTypeManager(), TEST_SESSION, false);
     }
 
     private Expression simplifyExpression(Expression expression)

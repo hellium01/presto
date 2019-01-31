@@ -203,7 +203,7 @@ public class TestMySqlIntegrationSmokeTest
                 "SELECT c1+c2, IF(c1>c2, c3), sum(c4), approx_distinct(c5) \n" +
                         "FROM test_aggregation\n" +
                         "WHERE c1 > 100 AND c1+c2 > 100 AND c3 IN ('test')\n" +
-                        "GROUP BY 1,2");
+                        "GROUP BY 1, 2");
     }
 
     private void execute(String sql)
