@@ -37,11 +37,14 @@ import com.facebook.presto.sql.planner.SymbolsExtractor;
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.iterative.Rule;
 import com.facebook.presto.sql.planner.plan.AggregationNode;
+import com.facebook.presto.sql.planner.plan.Assignments;
 import com.facebook.presto.sql.planner.plan.FilterNode;
 import com.facebook.presto.sql.planner.plan.PlanNode;
 import com.facebook.presto.sql.planner.plan.ProjectNode;
 import com.facebook.presto.sql.planner.plan.TableScanNode;
 import com.facebook.presto.sql.planner.plan.ValuesNode;
+import com.facebook.presto.sql.relational.RowExpression;
+import com.facebook.presto.sql.relational.SqlToRowExpressionTranslator;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.NodeRef;
 import com.facebook.presto.sql.tree.NullLiteral;
@@ -57,6 +60,7 @@ import java.util.Set;
 
 import static com.facebook.presto.SystemSessionProperties.isNewOptimizerEnabled;
 import static com.facebook.presto.matching.Capture.newCapture;
+import static com.facebook.presto.metadata.FunctionKind.SCALAR;
 import static com.facebook.presto.metadata.TableLayoutResult.computeEnforced;
 import static com.facebook.presto.sql.ExpressionUtils.combineConjuncts;
 import static com.facebook.presto.sql.ExpressionUtils.filterDeterministicConjuncts;
@@ -76,6 +80,7 @@ import static com.google.common.collect.Sets.intersection;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * These rules should not be run after AddExchanges so as not to overwrite the TableLayout
@@ -263,7 +268,30 @@ public class PickTableLayout
             Optional<FilterNode> filterNode = Optional.ofNullable(captures.getUnchecked(FILTER));
             Optional<TableScanNode> tableScanNode = Optional.ofNullable(captures.getUnchecked(SCAN));
             Optional<ProjectNode> projectNode = Optional.ofNullable(captures.getUnchecked(PROJECT));
-            PlanNode rewritten = planTableScan(tableScanNode.get(), filterNode.get().getPredicate(), context.getSession(), context.getSymbolAllocator().getTypes(), context.getIdAllocator(), metadata, parser, domainTranslator);
+
+            List<PlanNode> rewritten = listTableLayouts(
+                    tableScanNode.get(),
+                    filterNode.get().getPredicate(),
+                    projectNode.get().getAssignments(),
+                    false,
+                    context.getSession(),
+                    context.getSymbolAllocator().getTypes(),
+                    context.getIdAllocator(),
+                    metadata,
+                    parser,
+                    domainTranslator);
+
+            List<PlanNode> rewritten2 = listTableLayouts(
+                    tableScanNode.get(),
+                    filterNode.get().getPredicate(),
+                    false,
+                    context.getSession(),
+                    context.getSymbolAllocator().getTypes(),
+                    context.getIdAllocator(),
+                    metadata,
+                    parser,
+                    domainTranslator);
+
             return Result.empty();
         }
     }
@@ -289,6 +317,85 @@ public class PickTableLayout
                 parser,
                 domainTranslator)
                 .get(0);
+    }
+
+    public static List<PlanNode> listTableLayouts(
+            TableScanNode node,
+            Expression predicate,
+            Assignments assignments,
+            boolean pruneWithPredicateExpression,
+            Session session,
+            TypeProvider types,
+            PlanNodeIdAllocator idAllocator,
+            Metadata metadata,
+            SqlParser parser,
+            DomainTranslator domainTranslator)
+    {
+        Map<String, ColumnHandle> columns = metadata.getColumnHandles(session, node.getTable());
+        Map<NodeRef<Expression>, Type> expressionTypes =
+                getExpressionTypes(session, metadata, parser, types, assignments.getExpressions(), ImmutableList.of(), WarningCollector.NOOP, false);
+
+        // Aggregation -->
+        // Aggregation will have constraint on columns
+        Map<Symbol, RowExpression> assignmentRowExpressions = assignments.getMap()
+                .entrySet()
+                .stream()
+                .collect(toMap(entry -> entry.getKey(), entry -> {
+                    RowExpression rowExpression = SqlToRowExpressionTranslator.translate(
+                            entry.getValue(), SCALAR, expressionTypes, columns, metadata.getFunctionRegistry(), metadata.getTypeManager(), session, false);
+                    return rowExpression;
+                }));
+
+        Expression deterministicPredicate = filterDeterministicConjuncts(predicate);
+
+        DomainTranslator.ExtractionResult decomposedPredicate = DomainTranslator.fromPredicate(
+                metadata,
+                session,
+                deterministicPredicate,
+                types);
+
+        TupleDomain<ColumnHandle> newDomain = decomposedPredicate.getTupleDomain()
+                .transform(node.getAssignments()::get)
+                .intersect(node.getEnforcedConstraint());
+
+        RowExpression predicateRowExpression = SqlToRowExpressionTranslator.translate(
+                decomposedPredicate.getRemainingExpression(), SCALAR,
+                getExpressionTypes(session, metadata, parser, types, decomposedPredicate.getRemainingExpression(), ImmutableList.of(), WarningCollector.NOOP, false),
+                columns, metadata.getFunctionRegistry(), metadata.getTypeManager(), session, false);
+
+        Constraint<ColumnHandle> constraint;
+        if (pruneWithPredicateExpression) {
+            Map<ColumnHandle, Symbol> symbolForColumn = ImmutableBiMap.copyOf(node.getAssignments()).inverse();
+            LayoutConstraintEvaluator evaluator = new LayoutConstraintEvaluator(
+                    metadata,
+                    parser,
+                    session,
+                    types,
+                    node.getAssignments(),
+                    combineConjuncts(
+                            deterministicPredicate,
+                            // Simplify the tuple domain to avoid creating an expression with too many nodes,
+                            // which would be expensive to evaluate in the call to isCandidate below.
+                            domainTranslator.toPredicate(newDomain.simplify().transform(symbolForColumn::get))));
+            constraint = new Constraint<>(newDomain, evaluator::isCandidate);
+        }
+        else {
+            // Currently, invoking the expression interpreter is very expensive.
+            // TODO invoke the interpreter unconditionally when the interpreter becomes cheap enough.
+            constraint = new Constraint<>(newDomain);
+        }
+
+//        metadata.getLayouts(session, node.getTable(), )
+
+        List<TableLayoutResult> layouts = metadata.getLayouts(
+                session,
+                node.getTable(),
+                constraint,
+                Optional.of(node.getOutputSymbols().stream()
+                        .map(node.getAssignments()::get)
+                        .collect(toImmutableSet())));
+
+        return ImmutableList.of();
     }
 
     public static List<PlanNode> listTableLayouts(
