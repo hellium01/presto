@@ -80,13 +80,13 @@ public class TestExampleMetadata
         // unknown table
         try {
             metadata.getColumnHandles(SESSION, new ExampleTableHandle(CONNECTOR_ID, "unknown", "unknown"));
-            fail("Expected getColumnHandle of unknown table to throw a TableNotFoundException");
+            fail("Expected getInput of unknown table to throw a TableNotFoundException");
         }
         catch (TableNotFoundException expected) {
         }
         try {
             metadata.getColumnHandles(SESSION, new ExampleTableHandle(CONNECTOR_ID, "example", "unknown"));
-            fail("Expected getColumnHandle of unknown table to throw a TableNotFoundException");
+            fail("Expected getInput of unknown table to throw a TableNotFoundException");
         }
         catch (TableNotFoundException expected) {
         }

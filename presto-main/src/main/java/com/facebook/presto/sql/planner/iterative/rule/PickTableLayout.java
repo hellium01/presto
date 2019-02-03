@@ -25,6 +25,8 @@ import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.Constraint;
 import com.facebook.presto.spi.predicate.NullableValue;
 import com.facebook.presto.spi.predicate.TupleDomain;
+import com.facebook.presto.spi.relation.Relation;
+import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.parser.SqlParser;
 import com.facebook.presto.sql.planner.DomainTranslator;
@@ -32,6 +34,7 @@ import com.facebook.presto.sql.planner.ExpressionInterpreter;
 import com.facebook.presto.sql.planner.LiteralEncoder;
 import com.facebook.presto.sql.planner.LookupSymbolResolver;
 import com.facebook.presto.sql.planner.PlanNodeIdAllocator;
+import com.facebook.presto.sql.planner.RelationTranslator;
 import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.planner.SymbolsExtractor;
 import com.facebook.presto.sql.planner.TypeProvider;
@@ -43,7 +46,6 @@ import com.facebook.presto.sql.planner.plan.PlanNode;
 import com.facebook.presto.sql.planner.plan.ProjectNode;
 import com.facebook.presto.sql.planner.plan.TableScanNode;
 import com.facebook.presto.sql.planner.plan.ValuesNode;
-import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.sql.relational.SqlToRowExpressionTranslator;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.NodeRef;
@@ -60,8 +62,8 @@ import java.util.Set;
 
 import static com.facebook.presto.SystemSessionProperties.isNewOptimizerEnabled;
 import static com.facebook.presto.matching.Capture.newCapture;
-import static com.facebook.presto.spi.function.FunctionKind.SCALAR;
 import static com.facebook.presto.metadata.TableLayoutResult.computeEnforced;
+import static com.facebook.presto.spi.function.FunctionKind.SCALAR;
 import static com.facebook.presto.sql.ExpressionUtils.combineConjuncts;
 import static com.facebook.presto.sql.ExpressionUtils.filterDeterministicConjuncts;
 import static com.facebook.presto.sql.ExpressionUtils.filterNonDeterministicConjuncts;
@@ -268,6 +270,8 @@ public class PickTableLayout
             Optional<FilterNode> filterNode = Optional.ofNullable(captures.getUnchecked(FILTER));
             Optional<TableScanNode> tableScanNode = Optional.ofNullable(captures.getUnchecked(SCAN));
             Optional<ProjectNode> projectNode = Optional.ofNullable(captures.getUnchecked(PROJECT));
+            RelationTranslator translator = new RelationTranslator(metadata, context.getSymbolAllocator().getTypes(), context.getSession(), parser, context.getLookup());
+            Optional<Relation> relation = projectNode.flatMap(translator::translate);
 
             List<PlanNode> rewritten = listTableLayouts(
                     tableScanNode.get(),
@@ -387,13 +391,12 @@ public class PickTableLayout
 
 //        metadata.getLayouts(session, node.getTable(), )
 
-        List<TableLayoutResult> layouts = metadata.getLayouts(
-                session,
-                node.getTable(),
-                constraint,
-                Optional.of(node.getOutputSymbols().stream()
-                        .map(node.getAssignments()::get)
-                        .collect(toImmutableSet())));
+//        List<TableLayoutResult> layouts = metadata.getLayouts(
+//                session,
+//                node.getTable(),
+//                constraint,
+//                Optional.of(assignments.getExpressions()));
+//                        .collect(toImmutableSet())));
 
         return ImmutableList.of();
     }

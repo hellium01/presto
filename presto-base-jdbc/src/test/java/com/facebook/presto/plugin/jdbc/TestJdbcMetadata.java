@@ -98,7 +98,7 @@ public class TestJdbcMetadata
     {
         try {
             metadata.getColumnHandles(SESSION, tableHandle);
-            fail("Expected getColumnHandle of unknown table to throw a TableNotFoundException");
+            fail("Expected getInput of unknown table to throw a TableNotFoundException");
         }
         catch (TableNotFoundException ignored) {
         }

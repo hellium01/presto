@@ -15,10 +15,10 @@ package com.facebook.presto.sql.relational;
 
 import com.facebook.presto.Session;
 import com.facebook.presto.SystemSessionProperties;
-import com.facebook.presto.spi.function.FunctionKind;
 import com.facebook.presto.metadata.FunctionRegistry;
-import com.facebook.presto.spi.function.Signature;
 import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.function.FunctionKind;
+import com.facebook.presto.spi.function.Signature;
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.ColumnReferenceExpression;
 import com.facebook.presto.spi.relation.ConstantExpression;
@@ -168,10 +168,25 @@ public final class SqlToRowExpressionTranslator
             Session session,
             boolean optimize)
     {
+        return translate(expression, functionKind, types, columnHandleMap, ImmutableMap.of(), functionRegistry, typeManager, session, optimize);
+    }
+
+    public static RowExpression translate(
+            Expression expression,
+            FunctionKind functionKind,
+            Map<NodeRef<Expression>, Type> types,
+            Map<String, ColumnHandle> columnHandleMap,
+            Map<String, Integer> inputMap,
+            FunctionRegistry functionRegistry,
+            TypeManager typeManager,
+            Session session,
+            boolean optimize)
+    {
         Visitor visitor = new Visitor(
                 functionKind,
                 types,
                 columnHandleMap,
+                inputMap,
                 typeManager,
                 session.getTimeZoneKey(),
                 isLegacyRowFieldOrdinalAccessEnabled(session),
@@ -199,11 +214,13 @@ public final class SqlToRowExpressionTranslator
         @Deprecated
         private final boolean isLegacyTimestamp;
         private final Map<String, ColumnHandle> columnHandleMap;
+        private final Map<String, Integer> inputs;
 
         private Visitor(
                 FunctionKind functionKind,
                 Map<NodeRef<Expression>, Type> types,
                 Map<String, ColumnHandle> columnHandleMap,
+                Map<String, Integer> inputs,
                 TypeManager typeManager,
                 TimeZoneKey timeZoneKey,
                 boolean legacyRowFieldOrdinalAccess,
@@ -213,6 +230,7 @@ public final class SqlToRowExpressionTranslator
             this.types = ImmutableMap.copyOf(requireNonNull(types, "types is null"));
             this.columnHandleMap = ImmutableMap.copyOf(requireNonNull(columnHandleMap, "columnHandleMap is null"));
             this.typeManager = typeManager;
+            this.inputs = ImmutableMap.copyOf(inputs);
             this.timeZoneKey = timeZoneKey;
             this.legacyRowFieldOrdinalAccess = legacyRowFieldOrdinalAccess;
             this.isLegacyTimestamp = isLegacyTimestamp;
@@ -391,6 +409,9 @@ public final class SqlToRowExpressionTranslator
         {
             if (columnHandleMap.containsKey(node.getName())) {
                 return new ColumnReferenceExpression(columnHandleMap.get(node.getName()), getType(node));
+            }
+            else if (inputs.containsKey(node.getName())) {
+                return new InputReferenceExpression(inputs.get(node.getName()), getType(node));
             }
             return new VariableReferenceExpression(node.getName(), getType(node));
         }
