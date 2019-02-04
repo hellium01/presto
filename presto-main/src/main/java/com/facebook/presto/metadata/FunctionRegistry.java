@@ -215,9 +215,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.facebook.presto.spi.function.FunctionKind.AGGREGATE;
-import static com.facebook.presto.spi.function.FunctionKind.SCALAR;
-import static com.facebook.presto.spi.function.FunctionKind.WINDOW;
 import static com.facebook.presto.metadata.InternalFunction.internalOperator;
 import static com.facebook.presto.metadata.SignatureBinder.applyBoundVariables;
 import static com.facebook.presto.operator.aggregation.ArbitraryAggregationFunction.ARBITRARY_AGGREGATION;
@@ -297,6 +294,9 @@ import static com.facebook.presto.operator.window.AggregateWindowFunction.suppli
 import static com.facebook.presto.spi.StandardErrorCode.AMBIGUOUS_FUNCTION_CALL;
 import static com.facebook.presto.spi.StandardErrorCode.FUNCTION_IMPLEMENTATION_MISSING;
 import static com.facebook.presto.spi.StandardErrorCode.FUNCTION_NOT_FOUND;
+import static com.facebook.presto.spi.function.FunctionKind.AGGREGATE;
+import static com.facebook.presto.spi.function.FunctionKind.SCALAR;
+import static com.facebook.presto.spi.function.FunctionKind.WINDOW;
 import static com.facebook.presto.spi.type.BigintType.BIGINT;
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.spi.type.DoubleType.DOUBLE;
@@ -694,6 +694,15 @@ public class FunctionRegistry
         return functions.list().stream()
                 .filter(function -> !function.isHidden())
                 .collect(toImmutableList());
+    }
+
+    public List<QualifiedName> getFunctions(Signature signature)
+    {
+        // Better function matching?
+        return functions.functions.entries().stream()
+                .filter(entry -> entry.getValue().getSignature().getName().equals(signature.getName()))
+                .map(entry -> entry.getKey())
+                .collect(Collectors.toList());
     }
 
     public boolean isAggregationFunction(QualifiedName name)
@@ -1187,6 +1196,11 @@ public class FunctionRegistry
     {
         checkArgument(mangledName.startsWith(OPERATOR_PREFIX), "%s is not a mangled operator name", mangledName);
         return OperatorType.valueOf(mangledName.substring(OPERATOR_PREFIX.length()));
+    }
+
+    public static boolean isOperator(String functionName)
+    {
+        return functionName.startsWith(OPERATOR_PREFIX);
     }
 
     public static Optional<List<Type>> toTypes(List<TypeSignatureProvider> typeSignatureProviders, TypeManager typeManager)

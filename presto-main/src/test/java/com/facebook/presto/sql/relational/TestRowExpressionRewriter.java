@@ -1,11 +1,11 @@
 package com.facebook.presto.sql.relational;
 
 import com.facebook.presto.execution.warnings.WarningCollector;
-import com.facebook.presto.spi.function.FunctionKind;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.MetadataManager;
-import com.facebook.presto.spi.function.Signature;
 import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.function.FunctionKind;
+import com.facebook.presto.spi.function.Signature;
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.ColumnReferenceExpression;
 import com.facebook.presto.spi.relation.RowExpression;
@@ -38,11 +38,14 @@ import static com.facebook.presto.spi.function.OperatorType.ADD;
 import static com.facebook.presto.spi.type.BigintType.BIGINT;
 import static com.facebook.presto.spi.type.DoubleType.DOUBLE;
 import static com.facebook.presto.spi.type.IntegerType.INTEGER;
+import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
 import static com.facebook.presto.sql.planner.iterative.rule.test.PlanBuilder.expression;
 import static com.facebook.presto.sql.relational.rewriter.FunctionPattern.function;
 import static com.facebook.presto.sql.relational.rewriter.FunctionPattern.operator;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toMap;
+import static org.testng.Assert.assertTrue;
 
 public class TestRowExpressionRewriter
 {
@@ -60,6 +63,24 @@ public class TestRowExpressionRewriter
                 new Signature("approx_distinct", AGGREGATE, BIGINT.getTypeSignature(), ImmutableList.of(BIGINT.getTypeSignature())));
         sum.matchFunction(metadata.getFunctionRegistry(),
                 new Signature("avg", AGGREGATE, DOUBLE.getTypeSignature(), ImmutableList.of(BIGINT.getTypeSignature())));
+    }
+
+    @Test
+    public void testRowExpressionConvertBack()
+    {
+        Expression expression = expression("c1 > BIGINT '100' AND (c1 + c2) > 100 AND hamming_distance(c3, 'test_str') > 10");
+        Map<String, ColumnHandle> columns = ImmutableMap.of(
+                "c1", new TestColumnHandle("c1", BIGINT),
+                "c2", new TestColumnHandle("c2", BIGINT),
+                "c3", new TestColumnHandle("c3", VARCHAR));
+        Map<ColumnHandle, String> columnReverse = columns.entrySet()
+                .stream()
+                .collect(toMap(Map.Entry::getValue, Map.Entry::getKey));
+        RowExpression rowExpression = translateAndOptimize2(expression, SCALAR,
+                ImmutableMap.of(new Symbol("c1"), BIGINT, new Symbol("c2"), BIGINT, new Symbol("c3"), VARCHAR),
+                columns);
+        Optional<Expression> expression1 = RowExpressionToSqlTranslator.translate(rowExpression, ImmutableMap.of(), columnReverse, literalEncoder, metadata.getFunctionRegistry());
+        assertTrue(expression1.isPresent());
     }
 
     @Test
