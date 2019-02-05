@@ -30,6 +30,8 @@ import com.facebook.presto.sql.tree.Cast;
 import com.facebook.presto.sql.tree.ComparisonExpression;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.FunctionCall;
+import com.facebook.presto.sql.tree.IfExpression;
+import com.facebook.presto.sql.tree.InListExpression;
 import com.facebook.presto.sql.tree.LogicalBinaryExpression;
 import com.facebook.presto.sql.tree.QualifiedName;
 import com.facebook.presto.sql.tree.SubscriptExpression;
@@ -90,6 +92,11 @@ public class RowExpressionToSqlTranslator
             else if (call.getSignature().getName().equalsIgnoreCase("OR")) {
                 checkArgument(arguments.size() == 2, "LogicalBinaryExpression OR must have 2 arguments");
                 return Optional.of(new LogicalBinaryExpression(LogicalBinaryExpression.Operator.OR, arguments.get(0), arguments.get(1)));
+            }
+            else if (call.getSignature().getName().equalsIgnoreCase("IN")) {
+                return Optional.of(new InListExpression(arguments));
+            } else if (call.getSignature().getName().equalsIgnoreCase("IF")) {
+                return Optional.of(new IfExpression(arguments.get(0), arguments.get(1), arguments.get(2)));
             }
 
             if (isOperator(call.getSignature().getName())) {

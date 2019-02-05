@@ -16,5 +16,5 @@ package com.facebook.presto.spi.relation;
 public abstract class UnaryNode
         extends Relation
 {
-    abstract Relation getSource();
+    public abstract Relation getSource();
 }

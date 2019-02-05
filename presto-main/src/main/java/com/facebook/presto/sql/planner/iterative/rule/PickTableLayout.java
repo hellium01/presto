@@ -33,6 +33,7 @@ import com.facebook.presto.sql.planner.DomainTranslator;
 import com.facebook.presto.sql.planner.ExpressionInterpreter;
 import com.facebook.presto.sql.planner.LiteralEncoder;
 import com.facebook.presto.sql.planner.LookupSymbolResolver;
+import com.facebook.presto.sql.planner.PlanGenerator;
 import com.facebook.presto.sql.planner.PlanNodeIdAllocator;
 import com.facebook.presto.sql.planner.RelationTranslator;
 import com.facebook.presto.sql.planner.Symbol;
@@ -272,6 +273,9 @@ public class PickTableLayout
             Optional<ProjectNode> projectNode = Optional.ofNullable(captures.getUnchecked(PROJECT));
             RelationTranslator translator = new RelationTranslator(metadata, context.getSymbolAllocator().getTypes(), context.getSession(), parser, context.getLookup());
             Optional<Relation> relation = projectNode.flatMap(translator::translate);
+
+            Optional<PlanNode> planNode = new PlanGenerator(tableScanNode.get().getTable().getConnectorId(), context.getIdAllocator(), context.getSymbolAllocator(), new LiteralEncoder(metadata.getBlockEncodingSerde()), metadata.getFunctionRegistry())
+                    .toPlan(relation.get(), projectNode.get().getOutputSymbols());
 
             List<PlanNode> rewritten = listTableLayouts(
                     tableScanNode.get(),
