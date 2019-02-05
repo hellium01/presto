@@ -274,7 +274,11 @@ public class PickTableLayout
             RelationTranslator translator = new RelationTranslator(metadata, context.getSymbolAllocator().getTypes(), context.getSession(), parser, context.getLookup());
             Optional<Relation> relation = projectNode.flatMap(translator::translate);
 
-            Optional<PlanNode> planNode = new PlanGenerator(tableScanNode.get().getTable().getConnectorId(), context.getIdAllocator(), context.getSymbolAllocator(), new LiteralEncoder(metadata.getBlockEncodingSerde()), metadata.getFunctionRegistry())
+            Optional<PlanNode> planNode = new PlanGenerator(tableScanNode.get().getTable().getConnectorId(),
+                    context.getIdAllocator(),
+                    context.getSymbolAllocator(),
+                    new LiteralEncoder(metadata.getBlockEncodingSerde()),
+                    metadata.getFunctionRegistry())
                     .toPlan(relation.get(), projectNode.get().getOutputSymbols());
 
             List<PlanNode> rewritten = listTableLayouts(

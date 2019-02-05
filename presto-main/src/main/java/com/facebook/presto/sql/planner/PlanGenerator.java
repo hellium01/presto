@@ -153,6 +153,7 @@ public class PlanGenerator
         @Override
         protected Optional<PlanNode> visitTableScan(TableScan tableScan, Context context)
         {
+            //TODO clean up the code here
             List<ColumnHandle> columnHandles = tableScan.getOutput().stream()
                     .filter(outputColumn -> outputColumn instanceof ColumnReferenceExpression)
                     .map(outputColumn -> ((ColumnReferenceExpression) outputColumn).getColumnHandle())
@@ -178,6 +179,7 @@ public class PlanGenerator
 
         private String getNameHint(RowExpression rowExpression)
         {
+            //TODO name hit for NamedColumnHandle (which provides getName)
             if (rowExpression instanceof CallExpression) {
                 return ((CallExpression) rowExpression).getSignature().getName();
             }
