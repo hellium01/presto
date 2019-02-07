@@ -72,7 +72,6 @@ import static com.facebook.presto.sql.analyzer.ExpressionAnalyzer.getExpressionT
 import static com.facebook.presto.sql.planner.iterative.rule.PreconditionRules.checkRulesAreFiredBeforeAddExchangesRule;
 import static com.facebook.presto.sql.planner.plan.Patterns.aggregation;
 import static com.facebook.presto.sql.planner.plan.Patterns.filter;
-import static com.facebook.presto.sql.planner.plan.Patterns.project;
 import static com.facebook.presto.sql.planner.plan.Patterns.source;
 import static com.facebook.presto.sql.planner.plan.Patterns.tableScan;
 import static com.facebook.presto.sql.tree.BooleanLiteral.TRUE_LITERAL;
@@ -242,11 +241,11 @@ public class PickTableLayout
         private static final Capture<ProjectNode> PROJECT = newCapture();
         private static final Capture<FilterNode> FILTER = newCapture();
         private static final Capture<TableScanNode> SCAN = newCapture();
-        private static final Pattern<AggregationNode> PATTERN = aggregation()
-                .with(source().matching(project().capturedAs(PROJECT)
-                        .with(source().matching(filter().capturedAs(FILTER)
-                                .with(source().matching(tableScan().capturedAs(SCAN)))
-                        ))));
+        private static final Pattern<AggregationNode> PATTERN = aggregation();
+//                .with(source().matching(project().capturedAs(PROJECT)
+//                        .with(source().matching(filter().capturedAs(FILTER)
+//                                .with(source().matching(tableScan().capturedAs(SCAN)))
+//                        ))));
 
         private final Metadata metadata;
         private final SqlParser parser;
