@@ -46,7 +46,6 @@ import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -55,7 +54,6 @@ import static com.facebook.presto.spi.function.FunctionKind.SCALAR;
 import static com.facebook.presto.sql.analyzer.ExpressionAnalyzer.getExpressionTypes;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 
 public class RelationTranslator
 {
@@ -120,14 +118,14 @@ public class RelationTranslator
             Map<String, Integer> inputs = getSymbol(child.get().getOutputSymbols());
             groupingKeys.entrySet().stream()
                     .forEach(entry -> inputs.put(entry.getKey().getName(), inputs.get(entry.getValue().getName())));
-            List<Set<Integer>> groupingSetSpec = groupingSets
+            List<List<Integer>> groupingSetSpec = groupingSets
                     .stream()
                     .map(
                             set -> set
                                     .stream()
                                     .map(symbol -> inputs.get(symbol.getName()))
-                                    .collect(toSet())
-                    ).collect(Collectors.toList());
+                                    .collect(toImmutableList())
+                    ).collect(toImmutableList());
             Map<Symbol, RowExpression> aggregations = node.getAggregations().entrySet()
                     .stream()
                     .collect(toMap(Map.Entry::getKey, entry -> toRowExpression(entry.getValue().getCall(), inputs, AGGREGATE)));

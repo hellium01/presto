@@ -14,6 +14,7 @@
 package com.facebook.presto.sql.planner.iterative.rule;
 
 import com.facebook.presto.Session;
+import com.facebook.presto.connector.ConnectorId;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.matching.Capture;
 import com.facebook.presto.matching.Captures;
@@ -273,12 +274,14 @@ public class PickTableLayout
             RelationTranslator translator = new RelationTranslator(metadata, context.getSymbolAllocator().getTypes(), context.getSession(), parser, context.getLookup());
             Optional<Relation> relation = translator.translate(node);
 
-            Optional<PlanNode> planNode = new PlanGenerator(tableScanNode.get().getTable().getConnectorId(),
+            Optional<PlanNode> planNode = new PlanGenerator(
+                    new ConnectorId("test"),
+//                    tableScanNode.get().getTable().getConnectorId(),
                     context.getIdAllocator(),
                     context.getSymbolAllocator(),
                     new LiteralEncoder(metadata.getBlockEncodingSerde()),
                     metadata.getFunctionRegistry())
-                    .toPlan(relation.get(), projectNode.get().getOutputSymbols());
+                    .toPlan(relation.get(), node.getOutputSymbols());
 
             List<PlanNode> rewritten = listTableLayouts(
                     tableScanNode.get(),

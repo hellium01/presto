@@ -16,7 +16,6 @@ package com.facebook.presto.spi.relation;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,10 +25,10 @@ public class Aggregate
     private final List<RowExpression> aggregations;
     private final List<RowExpression> groups;
     private final Optional<RowExpression> groupId;
-    private final List<Set<Integer>> groupSets;
+    private final List<List<Integer>> groupSets;
     private final Relation source;
 
-    public Aggregate(List<RowExpression> aggregations, List<RowExpression> groups, Optional<RowExpression> groupId, List<Set<Integer>> groupSets, Relation source)
+    public Aggregate(List<RowExpression> aggregations, List<RowExpression> groups, Optional<RowExpression> groupId, List<List<Integer>> groupSets, Relation source)
     {
         this.aggregations = aggregations;
         this.groups = groups;
@@ -53,7 +52,7 @@ public class Aggregate
         return groupId;
     }
 
-    public List<Set<Integer>> getGroupSets()
+    public List<List<Integer>> getGroupSets()
     {
         return groupSets;
     }

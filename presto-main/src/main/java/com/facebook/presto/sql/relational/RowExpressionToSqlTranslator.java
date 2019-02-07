@@ -140,7 +140,7 @@ public class RowExpressionToSqlTranslator
             }
 
             List<QualifiedName> functions = functionRegistry.getFunctions(call.getSignature());
-            if (functions.size() != 1) {
+            if (functions.size() == 0) {
                 return Optional.empty();
             }
             return Optional.of(new FunctionCall(functions.get(0), arguments));
