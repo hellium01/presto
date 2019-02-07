@@ -17,8 +17,11 @@ import com.facebook.presto.Session;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.TableLayoutHandle;
+import com.facebook.presto.spi.function.FunctionKind;
+import com.facebook.presto.spi.relation.Aggregate;
 import com.facebook.presto.spi.relation.ColumnReferenceExpression;
 import com.facebook.presto.spi.relation.Filter;
+import com.facebook.presto.spi.relation.InputReferenceExpression;
 import com.facebook.presto.spi.relation.Project;
 import com.facebook.presto.spi.relation.Relation;
 import com.facebook.presto.spi.relation.RowExpression;
@@ -29,6 +32,7 @@ import com.facebook.presto.sql.planner.iterative.Lookup;
 import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.Assignments;
 import com.facebook.presto.sql.planner.plan.FilterNode;
+import com.facebook.presto.sql.planner.plan.GroupIdNode;
 import com.facebook.presto.sql.planner.plan.PlanNode;
 import com.facebook.presto.sql.planner.plan.PlanVisitor;
 import com.facebook.presto.sql.planner.plan.ProjectNode;
@@ -42,12 +46,16 @@ import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.facebook.presto.spi.function.FunctionKind.AGGREGATE;
 import static com.facebook.presto.spi.function.FunctionKind.SCALAR;
 import static com.facebook.presto.sql.analyzer.ExpressionAnalyzer.getExpressionTypes;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 public class RelationTranslator
 {
@@ -83,7 +91,68 @@ public class RelationTranslator
         @Override
         public Optional<Relation> visitAggregation(AggregationNode node, Void context)
         {
-            return super.visitAggregation(node, context);
+            if (node.getStep() != AggregationNode.Step.SINGLE) {
+                return Optional.empty();
+            }
+            Optional<PlanNode> child = lookup.resolveGroup(node.getSource()).findAny();
+            if (!child.isPresent()) {
+                return Optional.empty();
+            }
+            List<List<Symbol>> groupingSets;
+            Map<Symbol, Symbol> groupingKeys;
+            if (child.get() instanceof GroupIdNode) {
+                GroupIdNode groupIdNode = (GroupIdNode) child.get();
+                child = lookup.resolveGroup(groupIdNode.getSource()).findAny();
+                groupingSets = groupIdNode.getGroupingSets();
+                groupingKeys = groupIdNode.getGroupingColumns();
+            }
+            else {
+                groupingSets = ImmutableList.of(node.getGroupingKeys());
+                groupingKeys = node.getGroupingKeys().stream().collect(toMap(k -> k, v -> v));
+            }
+            if (!child.isPresent()) {
+                return Optional.empty();
+            }
+            Optional<Relation> source = child.get().accept(this, context);
+            if (!source.isPresent()) {
+                return Optional.empty();
+            }
+            Map<String, Integer> inputs = getSymbol(child.get().getOutputSymbols());
+            groupingKeys.entrySet().stream()
+                    .forEach(entry -> inputs.put(entry.getKey().getName(), inputs.get(entry.getValue().getName())));
+            List<Set<Integer>> groupingSetSpec = groupingSets
+                    .stream()
+                    .map(
+                            set -> set
+                                    .stream()
+                                    .map(symbol -> inputs.get(symbol.getName()))
+                                    .collect(toSet())
+                    ).collect(Collectors.toList());
+            Map<Symbol, RowExpression> aggregations = node.getAggregations().entrySet()
+                    .stream()
+                    .collect(toMap(Map.Entry::getKey, entry -> toRowExpression(entry.getValue().getCall(), inputs, AGGREGATE)));
+
+            return Optional.of(
+                    new Aggregate(
+                            node.getOutputSymbols().stream()
+                                    .filter(symbol -> aggregations.containsKey(symbol))
+                                    .map(symbol -> aggregations.get(symbol))
+                                    .collect(toImmutableList()),
+                            node.getOutputSymbols().stream()
+                                    .filter(symbol -> groupingKeys.containsKey(symbol) && inputs.containsKey(symbol.getName()))
+                                    .map(symbol -> new InputReferenceExpression(inputs.get(symbol.getName()), types.get(symbol)))
+                                    .collect(toImmutableList()),
+                            Optional.empty(),
+                            groupingSetSpec,
+                            source.get()));
+        }
+
+        private RowExpression toRowExpression(Expression expression, Map<String, Integer> inputs, FunctionKind type)
+        {
+            Map<NodeRef<Expression>, Type> expressionTypes =
+                    getExpressionTypes(session, metadata, parser, types, expression, ImmutableList.of(), WarningCollector.NOOP, false);
+            return SqlToRowExpressionTranslator.translate(expression, type, expressionTypes,
+                    ImmutableMap.of(), inputs, metadata.getFunctionRegistry(), metadata.getTypeManager(), session, false);
         }
 
         @Override

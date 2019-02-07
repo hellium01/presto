@@ -271,7 +271,7 @@ public class PickTableLayout
             Optional<TableScanNode> tableScanNode = Optional.ofNullable(captures.getUnchecked(SCAN));
             Optional<ProjectNode> projectNode = Optional.ofNullable(captures.getUnchecked(PROJECT));
             RelationTranslator translator = new RelationTranslator(metadata, context.getSymbolAllocator().getTypes(), context.getSession(), parser, context.getLookup());
-            Optional<Relation> relation = projectNode.flatMap(translator::translate);
+            Optional<Relation> relation = translator.translate(node);
 
             Optional<PlanNode> planNode = new PlanGenerator(tableScanNode.get().getTable().getConnectorId(),
                     context.getIdAllocator(),
