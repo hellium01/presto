@@ -19,6 +19,7 @@ import com.facebook.presto.spi.ConnectorSplitSource;
 import com.facebook.presto.spi.ConnectorTableMetadata;
 import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.predicate.TupleDomain;
+import com.facebook.presto.spi.relation.Relation;
 import com.facebook.presto.spi.statistics.TableStatistics;
 
 import javax.annotation.Nullable;
@@ -83,4 +84,9 @@ public interface JdbcClient
             throws SQLException;
 
     TableStatistics getTableStatistics(ConnectorSession session, JdbcTableHandle handle, TupleDomain<ColumnHandle> tupleDomain);
+
+    default Optional<Relation> optimize(Relation relation)
+    {
+        return Optional.empty();
+    }
 }

@@ -25,6 +25,7 @@ import com.facebook.presto.spi.SystemTable;
 import com.facebook.presto.spi.block.BlockEncodingSerde;
 import com.facebook.presto.spi.connector.ConnectorOutputMetadata;
 import com.facebook.presto.spi.predicate.TupleDomain;
+import com.facebook.presto.spi.relation.Relation;
 import com.facebook.presto.spi.security.GrantInfo;
 import com.facebook.presto.spi.security.Privilege;
 import com.facebook.presto.spi.statistics.ComputedStatistics;
@@ -72,6 +73,11 @@ public interface Metadata
     Optional<TableHandle> getTableHandleForStatisticsCollection(Session session, QualifiedObjectName tableName, Map<String, Object> analyzeProperties);
 
     List<TableLayoutResult> getLayouts(Session session, TableHandle tableHandle, Constraint<ColumnHandle> constraint, Optional<Set<ColumnHandle>> desiredColumns);
+
+    default Optional<Relation> optimize(Session session, ConnectorId connectorId, Relation relation)
+    {
+        return Optional.empty();
+    }
 
     TableLayout getLayout(Session session, TableLayoutHandle handle);
 

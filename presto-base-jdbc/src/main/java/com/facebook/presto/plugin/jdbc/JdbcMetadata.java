@@ -31,6 +31,7 @@ import com.facebook.presto.spi.SchemaTablePrefix;
 import com.facebook.presto.spi.TableNotFoundException;
 import com.facebook.presto.spi.connector.ConnectorMetadata;
 import com.facebook.presto.spi.connector.ConnectorOutputMetadata;
+import com.facebook.presto.spi.relation.Relation;
 import com.facebook.presto.spi.statistics.ComputedStatistics;
 import com.facebook.presto.spi.statistics.TableStatistics;
 import com.google.common.collect.ImmutableList;
@@ -78,6 +79,11 @@ public class JdbcMetadata
     public JdbcTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName)
     {
         return jdbcClient.getTableHandle(tableName);
+    }
+
+    public Optional<Relation> optmize(ConnectorSession session, Relation relation)
+    {
+       return jdbcClient.optimize(relation);
     }
 
     @Override

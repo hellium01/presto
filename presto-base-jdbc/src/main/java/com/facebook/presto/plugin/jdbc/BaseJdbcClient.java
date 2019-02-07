@@ -23,6 +23,7 @@ import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.TableNotFoundException;
 import com.facebook.presto.spi.predicate.TupleDomain;
+import com.facebook.presto.spi.relation.Relation;
 import com.facebook.presto.spi.statistics.TableStatistics;
 import com.facebook.presto.spi.type.CharType;
 import com.facebook.presto.spi.type.DecimalType;
@@ -463,6 +464,12 @@ public class BaseJdbcClient
     public TableStatistics getTableStatistics(ConnectorSession session, JdbcTableHandle handle, TupleDomain<ColumnHandle> tupleDomain)
     {
         return TableStatistics.empty();
+    }
+
+    @Override
+    public Optional<Relation> optimize(Relation relation)
+    {
+        return Optional.empty();
     }
 
     protected void execute(Connection connection, String query)

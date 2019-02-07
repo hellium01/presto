@@ -42,6 +42,7 @@ import com.facebook.presto.spi.connector.ConnectorPartitioningHandle;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.facebook.presto.spi.function.OperatorType;
 import com.facebook.presto.spi.predicate.TupleDomain;
+import com.facebook.presto.spi.relation.Relation;
 import com.facebook.presto.spi.security.GrantInfo;
 import com.facebook.presto.spi.security.Privilege;
 import com.facebook.presto.spi.statistics.ComputedStatistics;
@@ -388,6 +389,13 @@ public class MetadataManager
         return layouts.stream()
                 .map(layout -> new TableLayoutResult(fromConnectorLayout(connectorId, transaction, layout.getTableLayout()), layout.getUnenforcedConstraint()))
                 .collect(toImmutableList());
+    }
+
+    @Override
+    public Optional<Relation> optimize(Session session, ConnectorId connectorId, Relation relation)
+    {
+        CatalogMetadata catalogMetadata = getCatalogMetadata(session, connectorId);
+        return catalogMetadata.getMetadata().optimize(session.toConnectorSession(connectorId), relation);
     }
 
     @Override
