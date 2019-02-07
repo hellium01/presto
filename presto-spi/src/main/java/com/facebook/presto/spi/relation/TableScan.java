@@ -61,6 +61,11 @@ public class TableScan
         return connectorTableLayoutHandle;
     }
 
+    public TableScan withTableLayout(ConnectorTableLayoutHandle connectorTableHandle)
+    {
+       return new TableScan(tableHandle, output, transactionHandle, Optional.of(connectorTableHandle));
+    }
+
     @Override
     public <R, C> R accept(RelationVisitor<R, C> visitor, C context)
     {

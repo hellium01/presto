@@ -18,7 +18,9 @@ import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.type.Type;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 
+import java.util.List;
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -31,18 +33,31 @@ public final class JdbcColumnHandle
     private final String columnName;
     private final JdbcTypeHandle jdbcTypeHandle;
     private final Type columnType;
+    private final List<String> sqlCommand;
 
     @JsonCreator
     public JdbcColumnHandle(
             @JsonProperty("connectorId") String connectorId,
             @JsonProperty("columnName") String columnName,
             @JsonProperty("jdbcTypeHandle") JdbcTypeHandle jdbcTypeHandle,
-            @JsonProperty("columnType") Type columnType)
+            @JsonProperty("columnType") Type columnType,
+            @JsonProperty("sqlCommand") List<String> sqlCommand)
     {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.columnName = requireNonNull(columnName, "columnName is null");
         this.jdbcTypeHandle = requireNonNull(jdbcTypeHandle, "jdbcTypeHandle is null");
         this.columnType = requireNonNull(columnType, "columnType is null");
+        this.sqlCommand = requireNonNull(sqlCommand, "sqlCommand is null");
+    }
+
+    public JdbcColumnHandle(
+            String connectorId,
+            String columnName,
+            JdbcTypeHandle jdbcTypeHandle,
+            Type columnType)
+
+    {
+        this(connectorId, columnName, jdbcTypeHandle, columnType, ImmutableList.of());
     }
 
     @JsonProperty
@@ -67,6 +82,12 @@ public final class JdbcColumnHandle
     public Type getColumnType()
     {
         return columnType;
+    }
+
+    @JsonProperty
+    public List<String> getSqlCommand()
+    {
+        return sqlCommand;
     }
 
     public ColumnMetadata getColumnMetadata()

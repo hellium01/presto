@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -28,14 +29,22 @@ public class JdbcTableLayoutHandle
 {
     private final JdbcTableHandle table;
     private final TupleDomain<ColumnHandle> tupleDomain;
+    private final Optional<String> tableFilter;
 
     @JsonCreator
     public JdbcTableLayoutHandle(
             @JsonProperty("table") JdbcTableHandle table,
-            @JsonProperty("tupleDomain") TupleDomain<ColumnHandle> domain)
+            @JsonProperty("tupleDomain") TupleDomain<ColumnHandle> domain,
+            @JsonProperty("tableFilter") Optional<String> tableFilter)
     {
         this.table = requireNonNull(table, "table is null");
         this.tupleDomain = requireNonNull(domain, "tupleDomain is null");
+        this.tableFilter = requireNonNull(tableFilter, "tableFilter is null");
+    }
+
+    public JdbcTableLayoutHandle(JdbcTableHandle table, TupleDomain<ColumnHandle> domain)
+    {
+        this(table, domain, Optional.empty());
     }
 
     @JsonProperty
@@ -48,6 +57,12 @@ public class JdbcTableLayoutHandle
     public TupleDomain<ColumnHandle> getTupleDomain()
     {
         return tupleDomain;
+    }
+
+    @JsonProperty
+    public Optional<String> getTableFilter()
+    {
+        return tableFilter;
     }
 
     @Override

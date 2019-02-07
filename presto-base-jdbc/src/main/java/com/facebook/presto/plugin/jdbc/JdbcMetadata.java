@@ -81,9 +81,10 @@ public class JdbcMetadata
         return jdbcClient.getTableHandle(tableName);
     }
 
-    public Optional<Relation> optmize(ConnectorSession session, Relation relation)
+    @Override
+    public Optional<Relation> optimize(ConnectorSession session, Relation relation)
     {
-       return jdbcClient.optimize(relation);
+        return jdbcClient.optimize(relation);
     }
 
     @Override

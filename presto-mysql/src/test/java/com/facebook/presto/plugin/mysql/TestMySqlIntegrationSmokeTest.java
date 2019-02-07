@@ -201,11 +201,17 @@ public class TestMySqlIntegrationSmokeTest
                 " (1, 100, 'test', 1.0, 'test')", 1);
         MaterializedResult actual;
         actual = computeActual(
-                "SELECT c1+c2,  sum(c4), IF(c1>c2, c3), approx_distinct(c5), \n" +
-                        " array_agg(c4 order by c1), count(c3), sum(c4) FILTER (WHERE c1 > 1)\n" +
+                "SELECT c1+c2,  sum(c4), IF(c1>c2, c3), avg(c4), \n" +
+                        "  count(c3), sum(c4) FILTER (WHERE c1 > 1)\n" +
                         "FROM test_aggregation\n" +
                         "WHERE c1 > 100 AND c1+c2 > 100 AND c3 IN ('test')\n" +
                         "GROUP BY 1, 3, c1");
+//        actual = computeActual(
+//                "SELECT c1+c2,  sum(c4), IF(c1>c2, c3), approx_distinct(c5), \n" +
+//                        " array_agg(c4 order by c1), count(c3), sum(c4) FILTER (WHERE c1 > 1)\n" +
+//                        "FROM test_aggregation\n" +
+//                        "WHERE c1 > 100 AND c1+c2 > 100 AND c3 IN ('test')\n" +
+//                        "GROUP BY 1, 3, c1");
 
 //        actual = computeActual(
 //                "SELECT sum(c4), approx_distinct(c5), \n" +
