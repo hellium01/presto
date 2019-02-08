@@ -11,24 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.spi.relation;
+package com.facebook.presto.spi.relation.pattern;
 
-import com.facebook.presto.spi.relation.pattern.Node;
-import com.facebook.presto.spi.type.Type;
+import com.google.common.collect.ImmutableList;
 
-public abstract class RowExpression
-        implements Node<RowExpression>
+import java.util.List;
+
+public interface Node<T>
 {
-    public abstract Type getType();
-
-    @Override
-    public abstract boolean equals(Object other);
-
-    @Override
-    public abstract int hashCode();
-
-    @Override
-    public abstract String toString();
-
-    public abstract <R, C> R accept(RowExpressionVisitor<R, C> visitor, C context);
+    default List<T> getChildren()
+    {
+        return ImmutableList.of();
+    }
 }

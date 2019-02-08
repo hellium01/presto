@@ -87,4 +87,10 @@ public final class CallExpression
     {
         return visitor.visitCall(this, context);
     }
+
+    @Override
+    public List<RowExpression> getChildren()
+    {
+        return arguments;
+    }
 }
