@@ -281,13 +281,12 @@ public class PickTableLayout
             Optional<Relation> result = metadata.optimize(context.getSession(), tableScanNode.get().getTable().getConnectorId(), relation.get());
 
             Optional<PlanNode> planNode = new PlanGenerator(
-                    new ConnectorId("test"),
 //                    tableScanNode.get().getTable().getConnectorId(),
                     context.getIdAllocator(),
                     context.getSymbolAllocator(),
                     new LiteralEncoder(metadata.getBlockEncodingSerde()),
                     metadata.getFunctionRegistry())
-                    .toPlan(relation.get(), node.getOutputSymbols());
+                    .toPlan(new ConnectorId("test"), relation.get(), node.getOutputSymbols());
 
             List<PlanNode> rewritten = listTableLayouts(
                     tableScanNode.get(),

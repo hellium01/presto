@@ -10,7 +10,6 @@ import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.ColumnReferenceExpression;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.pattern.Pattern;
-import com.facebook.presto.spi.relation.pattern.PatternWalker;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.analyzer.ExpressionAnalyzer;
 import com.facebook.presto.sql.analyzer.Scope;
@@ -75,11 +74,11 @@ public class TestRowExpressionRewriter
                 ImmutableMap.of("c1", new TestColumnHandle("c1", BIGINT)));
 
 //        String r =
-                new PatternWalker<RowExpression, String>((a, b) -> Optional.ofNullable((String) null))
-                .with(func("avg"), node -> {
-                    return "avg";
-                }).orElse(node -> "null")
-                .accept(result);
+//                new PatternWalker<RowExpression, String>((a, b) -> Optional.ofNullable((String) null))
+//                .with(func("avg"), node -> {
+//                    return "avg";
+//                }).orElse(node -> "null")
+//                .accept(result);
 
 //                .orElse(node -> {
 //                    return "null";

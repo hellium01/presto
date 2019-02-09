@@ -56,24 +56,22 @@ import static org.glassfish.jersey.internal.util.collection.ImmutableCollectors.
 
 public class PlanGenerator
 {
-    private final ConnectorId connectorId;
     private final PlanNodeIdAllocator idAllocator;
     private final SymbolAllocator symbolAllocator;
     private final LiteralEncoder literalEncoder;
     private final FunctionRegistry functionRegistry;
 
-    public PlanGenerator(ConnectorId connectorId, PlanNodeIdAllocator idAllocator, SymbolAllocator symbolAllocator, LiteralEncoder literalEncoder, FunctionRegistry functionRegistry)
+    public PlanGenerator(PlanNodeIdAllocator idAllocator, SymbolAllocator symbolAllocator, LiteralEncoder literalEncoder, FunctionRegistry functionRegistry)
     {
-        this.connectorId = connectorId;
         this.idAllocator = idAllocator;
         this.symbolAllocator = symbolAllocator;
         this.literalEncoder = literalEncoder;
         this.functionRegistry = functionRegistry;
     }
 
-    public Optional<PlanNode> toPlan(Relation relation, List<Symbol> outputSymbols)
+    public Optional<PlanNode> toPlan(ConnectorId connectorId, Relation relation, List<Symbol> outputSymbols)
     {
-        return relation.accept(new PlanCreator(), new Context(outputSymbols));
+        return relation.accept(new PlanCreator(connectorId), new Context(outputSymbols));
     }
 
     private static class Context
@@ -101,6 +99,13 @@ public class PlanGenerator
     private class PlanCreator
             extends RelationVisitor<Optional<PlanNode>, Context>
     {
+        private final ConnectorId connectorId;
+
+        public PlanCreator(ConnectorId connectorId)
+        {
+            this.connectorId = connectorId;
+        }
+
         @Override
         protected Optional<PlanNode> visitProject(Project project, Context context)
         {
@@ -131,8 +136,8 @@ public class PlanGenerator
                     .boxed()
                     .collect(toMap(i -> i, i ->
                             symbolAllocator.newSymbol(
-                            getNameHint(node.getSource().getOutput().get(i)),
-                            node.getSource().getOutput().get(i).getType()).getName()));
+                                    getNameHint(node.getSource().getOutput().get(i)),
+                                    node.getSource().getOutput().get(i).getType()).getName()));
         }
 
         private Optional<Expression> translate(RowExpression rowExpression, Map<Integer, String> inputChannelNames)

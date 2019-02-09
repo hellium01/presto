@@ -13,9 +13,16 @@
  */
 package com.facebook.presto.spi.connector;
 
-import java.util.Set;
+import com.facebook.presto.spi.ConnectorSession;
+import com.facebook.presto.spi.relation.Relation;
 
-public interface ConnectorRuleProvider
+import java.util.Optional;
+
+public interface ConnectorOptimizationRule
 {
-    Set<ConnectorOptimizationRule> getRules();
+    boolean enabled(ConnectorSession session);
+
+    boolean match(ConnectorSession session, Relation relation);
+
+    Optional<Relation> optimize(Relation relation);
 }
