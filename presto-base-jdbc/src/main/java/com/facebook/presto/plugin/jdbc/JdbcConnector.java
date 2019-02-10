@@ -18,6 +18,7 @@ import com.facebook.presto.spi.connector.ConnectorAccessControl;
 import com.facebook.presto.spi.connector.ConnectorMetadata;
 import com.facebook.presto.spi.connector.ConnectorPageSinkProvider;
 import com.facebook.presto.spi.connector.ConnectorRecordSetProvider;
+import com.facebook.presto.spi.connector.ConnectorRuleProvider;
 import com.facebook.presto.spi.connector.ConnectorSplitManager;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.facebook.presto.spi.procedure.Procedure;
@@ -48,6 +49,7 @@ public class JdbcConnector
     private final JdbcSplitManager jdbcSplitManager;
     private final JdbcRecordSetProvider jdbcRecordSetProvider;
     private final JdbcPageSinkProvider jdbcPageSinkProvider;
+    private final JdbcConnetorRuleProvider jdbcConnetorRuleProvider;
     private final Optional<ConnectorAccessControl> accessControl;
     private final Set<Procedure> procedures;
 
@@ -61,6 +63,7 @@ public class JdbcConnector
             JdbcRecordSetProvider jdbcRecordSetProvider,
             JdbcPageSinkProvider jdbcPageSinkProvider,
             Optional<ConnectorAccessControl> accessControl,
+            JdbcConnetorRuleProvider jdbcConnetorRuleProvider,
             Set<Procedure> procedures)
     {
         this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
@@ -69,6 +72,7 @@ public class JdbcConnector
         this.jdbcRecordSetProvider = requireNonNull(jdbcRecordSetProvider, "jdbcRecordSetProvider is null");
         this.jdbcPageSinkProvider = requireNonNull(jdbcPageSinkProvider, "jdbcPageSinkProvider is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
+        this.jdbcConnetorRuleProvider = requireNonNull(jdbcConnetorRuleProvider, "jdbcConnectorRuleProvider is null");
         this.procedures = ImmutableSet.copyOf(requireNonNull(procedures, "procedures is null"));
     }
 
@@ -125,6 +129,12 @@ public class JdbcConnector
     public ConnectorPageSinkProvider getPageSinkProvider()
     {
         return jdbcPageSinkProvider;
+    }
+
+    @Override
+    public ConnectorRuleProvider getConnectorRuleProvider()
+    {
+        return jdbcConnetorRuleProvider;
     }
 
     @Override
