@@ -20,13 +20,13 @@ public class RowExpressionRewriter<R>
     private final List<FunctionRule<R>> functionRules;
     private final List<ConstantRule<R>> constantRules;
     private final List<ColumnRule<R>> columnRules;
-    private final Optional<BiFunction<RowExpression, RowExpressionRewriter<R>, Optional<R>>> defaultRule;
+    private final Optional<BiFunction<RowExpressionRewriter<R>, RowExpression, Optional<R>>> defaultRule;
 
     public RowExpressionRewriter(
             List<FunctionRule<R>> functionRules,
             List<ConstantRule<R>> constantRules,
             List<ColumnRule<R>> columnRules,
-            Optional<BiFunction<RowExpression, RowExpressionRewriter<R>, Optional<R>>> defaultRule)
+            Optional<BiFunction<RowExpressionRewriter<R>, RowExpression, Optional<R>>> defaultRule)
     {
         this.functionRules = functionRules;
         this.constantRules = constantRules;
@@ -42,7 +42,7 @@ public class RowExpressionRewriter<R>
         this(functionRules, constantRules, columnRules, Optional.empty());
     }
 
-    public RowExpressionRewriter(BiFunction<RowExpression, RowExpressionRewriter<R>, Optional<R>> defaultRule)
+    public RowExpressionRewriter(BiFunction<RowExpressionRewriter<R>, RowExpression, Optional<R>> defaultRule)
     {
         this(ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), Optional.of(defaultRule));
     }
@@ -69,7 +69,7 @@ public class RowExpressionRewriter<R>
                     .filter(rule -> rule.match(call))
                     .findAny();
             if (!matchedRule.isPresent() && defaultRule.isPresent()) {
-                return defaultRule.get().apply(call, rewriter);
+                return defaultRule.get().apply(rewriter, call);
             }
             return matchedRule.flatMap(rule -> rule.call(rewriter, call));
         }
@@ -86,6 +86,9 @@ public class RowExpressionRewriter<R>
             Optional<ConstantRule<R>> matchedRule = constantRules.stream()
                     .filter(rule -> rule.match(literal))
                     .findAny();
+            if (!matchedRule.isPresent() && defaultRule.isPresent()) {
+                return defaultRule.get().apply(rewriter, literal);
+            }
             return matchedRule.flatMap(rule -> rule.call(literal.getValue()));
         }
 
@@ -107,8 +110,10 @@ public class RowExpressionRewriter<R>
             Optional<ColumnRule<R>> matchedRule = columnRules.stream()
                     .filter(rule -> rule.match(columnReferenceExpression))
                     .findAny();
+            if (!matchedRule.isPresent() && defaultRule.isPresent()) {
+                return defaultRule.get().apply(rewriter, columnReferenceExpression);
+            }
             return matchedRule.flatMap(rule -> rule.apply(columnReferenceExpression));
         }
     }
-
 }

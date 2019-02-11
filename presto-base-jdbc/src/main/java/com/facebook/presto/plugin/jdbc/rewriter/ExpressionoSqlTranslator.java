@@ -16,12 +16,16 @@ package com.facebook.presto.plugin.jdbc.rewriter;
 import com.facebook.presto.plugin.jdbc.JdbcColumnHandle;
 import com.facebook.presto.plugin.jdbc.JdbcTypeHandle;
 import com.facebook.presto.spi.relation.CallExpression;
+import com.facebook.presto.spi.relation.ColumnReferenceExpression;
 import com.facebook.presto.spi.relation.ConstantExpression;
 import com.facebook.presto.spi.relation.InputReferenceExpression;
 import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.RowExpressionVisitor;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+import com.facebook.presto.spi.type.BigintType;
+import com.facebook.presto.spi.type.BooleanType;
+import com.facebook.presto.spi.type.DoubleType;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.VarcharType;
 import com.google.common.base.Joiner;
@@ -45,7 +49,6 @@ import static com.facebook.presto.spi.function.OperatorType.MULTIPLY;
 import static com.facebook.presto.spi.function.OperatorType.SUBTRACT;
 import static com.facebook.presto.spi.type.BigintType.BIGINT;
 import static com.facebook.presto.spi.type.IntegerType.INTEGER;
-import static com.facebook.presto.spi.type.StandardTypes.BOOLEAN;
 import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -146,13 +149,16 @@ public class ExpressionoSqlTranslator
         };
     }
 
-    private JdbcTypeHandle fromPrestoType(Type type)
+    public static JdbcTypeHandle fromPrestoType(Type type)
     {
-        if (type.equals(BIGINT)) {
+        if (type.equals(BigintType.BIGINT)) {
             return new JdbcTypeHandle(Types.BIGINT, 11, 0);
         }
-        else if (type.equals(BOOLEAN)) {
+        else if (type.equals(BooleanType.BOOLEAN)) {
             return new JdbcTypeHandle(Types.BOOLEAN, 1, 0);
+        }
+        else if (type.equals(DoubleType.DOUBLE)) {
+            return new JdbcTypeHandle(Types.DOUBLE, 11, 0);
         }
         else if (type instanceof VarcharType) {
             return new JdbcTypeHandle(Types.VARCHAR, ((VarcharType) type).getLengthSafe(), 0);
@@ -212,6 +218,64 @@ public class ExpressionoSqlTranslator
         public RowExpression visitVariableReference(VariableReferenceExpression reference, Void context)
         {
             return null;
+        }
+    }
+
+    public static class RewriteColumn
+            implements RowExpressionVisitor<RowExpression, Void>
+    {
+        private final List<ColumnReferenceExpression> inputColumns;
+
+        public RewriteColumn(List<ColumnReferenceExpression> inputColumns)
+        {
+            this.inputColumns = inputColumns;
+        }
+
+        public static RowExpression rewriteColumns(RowExpression rowExpression, List<ColumnReferenceExpression> inputColumns)
+        {
+            return rowExpression.accept(new RewriteColumn(inputColumns), null);
+        }
+
+        @Override
+        public RowExpression visitCall(CallExpression call, Void context)
+        {
+            return new CallExpression(call.getSignature(),
+                    call.getType(),
+                    call.getArguments()
+                            .stream()
+                            .map(row -> row.accept(this, context))
+                            .collect(toImmutableList()));
+        }
+
+        @Override
+        public RowExpression visitInputReference(InputReferenceExpression reference, Void context)
+        {
+            return reference;
+        }
+
+        @Override
+        public RowExpression visitConstant(ConstantExpression literal, Void context)
+        {
+            return literal;
+        }
+
+        @Override
+        public RowExpression visitLambda(LambdaDefinitionExpression lambda, Void context)
+        {
+            return null;
+        }
+
+        @Override
+        public RowExpression visitVariableReference(VariableReferenceExpression reference, Void context)
+        {
+            return null;
+        }
+
+        @Override
+        public RowExpression visitColumnReference(ColumnReferenceExpression columnReferenceExpression, Void context)
+        {
+            int i = inputColumns.indexOf(columnReferenceExpression);
+            return new InputReferenceExpression(i, columnReferenceExpression.getType());
         }
     }
 }
