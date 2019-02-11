@@ -20,6 +20,7 @@ import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.TableHandle;
 import com.facebook.presto.metadata.TableLayoutHandle;
 import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.predicate.TupleDomain;
 import com.facebook.presto.spi.relation.Aggregate;
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.ColumnReferenceExpression;
@@ -261,7 +262,7 @@ public class PlanGenerator
             Map<Symbol, ColumnHandle> columnHandleMap = IntStream.range(0, columnHandles.size())
                     .boxed()
                     .collect(toMap(i -> outputChannelNames.get(i), i -> columnHandles.get(i)));
-            
+
             Optional<TableLayoutHandle> tableLayoutHandle = Optional.empty();
             if (tableScan.getConnectorTableLayoutHandle().isPresent()) {
                 tableLayoutHandle = Optional.of(
@@ -275,7 +276,9 @@ public class PlanGenerator
                     new TableHandle(connectorId, tableScan.getTableHandle()),
                     outputChannelNames,
                     columnHandleMap,
-                    tableLayoutHandle));
+                    tableLayoutHandle,
+                    TupleDomain.all(),
+                    TupleDomain.all()));
         }
 
         private Optional<Expression> rewriteRowExpression(RowExpression rowExpression)
