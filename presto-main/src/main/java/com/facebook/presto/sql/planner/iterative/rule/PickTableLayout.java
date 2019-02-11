@@ -14,7 +14,6 @@
 package com.facebook.presto.sql.planner.iterative.rule;
 
 import com.facebook.presto.Session;
-import com.facebook.presto.connector.ConnectorId;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.matching.Capture;
 import com.facebook.presto.matching.Captures;
@@ -34,7 +33,6 @@ import com.facebook.presto.sql.planner.DomainTranslator;
 import com.facebook.presto.sql.planner.ExpressionInterpreter;
 import com.facebook.presto.sql.planner.LiteralEncoder;
 import com.facebook.presto.sql.planner.LookupSymbolResolver;
-import com.facebook.presto.sql.planner.PlanGenerator;
 import com.facebook.presto.sql.planner.PlanNodeIdAllocator;
 import com.facebook.presto.sql.planner.RelationTranslator;
 import com.facebook.presto.sql.planner.Symbol;
@@ -277,17 +275,6 @@ public class PickTableLayout
             if (!relation.isPresent()) {
                 return Result.empty();
             }
-
-//            Optional<Relation> result = metadata.optimize(context.getSession(), tableScanNode.get().getTable().getConnectorId(), relation.get());
-
-            Optional<PlanNode> planNode = new PlanGenerator(
-//                    tableScanNode.get().getTable().getConnectorId(),
-                    context.getIdAllocator(),
-                    context.getSymbolAllocator(),
-                    new LiteralEncoder(metadata.getBlockEncodingSerde()),
-                    metadata.getFunctionRegistry())
-                    .toPlan(new ConnectorId("test"), relation.get(), node.getOutputSymbols());
-
             List<PlanNode> rewritten = listTableLayouts(
                     tableScanNode.get(),
                     filterNode.get().getPredicate(),

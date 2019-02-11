@@ -13,9 +13,12 @@
  */
 package com.facebook.presto.sql.planner;
 
+import com.facebook.presto.Session;
 import com.facebook.presto.connector.ConnectorId;
 import com.facebook.presto.metadata.FunctionRegistry;
+import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.TableHandle;
+import com.facebook.presto.metadata.TableLayoutHandle;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.relation.Aggregate;
 import com.facebook.presto.spi.relation.CallExpression;
@@ -60,18 +63,20 @@ public class PlanGenerator
     private final SymbolAllocator symbolAllocator;
     private final LiteralEncoder literalEncoder;
     private final FunctionRegistry functionRegistry;
+    private final Metadata metadata;
 
-    public PlanGenerator(PlanNodeIdAllocator idAllocator, SymbolAllocator symbolAllocator, LiteralEncoder literalEncoder, FunctionRegistry functionRegistry)
+    public PlanGenerator(PlanNodeIdAllocator idAllocator, SymbolAllocator symbolAllocator, LiteralEncoder literalEncoder, Metadata metadata)
     {
         this.idAllocator = idAllocator;
         this.symbolAllocator = symbolAllocator;
         this.literalEncoder = literalEncoder;
-        this.functionRegistry = functionRegistry;
+        this.functionRegistry = metadata.getFunctionRegistry();
+        this.metadata = metadata;
     }
 
-    public Optional<PlanNode> toPlan(ConnectorId connectorId, Relation relation, List<Symbol> outputSymbols)
+    public Optional<PlanNode> toPlan(Session session, ConnectorId connectorId, Relation relation, List<Symbol> outputSymbols)
     {
-        return relation.accept(new PlanCreator(connectorId), new Context(outputSymbols));
+        return relation.accept(new PlanCreator(session, connectorId), new Context(outputSymbols));
     }
 
     private static class Context
@@ -93,10 +98,12 @@ public class PlanGenerator
     private class PlanCreator
             extends RelationVisitor<Optional<PlanNode>, Context>
     {
+        private final Session session;
         private final ConnectorId connectorId;
 
-        public PlanCreator(ConnectorId connectorId)
+        public PlanCreator(Session session, ConnectorId connectorId)
         {
+            this.session = session;
             this.connectorId = connectorId;
         }
 
@@ -254,11 +261,21 @@ public class PlanGenerator
             Map<Symbol, ColumnHandle> columnHandleMap = IntStream.range(0, columnHandles.size())
                     .boxed()
                     .collect(toMap(i -> outputChannelNames.get(i), i -> columnHandles.get(i)));
+            
+            Optional<TableLayoutHandle> tableLayoutHandle = Optional.empty();
+            if (tableScan.getConnectorTableLayoutHandle().isPresent()) {
+                tableLayoutHandle = Optional.of(
+                        new TableLayoutHandle(
+                                connectorId,
+                                metadata.getTransactionHandle(session, connectorId),
+                                tableScan.getConnectorTableLayoutHandle().get()));
+            }
             return Optional.of(new TableScanNode(
                     idAllocator.getNextId(),
                     new TableHandle(connectorId, tableScan.getTableHandle()),
                     outputChannelNames,
-                    columnHandleMap));
+                    columnHandleMap,
+                    tableLayoutHandle));
         }
 
         private Optional<Expression> rewriteRowExpression(RowExpression rowExpression)

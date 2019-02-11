@@ -93,7 +93,6 @@ public class ProjectPushdown
                 columns.stream()
                         .map(RowExpression.class::cast)
                         .collect(toImmutableList()),
-                tableScan.getTransactionHandle(),
                 tableScan.getConnectorTableLayoutHandle());
         List<RowExpression> outputExpressions = results.stream()
                 .map(result -> rewriteColumns(result.getLeftOver(), columns))

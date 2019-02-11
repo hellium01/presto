@@ -495,6 +495,12 @@ public class MetadataManager
     }
 
     @Override
+    public ConnectorTransactionHandle getTransactionHandle(Session session, ConnectorId connectorId)
+    {
+        return getCatalogMetadata(session, connectorId).getTransactionHandleFor(connectorId);
+    }
+
+    @Override
     public List<QualifiedObjectName> listTables(Session session, QualifiedTablePrefix prefix)
     {
         requireNonNull(prefix, "prefix is null");

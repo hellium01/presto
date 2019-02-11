@@ -71,7 +71,7 @@ public class ConnectorOptimizer
         Lookup lookup = Lookup.from(planNode -> Stream.of(memo.resolve(planNode)));
         Duration timeout = SystemSessionProperties.getOptimizerTimeout(session);
         RelationTranslator translator = new RelationTranslator(metadata, symbolAllocator.getTypes(), session, parser, lookup);
-        PlanGenerator generator = new PlanGenerator(idAllocator, symbolAllocator, literalEncoder, metadata.getFunctionRegistry());
+        PlanGenerator generator = new PlanGenerator(idAllocator, symbolAllocator, literalEncoder, metadata);
         Context context = new Context(memo, System.nanoTime(), timeout.toMillis(), session, translator, generator);
         exploreGroup(memo.getRootGroup(), context);
 
@@ -139,7 +139,7 @@ public class ConnectorOptimizer
                 if (rule.enabled(connectorSession) && rule.match(connectorSession, relation.get())) {
                     Optional<Relation> rewritten = rule.optimize(relation.get());
                     if (rewritten.isPresent()) {
-                        Optional<PlanNode> rewrittenPlanNode = context.generator.toPlan(connectorId, rewritten.get(), node.getOutputSymbols());
+                        Optional<PlanNode> rewrittenPlanNode = context.generator.toPlan(context.session, connectorId, rewritten.get(), node.getOutputSymbols());
                         checkArgument(rewrittenPlanNode.isPresent(), "Rewrite rule should return something that can be converted back to plan");
                         node = context.memo.replace(group, rewrittenPlanNode.get(), format("%s - %s", connectorId, rule.getClass().getName()));
                         relation = context.relationTranslator.translate(node);

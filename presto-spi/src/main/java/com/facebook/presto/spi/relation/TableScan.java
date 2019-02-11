@@ -15,7 +15,6 @@ package com.facebook.presto.spi.relation;
 
 import com.facebook.presto.spi.ConnectorTableHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
-import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 
 import java.util.List;
 import java.util.Objects;
@@ -26,18 +25,15 @@ public class TableScan
 {
     private final ConnectorTableHandle tableHandle;
     private final List<RowExpression> output;
-    private final Optional<ConnectorTransactionHandle> transactionHandle;
     private final Optional<ConnectorTableLayoutHandle> connectorTableLayoutHandle;
 
     public TableScan(
             ConnectorTableHandle tableHandle,
             List<RowExpression> output,
-            Optional<ConnectorTransactionHandle> transactionHandle,
             Optional<ConnectorTableLayoutHandle> connectorTableLayoutHandle)
     {
         this.tableHandle = tableHandle;
         this.output = output;
-        this.transactionHandle = transactionHandle;
         this.connectorTableLayoutHandle = connectorTableLayoutHandle;
     }
 
@@ -51,11 +47,6 @@ public class TableScan
         return output;
     }
 
-    public Optional<ConnectorTransactionHandle> getTransactionHandle()
-    {
-        return transactionHandle;
-    }
-
     public Optional<ConnectorTableLayoutHandle> getConnectorTableLayoutHandle()
     {
         return connectorTableLayoutHandle;
@@ -63,7 +54,7 @@ public class TableScan
 
     public TableScan withTableLayout(ConnectorTableLayoutHandle connectorTableHandle)
     {
-       return new TableScan(tableHandle, output, transactionHandle, Optional.of(connectorTableHandle));
+        return new TableScan(tableHandle, output, Optional.of(connectorTableHandle));
     }
 
     @Override
@@ -84,13 +75,12 @@ public class TableScan
         TableScan tableScan = (TableScan) o;
         return Objects.equals(tableHandle, tableScan.tableHandle) &&
                 Objects.equals(output, tableScan.output) &&
-                Objects.equals(transactionHandle, tableScan.transactionHandle) &&
                 Objects.equals(connectorTableLayoutHandle, tableScan.connectorTableLayoutHandle);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(tableHandle, output, transactionHandle, connectorTableLayoutHandle);
+        return Objects.hash(tableHandle, output, connectorTableLayoutHandle);
     }
 }

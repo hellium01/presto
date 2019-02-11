@@ -24,6 +24,7 @@ import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SystemTable;
 import com.facebook.presto.spi.block.BlockEncodingSerde;
 import com.facebook.presto.spi.connector.ConnectorOutputMetadata;
+import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.facebook.presto.spi.relation.Relation;
 import com.facebook.presto.spi.security.GrantInfo;
@@ -127,6 +128,11 @@ public interface Metadata
      * @throws RuntimeException if table or column handles are no longer valid
      */
     ColumnMetadata getColumnMetadata(Session session, TableHandle tableHandle, ColumnHandle columnHandle);
+
+    /**
+     * Get the transaction handle
+     */
+    ConnectorTransactionHandle getTransactionHandle(Session session, ConnectorId connectorId);
 
     /**
      * Gets the metadata for all columns that match the specified table prefix.

@@ -206,7 +206,6 @@ public class RelationTranslator
                     node.getOutputSymbols().stream()
                             .map(symbol -> new ColumnReferenceExpression(node.getAssignments().get(symbol), types.get(symbol)))
                             .collect(Collectors.toList()),
-                    node.getLayout().map(TableLayoutHandle::getTransactionHandle),
                     node.getLayout().map(TableLayoutHandle::getConnectorHandle)));
         }
     }
