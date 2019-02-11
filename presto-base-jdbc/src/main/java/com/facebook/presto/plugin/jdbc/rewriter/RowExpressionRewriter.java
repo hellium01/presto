@@ -12,6 +12,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 public class RowExpressionRewriter<R>
 
@@ -19,13 +20,13 @@ public class RowExpressionRewriter<R>
     private final List<FunctionRule<R>> functionRules;
     private final List<ConstantRule<R>> constantRules;
     private final List<ColumnRule<R>> columnRules;
-    private final Optional<CallBack<RowExpression, RowExpressionRewriter<R>, Optional<R>>> defaultRule;
+    private final Optional<BiFunction<RowExpression, RowExpressionRewriter<R>, Optional<R>>> defaultRule;
 
     public RowExpressionRewriter(
             List<FunctionRule<R>> functionRules,
             List<ConstantRule<R>> constantRules,
             List<ColumnRule<R>> columnRules,
-            Optional<CallBack<RowExpression, RowExpressionRewriter<R>, Optional<R>>> defaultRule)
+            Optional<BiFunction<RowExpression, RowExpressionRewriter<R>, Optional<R>>> defaultRule)
     {
         this.functionRules = functionRules;
         this.constantRules = constantRules;
@@ -41,7 +42,7 @@ public class RowExpressionRewriter<R>
         this(functionRules, constantRules, columnRules, Optional.empty());
     }
 
-    public RowExpressionRewriter(CallBack<RowExpression, RowExpressionRewriter<R>, Optional<R>> defaultRule)
+    public RowExpressionRewriter(BiFunction<RowExpression, RowExpressionRewriter<R>, Optional<R>> defaultRule)
     {
         this(ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), Optional.of(defaultRule));
     }
@@ -50,8 +51,6 @@ public class RowExpressionRewriter<R>
     {
         return root.accept(new Visitor(this), null);
     }
-
-
 
     public class Visitor
             implements RowExpressionVisitor<Optional<R>, Void>
@@ -72,7 +71,7 @@ public class RowExpressionRewriter<R>
             if (!matchedRule.isPresent() && defaultRule.isPresent()) {
                 return defaultRule.get().apply(call, rewriter);
             }
-            return matchedRule.flatMap(rule -> rule.call(rewriter, call.getArguments()));
+            return matchedRule.flatMap(rule -> rule.call(rewriter, call));
         }
 
         @Override
@@ -112,8 +111,4 @@ public class RowExpressionRewriter<R>
         }
     }
 
-    public interface CallBack<I, J, R>
-    {
-        R apply(I a1, J a2);
-    }
 }

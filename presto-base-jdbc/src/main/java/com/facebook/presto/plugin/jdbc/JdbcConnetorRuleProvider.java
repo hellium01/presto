@@ -13,6 +13,9 @@
  */
 package com.facebook.presto.plugin.jdbc;
 
+import com.facebook.presto.plugin.jdbc.rewriter.AggregationPushdown;
+import com.facebook.presto.plugin.jdbc.rewriter.PredicatePushdown;
+import com.facebook.presto.plugin.jdbc.rewriter.ProjectPushdown;
 import com.facebook.presto.spi.connector.ConnectorOptimizationRule;
 import com.facebook.presto.spi.connector.ConnectorRuleProvider;
 import com.google.common.collect.ImmutableSet;
@@ -34,6 +37,9 @@ public class JdbcConnetorRuleProvider
     private Set<ConnectorOptimizationRule> allRules()
     {
         return new ImmutableSet.Builder()
+                .add(new PredicatePushdown())
+                .add(new ProjectPushdown())
+                .add(new AggregationPushdown())
                 .build();
     }
 

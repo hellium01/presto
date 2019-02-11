@@ -469,7 +469,7 @@ public class BaseJdbcClient
     @Override
     public Optional<Relation> optimize(Relation relation)
     {
-        return new PushdownCalculationToMySql(connectorId).rewrite(relation);
+        return Optional.empty();
     }
 
     protected void execute(Connection connection, String query)

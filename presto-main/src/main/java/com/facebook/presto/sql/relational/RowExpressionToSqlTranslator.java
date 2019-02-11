@@ -24,6 +24,7 @@ import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.RowExpressionVisitor;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.planner.LiteralEncoder;
+import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.tree.ArithmeticBinaryExpression;
 import com.facebook.presto.sql.tree.ArithmeticUnaryExpression;
 import com.facebook.presto.sql.tree.Cast;
@@ -49,7 +50,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class RowExpressionToSqlTranslator
 {
 
-    public static Optional<Expression> translate(RowExpression rowExpression, Map<Integer, String> inputs, Map<ColumnHandle, String> columns, LiteralEncoder literalEncoder,
+    public static Optional<Expression> translate(RowExpression rowExpression, List<Symbol> inputs, Map<ColumnHandle, String> columns, LiteralEncoder literalEncoder,
             FunctionRegistry functionRegistry)
     {
         return rowExpression.accept(new Visitor(inputs, columns, literalEncoder, functionRegistry), null);
@@ -58,12 +59,12 @@ public class RowExpressionToSqlTranslator
     public static class Visitor
             implements RowExpressionVisitor<Optional<Expression>, Void>
     {
-        private final Map<Integer, String> inputs;
+        private final List<Symbol> inputs;
         private final Map<ColumnHandle, String> columns;
         private final LiteralEncoder literalEncoder;
         private final FunctionRegistry functionRegistry;
 
-        public Visitor(Map<Integer, String> inputs, Map<ColumnHandle, String> columns, LiteralEncoder literalEncoder, FunctionRegistry functionRegistry)
+        public Visitor(List<Symbol> inputs, Map<ColumnHandle, String> columns, LiteralEncoder literalEncoder, FunctionRegistry functionRegistry)
         {
             this.inputs = inputs;
             this.columns = columns;
@@ -95,7 +96,8 @@ public class RowExpressionToSqlTranslator
             }
             else if (call.getSignature().getName().equalsIgnoreCase("IN")) {
                 return Optional.of(new InListExpression(arguments));
-            } else if (call.getSignature().getName().equalsIgnoreCase("IF")) {
+            }
+            else if (call.getSignature().getName().equalsIgnoreCase("IF")) {
                 return Optional.of(new IfExpression(arguments.get(0), arguments.get(1), arguments.get(2)));
             }
 
@@ -149,8 +151,8 @@ public class RowExpressionToSqlTranslator
         @Override
         public Optional<Expression> visitInputReference(InputReferenceExpression reference, Void context)
         {
-            checkArgument(inputs.containsKey(reference.getField()), "field not found.");
-            return Optional.of(new SymbolReference(inputs.get(reference.getField())));
+            checkArgument(reference.getField() < inputs.size(), "field not found.");
+            return Optional.of(inputs.get(reference.getField()).toSymbolReference());
         }
 
         @Override

@@ -278,7 +278,7 @@ public class PickTableLayout
                 return Result.empty();
             }
 
-            Optional<Relation> result = metadata.optimize(context.getSession(), tableScanNode.get().getTable().getConnectorId(), relation.get());
+//            Optional<Relation> result = metadata.optimize(context.getSession(), tableScanNode.get().getTable().getConnectorId(), relation.get());
 
             Optional<PlanNode> planNode = new PlanGenerator(
 //                    tableScanNode.get().getTable().getConnectorId(),

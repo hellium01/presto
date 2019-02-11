@@ -118,7 +118,7 @@ public class TestRowExpressionRewriter
         RowExpression rowExpression = translateAndOptimize2(expression, SCALAR,
                 ImmutableMap.of(new Symbol("c1"), BIGINT, new Symbol("c2"), BIGINT, new Symbol("c3"), VARCHAR),
                 columns);
-        Optional<Expression> expression1 = RowExpressionToSqlTranslator.translate(rowExpression, ImmutableMap.of(), columnReverse, literalEncoder, metadata.getFunctionRegistry());
+        Optional<Expression> expression1 = RowExpressionToSqlTranslator.translate(rowExpression, ImmutableList.of(), columnReverse, literalEncoder, metadata.getFunctionRegistry());
         assertTrue(expression1.isPresent());
     }
 

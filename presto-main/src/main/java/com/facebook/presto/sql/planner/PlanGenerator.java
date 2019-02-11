@@ -76,21 +76,15 @@ public class PlanGenerator
 
     private static class Context
     {
-        Map<Integer, String> outputChannels;
 
-        public Context(Map<Integer, String> outputChannels)
-        {
-            this.outputChannels = outputChannels;
-        }
+        private List<Symbol> outputChannels;
 
         public Context(List<Symbol> outputChannels)
         {
-            this.outputChannels = IntStream.range(0, outputChannels.size())
-                    .boxed()
-                    .collect(toMap(i -> i, i -> outputChannels.get(i).getName()));
+            this.outputChannels = ImmutableList.copyOf(outputChannels);
         }
 
-        public Map<Integer, String> getOutput()
+        public List<Symbol> getOutput()
         {
             return outputChannels;
         }
@@ -109,7 +103,7 @@ public class PlanGenerator
         @Override
         protected Optional<PlanNode> visitProject(Project project, Context context)
         {
-            Map<Integer, String> inputChannelNames = getInputChannels(project);
+            List<Symbol> inputChannelNames = getInputChannels(project);
             Optional<PlanNode> child = project.getSource().accept(this, new Context(inputChannelNames));
 
             if (child.isPresent()) {
@@ -123,24 +117,25 @@ public class PlanGenerator
                     return Optional.empty();
                 }
                 IntStream.range(0, assignments.size()).boxed()
-                        .forEach(i -> builder.put(new Symbol(context.getOutput().get(i)), assignments.get(i)));
+                        .forEach(i -> builder.put(context.getOutput().get(i), assignments.get(i)));
                 return Optional.of(new ProjectNode(idAllocator.getNextId(), child.get(), builder.build()));
             }
             return Optional.empty();
         }
 
-        private Map<Integer, String> getInputChannels(UnaryNode node)
+        private List<Symbol> getInputChannels(UnaryNode node)
         {
             // First if expression is InputReference use output name
             return IntStream.range(0, node.getSource().getOutput().size())
                     .boxed()
-                    .collect(toMap(i -> i, i ->
+                    .map(i ->
                             symbolAllocator.newSymbol(
                                     getNameHint(node.getSource().getOutput().get(i)),
-                                    node.getSource().getOutput().get(i).getType()).getName()));
+                                    node.getSource().getOutput().get(i).getType()))
+                    .collect(toImmutableList());
         }
 
-        private Optional<Expression> translate(RowExpression rowExpression, Map<Integer, String> inputChannelNames)
+        private Optional<Expression> translate(RowExpression rowExpression, List<Symbol> inputChannelNames)
         {
             return RowExpressionToSqlTranslator.translate(rowExpression, inputChannelNames, ImmutableMap.of(), literalEncoder, functionRegistry);
         }
@@ -148,7 +143,7 @@ public class PlanGenerator
         @Override
         protected Optional<PlanNode> visitFilter(Filter filter, Context context)
         {
-            Map<Integer, String> inputChannelNames = getInputChannels(filter);
+            List<Symbol> inputChannelNames = getInputChannels(filter);
             Optional<PlanNode> child = filter.getSource().accept(this, context);
             if (child.isPresent()) {
                 Optional<Expression> predicate = translate(filter.getPredicate(), inputChannelNames);
@@ -163,8 +158,8 @@ public class PlanGenerator
         protected Optional<PlanNode> visitAggregate(Aggregate aggregate, Context context)
         {
             // TODO make the output ... etc. correct
-            Map<Integer, String> outputChannelNames = context.getOutput();
-            Map<Integer, String> inputChannelNames = getInputChannels(aggregate);
+            List<Symbol> outputChannelNames = context.getOutput();
+            List<Symbol> inputChannelNames = getInputChannels(aggregate);
             Optional<PlanNode> child = aggregate.getSource().accept(this, new Context(inputChannelNames));
             if (!child.isPresent()) {
                 return Optional.empty();
@@ -180,7 +175,7 @@ public class PlanGenerator
                         .stream()
                         .collect(
                                 toMap(i -> i,
-                                        i -> symbolAllocator.newSymbol(inputChannelNames.get(i), aggregate.getSource().getOutput().get(i).getType(), "gid")));
+                                        i -> symbolAllocator.newSymbol(inputChannelNames.get(i).getName(), aggregate.getSource().getOutput().get(i).getType(), "gid")));
                 List<List<Symbol>> groupingSets = aggregate.getGroupSets()
                         .stream()
                         .map(set -> set.stream().map(i -> groupingChannelName.get(i)).collect(toImmutableList()))
@@ -188,11 +183,11 @@ public class PlanGenerator
                 List<Symbol> aggregateColumns = IntStream.range(0, child.get().getOutputSymbols().size())
                         .boxed()
                         .filter(i -> !groupingChannelName.containsKey(i))
-                        .map(i -> new Symbol(inputChannelNames.get(i)))
+                        .map(i -> inputChannelNames.get(i))
                         .collect(Collectors.toList());
                 Map<Symbol, Symbol> groupingColumnNames = groupingChannelName.entrySet()
                         .stream()
-                        .collect(toMap(entry -> entry.getValue(), entry -> new Symbol(inputChannelNames.get(entry.getKey()))));
+                        .collect(toMap(entry -> entry.getValue(), entry -> inputChannelNames.get(entry.getKey())));
                 child = Optional.of(
                         new GroupIdNode(
                                 idAllocator.getNextId(),
@@ -218,7 +213,7 @@ public class PlanGenerator
                                 .filter(InputReferenceExpression.class::isInstance)
                                 .map(InputReferenceExpression.class::cast)
                                 .map(InputReferenceExpression::getField)
-                                .map(i -> new Symbol(inputChannelNames.get(i)))
+                                .map(i -> inputChannelNames.get(i))
                                 .collect(toImmutableList()),
                         aggregate.getGroupSets().size(),
                         ImmutableSet.of());
@@ -250,21 +245,19 @@ public class PlanGenerator
         protected Optional<PlanNode> visitTableScan(TableScan tableScan, Context context)
         {
             //TODO clean up the code here
+            List<Symbol> outputChannelNames = context.getOutput();
             List<ColumnHandle> columnHandles = tableScan.getOutput().stream()
                     .filter(outputColumn -> outputColumn instanceof ColumnReferenceExpression)
                     .map(outputColumn -> ((ColumnReferenceExpression) outputColumn).getColumnHandle())
                     .collect(Collectors.toList());
             checkArgument(columnHandles.size() == tableScan.getOutput().size(), "tableScan must contains all columnHandle");
-            List<Symbol> outputColumnNames = tableScan.getOutput().stream()
-                    .map(rowExpression -> symbolAllocator.newSymbol(getNameHint(rowExpression), rowExpression.getType()))
-                    .collect(toImmutableList());
             Map<Symbol, ColumnHandle> columnHandleMap = IntStream.range(0, columnHandles.size())
                     .boxed()
-                    .collect(toMap(i -> outputColumnNames.get(i), i -> columnHandles.get(i)));
+                    .collect(toMap(i -> outputChannelNames.get(i), i -> columnHandles.get(i)));
             return Optional.of(new TableScanNode(
                     idAllocator.getNextId(),
                     new TableHandle(connectorId, tableScan.getTableHandle()),
-                    outputColumnNames,
+                    outputChannelNames,
                     columnHandleMap));
         }
 
