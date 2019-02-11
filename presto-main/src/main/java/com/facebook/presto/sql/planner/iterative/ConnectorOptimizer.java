@@ -142,6 +142,10 @@ public class ConnectorOptimizer
                         Optional<PlanNode> rewrittenPlanNode = context.generator.toPlan(connectorId, rewritten.get(), node.getOutputSymbols());
                         checkArgument(rewrittenPlanNode.isPresent(), "Rewrite rule should return something that can be converted back to plan");
                         node = context.memo.replace(group, rewrittenPlanNode.get(), format("%s - %s", connectorId, rule.getClass().getName()));
+                        relation = context.relationTranslator.translate(node);
+                        if (!relation.isPresent()) {
+                            return false;
+                        }
                         done = false;
                         progress = true;
                     }
