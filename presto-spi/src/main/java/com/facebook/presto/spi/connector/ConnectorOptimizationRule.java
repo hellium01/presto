@@ -24,5 +24,5 @@ public interface ConnectorOptimizationRule
 
     boolean match(ConnectorSession session, Relation relation);
 
-    Optional<Relation> optimize(Relation relation);
+    Optional<Relation> optimize(ConnectorSession session, Relation relation);
 }

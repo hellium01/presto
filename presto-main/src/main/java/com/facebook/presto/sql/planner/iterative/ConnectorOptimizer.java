@@ -137,7 +137,7 @@ public class ConnectorOptimizer
             for (ConnectorOptimizationRule rule : ruleManager.getRules(connectorId)) {
                 context.checkTimeoutNotExhausted();
                 if (rule.enabled(connectorSession) && rule.match(connectorSession, relation.get())) {
-                    Optional<Relation> rewritten = rule.optimize(relation.get());
+                    Optional<Relation> rewritten = rule.optimize(connectorSession, relation.get());
                     if (rewritten.isPresent()) {
                         Optional<PlanNode> rewrittenPlanNode = context.generator.toPlan(context.session, connectorId, rewritten.get(), node.getOutputSymbols());
                         checkArgument(rewrittenPlanNode.isPresent(), "Rewrite rule should return something that can be converted back to plan");

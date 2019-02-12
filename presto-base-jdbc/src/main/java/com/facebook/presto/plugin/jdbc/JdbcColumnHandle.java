@@ -123,6 +123,7 @@ public final class JdbcColumnHandle
                 .add("columnName", columnName)
                 .add("jdbcTypeHandle", jdbcTypeHandle)
                 .add("columnType", columnType)
+                .add("sqlCommand", sqlCommand)
                 .toString();
     }
 }

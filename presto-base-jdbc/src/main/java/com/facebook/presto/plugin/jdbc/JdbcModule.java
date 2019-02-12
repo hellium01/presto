@@ -14,6 +14,7 @@
 package com.facebook.presto.plugin.jdbc;
 
 import com.facebook.presto.spi.connector.ConnectorAccessControl;
+import com.facebook.presto.spi.connector.ConnectorContext;
 import com.facebook.presto.spi.procedure.Procedure;
 import com.google.inject.Binder;
 import com.google.inject.Module;
@@ -28,10 +29,12 @@ public class JdbcModule
         implements Module
 {
     private final String connectorId;
+    private final ConnectorContext context;
 
-    public JdbcModule(String connectorId)
+    public JdbcModule(String connectorId, ConnectorContext context)
     {
         this.connectorId = requireNonNull(connectorId, "connector id is null");
+        this.context = requireNonNull(context, "context is null");
     }
 
     @Override
@@ -44,7 +47,7 @@ public class JdbcModule
         binder.bind(JdbcSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(JdbcRecordSetProvider.class).in(Scopes.SINGLETON);
         binder.bind(JdbcPageSinkProvider.class).in(Scopes.SINGLETON);
-        binder.bind(JdbcConnetorRuleProvider.class).in(Scopes.SINGLETON);
+        binder.bind(JdbcConnetorRuleProvider.class).toInstance(new JdbcConnetorRuleProvider(connectorId, context));
         binder.bind(JdbcConnector.class).in(Scopes.SINGLETON);
         configBinder(binder).bindConfig(JdbcMetadataConfig.class);
     }

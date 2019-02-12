@@ -45,6 +45,13 @@ import static java.util.Objects.requireNonNull;
 public class ProjectPushdown
         implements ConnectorOptimizationRule
 {
+    private final String connectorId;
+
+    public ProjectPushdown(String connectorId)
+    {
+        this.connectorId = connectorId;
+    }
+
     @Override
     public boolean enabled(ConnectorSession session)
     {
@@ -60,7 +67,7 @@ public class ProjectPushdown
     }
 
     @Override
-    public Optional<Relation> optimize(Relation relation)
+    public Optional<Relation> optimize(ConnectorSession session, Relation relation)
     {
         Project project = (Project) relation;
         Optional<Filter> filter = project.getSource() instanceof Filter ? Optional.of((Filter) project.getSource()) : Optional.empty();
@@ -71,13 +78,15 @@ public class ProjectPushdown
                 .count() == tableScan.getOutput().size();
         checkArgument(allColumnOutput, "tableScan must has all output as column reference");
 
+        // rewrite from channel to column to be able to push down to tableScan
         List<RowExpression> rowExpressions = project.getOutput().stream()
                 .map(rowExpression -> rewriteInput(rowExpression, tableScan.getOutput()))
                 .collect(Collectors.toList());
         CalculatedColumnIdAllocator idAllocator = new CalculatedColumnIdAllocator();
 
+        // rewrite, leftover will be used in
         List<Result> results = rowExpressions.stream()
-                .map(rowExpression -> getProjectRewriter("mysql", idAllocator).rewrite(rowExpression))
+                .map(rowExpression -> getProjectRewriter(connectorId, idAllocator).rewrite(rowExpression))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(toImmutableList());
@@ -94,6 +103,8 @@ public class ProjectPushdown
                         .map(RowExpression.class::cast)
                         .collect(toImmutableList()),
                 tableScan.getConnectorTableLayoutHandle());
+
+        // covert back leftover from column reference to channel
         List<RowExpression> outputExpressions = results.stream()
                 .map(result -> rewriteColumns(result.getLeftOver(), columns))
                 .collect(Collectors.toList());
@@ -175,17 +186,6 @@ public class ProjectPushdown
         public List<ColumnReferenceExpression> getColumns()
         {
             return columns;
-        }
-    }
-
-    private static class CalculatedColumnIdAllocator
-    {
-        private int nextId;
-        private static String PREFIX = "calculated_";
-
-        public String getNextId()
-        {
-            return PREFIX + Integer.toString(nextId++);
         }
     }
 }

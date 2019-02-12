@@ -46,6 +46,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -133,13 +134,20 @@ public class PlanGenerator
 
         private List<Symbol> getInputChannels(UnaryNode node)
         {
+            return getInputChannels(node, ImmutableList.of());
+        }
+
+        private List<Symbol> getInputChannels(UnaryNode node, List<Symbol> knownInput)
+        {
             // First if expression is InputReference use output name
             return IntStream.range(0, node.getSource().getOutput().size())
                     .boxed()
                     .map(i ->
-                            symbolAllocator.newSymbol(
-                                    getNameHint(node.getSource().getOutput().get(i)),
-                                    node.getSource().getOutput().get(i).getType()))
+                            i < knownInput.size() ?
+                                    knownInput.get(i) :
+                                    symbolAllocator.newSymbol(
+                                            getNameHint(node.getSource().getOutput().get(i)),
+                                            node.getSource().getOutput().get(i).getType()))
                     .collect(toImmutableList());
         }
 
@@ -165,14 +173,13 @@ public class PlanGenerator
         @Override
         protected Optional<PlanNode> visitAggregate(Aggregate aggregate, Context context)
         {
-            // TODO make the output ... etc. correct
+            int numGroups = aggregate.getGroups().size();
             List<Symbol> outputChannelNames = context.getOutput();
-            List<Symbol> inputChannelNames = getInputChannels(aggregate);
+            List<Symbol> inputChannelNames = getInputChannels(aggregate, outputChannelNames.subList(0, numGroups));
             Optional<PlanNode> child = aggregate.getSource().accept(this, new Context(inputChannelNames));
             if (!child.isPresent()) {
                 return Optional.empty();
             }
-            int numGroups = aggregate.getGroups().size();
             AggregationNode.GroupingSetDescriptor groupingSetDescriptor;
             Optional<Symbol> groupIdSymbol = Optional.empty();
             if (aggregate.getGroupSets().size() > 1) {
@@ -209,7 +216,7 @@ public class PlanGenerator
                                         .filter(InputReferenceExpression.class::isInstance)
                                         .map(InputReferenceExpression.class::cast)
                                         .map(InputReferenceExpression::getField)
-                                        .map(i -> groupingChannelName.get(i)),
+                                        .map(i -> outputChannelNames.get(i)),
                                 Stream.of(groupIdSymbol.get())
                         ).collect(toImmutableList()),
                         aggregate.getGroupSets().size(),
@@ -221,22 +228,21 @@ public class PlanGenerator
                                 .filter(InputReferenceExpression.class::isInstance)
                                 .map(InputReferenceExpression.class::cast)
                                 .map(InputReferenceExpression::getField)
-                                .map(i -> inputChannelNames.get(i))
+                                .map(i -> outputChannelNames.get(i))
                                 .collect(toImmutableList()),
                         aggregate.getGroupSets().size(),
                         ImmutableSet.of());
             }
-            Map<Symbol, AggregationNode.Aggregation> aggregations = aggregate.getAggregations()
-                    .stream()
-                    .filter(CallExpression.class::isInstance)
-                    .map(CallExpression.class::cast)
-                    .collect(
-                            toMap(
-                                    rowExpression -> symbolAllocator.newSymbol(rowExpression.getSignature().getName(), rowExpression.getType()),
-                                    rowExpression -> new AggregationNode.Aggregation(
-                                            (FunctionCall) translate(rowExpression, inputChannelNames).get(),
-                                            rowExpression.getSignature(),
-                                            Optional.empty())));
+            Map<Symbol, AggregationNode.Aggregation> aggregations = new LinkedHashMap<>();
+            IntStream.range(0, aggregate.getAggregations().size())
+                    .boxed()
+                    .forEach(i -> aggregations.put(
+                            outputChannelNames.get(i + numGroups),
+                            new AggregationNode.Aggregation(
+                                    (FunctionCall) translate(aggregate.getAggregations().get(i), inputChannelNames).get(),
+                                    ((CallExpression) aggregate.getAggregations().get(i)).getSignature(),
+                                    Optional.empty())));
+
             return Optional.of(
                     new AggregationNode(
                             idAllocator.getNextId(),

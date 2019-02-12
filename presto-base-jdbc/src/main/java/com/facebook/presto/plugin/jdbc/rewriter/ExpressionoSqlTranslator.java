@@ -94,6 +94,17 @@ public class ExpressionoSqlTranslator
                         })
                         .add(function("and"), binaryFunction("AND"))
                         .add(function("or"), binaryFunction("OR"))
+                        .add(function("if"), (rewriter, callExpression) -> {
+                            List<RowExpression> arguments = callExpression.getArguments();
+                            checkArgument(arguments.size() == 3, "must has only 3 argument for IF");
+                            Optional<String> condition = rewriter.rewrite(arguments.get(0));
+                            Optional<String> trueValue = rewriter.rewrite(arguments.get(1));
+                            Optional<String> falseValue = rewriter.rewrite(arguments.get(2));
+                            if (condition.isPresent() && trueValue.isPresent() && falseValue.isPresent()) {
+                                return format("IF((%s),(%s),(%s))", condition.get(), trueValue.get(), falseValue.get());
+                            }
+                            return null;
+                        })
                         .add(operator(ADD), binaryFunction("+"))
                         .add(operator(SUBTRACT), binaryFunction("-"))
                         .add(operator(MULTIPLY), binaryFunction("*"))
@@ -107,15 +118,15 @@ public class ExpressionoSqlTranslator
                             checkArgument(arguments.size() == 1, "must has only 1 argument for cast");
                             Optional<String> value = rewriter.rewrite(callExpression.getArguments().get(0));
                             if (value.isPresent()) {
-                                return format("CAST(%s AS %s)", value.get(), "VARCHAR");
+                                return format("CAST(%s AS %s)", value.get(), toSqlType(fromPrestoType(callExpression.getType()).getJdbcType()));
                             }
                             return null;
                         })
                         .build(),
                 new ConstantRule.ListBuilder<String>()
-                        .add(BIGINT, object -> Optional.of(format("%s", object)))
-                        .add(INTEGER, object -> Optional.of(format("%s", object)))
-                        .add(VARCHAR, object -> Optional.of(format("\'%s\'", ((Slice) object).toStringUtf8())))
+                        .add(BIGINT, object -> object == null ? Optional.of("NULL") : Optional.of(format("%s", object)))
+                        .add(INTEGER, object -> object == null ? Optional.of("NULL") : Optional.of(format("%s", object)))
+                        .add(VARCHAR, object -> object == null ? Optional.of("NULL") : Optional.of(format("\'%s\'", ((Slice) object).toStringUtf8())))
                         .build(),
                 new ColumnRule.ListBuilder<String>()
                         .add(JdbcColumnHandle.class, columnHandle -> Optional.of(format("`%s`", ((JdbcColumnHandle) columnHandle).getColumnName())))
@@ -164,6 +175,19 @@ public class ExpressionoSqlTranslator
             return new JdbcTypeHandle(Types.VARCHAR, ((VarcharType) type).getLengthSafe(), 0);
         }
         throw new UnsupportedOperationException(format("Unsupported type: %s", type));
+    }
+
+    public static String toSqlType(int jdbcType)
+    {
+        switch (jdbcType) {
+            case Types.BIGINT:
+                return "BIGINT";
+            case Types.BOOLEAN:
+                return "BOOLEAN";
+            case Types.VARCHAR:
+                return "VARCHAR";
+        }
+        throw new UnsupportedOperationException(format("Unsupported jdbc type: %s", jdbcType));
     }
 
     public static class RewriteInput

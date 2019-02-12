@@ -16,30 +16,33 @@ package com.facebook.presto.plugin.jdbc;
 import com.facebook.presto.plugin.jdbc.rewriter.AggregationPushdown;
 import com.facebook.presto.plugin.jdbc.rewriter.PredicatePushdown;
 import com.facebook.presto.plugin.jdbc.rewriter.ProjectPushdown;
+import com.facebook.presto.spi.connector.ConnectorContext;
 import com.facebook.presto.spi.connector.ConnectorOptimizationRule;
 import com.facebook.presto.spi.connector.ConnectorRuleProvider;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
 
 import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 public class JdbcConnetorRuleProvider
         implements ConnectorRuleProvider
 {
-    private Set<ConnectorOptimizationRule> rules;
+    private final Set<ConnectorOptimizationRule> rules;
 
-    @Inject
-    public JdbcConnetorRuleProvider()
+    public JdbcConnetorRuleProvider(String connectorId, ConnectorContext context)
     {
-        this.rules = allRules();
+        requireNonNull(connectorId, "connectorId is null");
+        requireNonNull(context, "context is null");
+        this.rules = allRules(connectorId, context);
     }
 
-    private Set<ConnectorOptimizationRule> allRules()
+    private Set<ConnectorOptimizationRule> allRules(String connectorId, ConnectorContext context)
     {
         return new ImmutableSet.Builder()
                 .add(new PredicatePushdown())
-                .add(new ProjectPushdown())
-                .add(new AggregationPushdown())
+                .add(new ProjectPushdown(connectorId))
+                .add(new AggregationPushdown(connectorId, context.getTypeManager()))
                 .build();
     }
 

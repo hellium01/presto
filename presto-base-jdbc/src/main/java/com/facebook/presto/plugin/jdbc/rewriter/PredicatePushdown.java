@@ -56,7 +56,7 @@ public class PredicatePushdown
     }
 
     @Override
-    public Optional<Relation> optimize(Relation relation)
+    public Optional<Relation> optimize(ConnectorSession session, Relation relation)
     {
         checkArgument(relation instanceof Filter, "relation is not Filter");
         Filter filter = (Filter) relation;
@@ -68,7 +68,8 @@ public class PredicatePushdown
                     new JdbcTableLayoutHandle(
                             (JdbcTableHandle) tableScan.getTableHandle(),
                             TupleDomain.all(),
-                            Optional.of(Joiner.on(" AND ").join(result.get().getRewrittenSQL()))));
+                            Optional.of(Joiner.on(" AND ").join(result.get().getRewrittenSQL())),
+                            ImmutableList.of()));
             if (result.get().getLeftOver() != null) {
                 return Optional.of(new Filter(result.get().getLeftOver(), newTableScan));
             }

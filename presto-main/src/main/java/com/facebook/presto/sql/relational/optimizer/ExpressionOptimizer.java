@@ -15,11 +15,9 @@ package com.facebook.presto.sql.relational.optimizer;
 
 import com.facebook.presto.Session;
 import com.facebook.presto.metadata.FunctionRegistry;
-import com.facebook.presto.spi.function.Signature;
 import com.facebook.presto.operator.scalar.ScalarFunctionImplementation;
 import com.facebook.presto.spi.ConnectorSession;
-import com.facebook.presto.spi.type.TypeManager;
-import com.facebook.presto.spi.type.TypeSignature;
+import com.facebook.presto.spi.function.Signature;
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.ConstantExpression;
 import com.facebook.presto.spi.relation.InputReferenceExpression;
@@ -27,6 +25,8 @@ import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.RowExpressionVisitor;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+import com.facebook.presto.spi.type.TypeManager;
+import com.facebook.presto.spi.type.TypeSignature;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
@@ -73,9 +73,14 @@ public class ExpressionOptimizer
 
     public ExpressionOptimizer(FunctionRegistry registry, TypeManager typeManager, Session session)
     {
+        this(registry, typeManager, session.toConnectorSession());
+    }
+
+    public ExpressionOptimizer(FunctionRegistry registry, TypeManager typeManager, ConnectorSession session)
+    {
         this.registry = registry;
         this.typeManager = typeManager;
-        this.session = session.toConnectorSession();
+        this.session = session;
     }
 
     public RowExpression optimize(RowExpression expression)
