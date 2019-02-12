@@ -722,6 +722,21 @@ public class FunctionRegistry
             return match.get();
         }
 
+        if (parameterTypes.size() == 1 && !parameterTypes.get(0).hasDependency()) {
+            match = exactCandidates.stream()
+                    .map(SqlFunction::getSignature)
+                    .filter(signature ->
+                            signature.getKind() == AGGREGATE &&
+                                    getAggregateFunctionImplementation(signature)
+                                            .getIntermediateType()
+                                            .getTypeSignature()
+                                            .equals(parameterTypes.get(0).getTypeSignature()))
+                    .findAny();
+            if (match.isPresent()) {
+                return match.get();
+            }
+        }
+
         List<SqlFunction> genericCandidates = allCandidates.stream()
                 .filter(function -> !function.getSignature().getTypeVariableConstraints().isEmpty())
                 .collect(Collectors.toList());
