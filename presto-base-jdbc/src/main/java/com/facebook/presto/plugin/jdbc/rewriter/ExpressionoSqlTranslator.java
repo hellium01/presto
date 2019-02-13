@@ -81,6 +81,18 @@ public class ExpressionoSqlTranslator
                             }
                             return null;
                         })
+                        .add(function("concat"), (rewriter, callExpression) -> {
+                            List<RowExpression> arguments = callExpression.getArguments();
+                            List<String> results = arguments.stream()
+                                    .map(list -> rewriter.rewrite(list))
+                                    .filter(Optional::isPresent)
+                                    .map(Optional::get)
+                                    .collect(toImmutableList());
+                            if (results.size() == arguments.size()) {
+                                return format("concat(%s)", Joiner.on(",").join(results));
+                            }
+                            return null;
+                        })
                         .add(function("IN"), (rewriter, callExpression) -> {
                             List<RowExpression> arguments = callExpression.getArguments();
                             List<String> results = arguments.stream()
@@ -187,6 +199,8 @@ public class ExpressionoSqlTranslator
         switch (jdbcType) {
             case Types.BIGINT:
                 return "SIGNED INTEGER";
+            case Types.DOUBLE:
+                return "DECIMAL(50,0)";
             case Types.BOOLEAN:
                 return "BOOLEAN";
             case Types.VARCHAR:

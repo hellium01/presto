@@ -31,10 +31,14 @@ import java.sql.Statement;
 import java.util.Map;
 
 import static com.facebook.presto.plugin.mysql.MySqlQueryRunner.createMySqlQueryRunner;
+import static com.facebook.presto.spi.type.BigintType.BIGINT;
+import static com.facebook.presto.spi.type.DoubleType.DOUBLE;
 import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
+import static com.facebook.presto.testing.TestingConnectorSession.SESSION;
 import static com.facebook.presto.testing.TestingSession.testSessionBuilder;
 import static com.facebook.presto.testing.assertions.Assert.assertEquals;
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static io.airlift.testing.Assertions.assertEqualsIgnoreOrder;
 import static io.airlift.tpch.TpchTable.ORDERS;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -218,11 +222,17 @@ public class TestMySqlIntegrationSmokeTest
 //                        "GROUP BY 1, 3, c1");
         actual = computeActual(
                 "SELECT c1+c2,  sum(c4), IF(c1<c2, c3), \n" +
-                        "  COUNT(c3), sum(c3), avg(c4)\n" +
+                        "  COUNT(c3), sum(c2), avg(c4+c2), min(c5)\n" +
                         "FROM test_aggregation\n" +
-                        "WHERE c1 < 100 AND c1+c2 > 100 AND c3 IN ('test') AND c5 LIKE 'tes%'\n" +
+                        "WHERE c1 < 100 AND c1+c2 > 100 AND c3 || '1' IN ('test1') AND c5 LIKE 'tes%'\n" +
                         "GROUP BY 1, 3, c1");
         assertEquals(actual.getRowCount(), 3);
+        MaterializedResult expected = MaterializedResult.resultBuilder(SESSION, BIGINT, DOUBLE, VARCHAR, BIGINT, BIGINT, DOUBLE, VARCHAR)
+                .row(101L, 3.0, "test", 1L, 99L, 99+3.0, "test")
+                .row(101L, 7.0, "test", 3L, 300L, 100+7.0/3, "tes")
+                .row(102L, 2.0, "test", 1L, 100L, 102.0, "test")
+                .build();
+        assertEqualsIgnoreOrder(actual, expected);
         //Test like pushdown
         //Test avg --> yield Row(sum, count)
 

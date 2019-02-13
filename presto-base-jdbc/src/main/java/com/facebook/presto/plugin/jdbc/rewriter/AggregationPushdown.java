@@ -217,7 +217,7 @@ public class AggregationPushdown
                         jdbcTypeHandles = ImmutableList.of(fromPrestoType(intermediateType));
                     }
                     ColumnReferenceExpression column = new ColumnReferenceExpression(
-                            new JdbcColumnHandle(connectorId, idAllocator.getNextId(), oldColumn.getJdbcTypeHandle(), intermediateType, ImmutableList.of(format("sum(%s)", sqlCommand), "count(*)")),
+                            new JdbcColumnHandle(connectorId, idAllocator.getNextId(), jdbcTypeHandles, intermediateType, ImmutableList.of(format("sum(%s)", sqlCommand), "count(*)")),
                             intermediateType);
                     RowExpression rewrittenFunction = new CallExpression(call.getSignature(), call.getType(), ImmutableList.of(column));
 
