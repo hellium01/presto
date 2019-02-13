@@ -40,6 +40,7 @@ public class JdbcRecordCursor
     private static final Logger log = Logger.get(JdbcRecordCursor.class);
 
     private final JdbcColumnHandle[] columnHandles;
+    private final int[] columnOffset;
     private final BooleanReadFunction[] booleanReadFunctions;
     private final DoubleReadFunction[] doubleReadFunctions;
     private final LongReadFunction[] longReadFunctions;
@@ -56,39 +57,47 @@ public class JdbcRecordCursor
         this.jdbcClient = requireNonNull(jdbcClient, "jdbcClient is null");
 
         this.columnHandles = columnHandles.toArray(new JdbcColumnHandle[0]);
+        this.columnOffset = new int[columnHandles.size()];
+        int offset = 0;
+        for (int i = 0; i < columnHandles.size(); i++) {
+            columnOffset[i] = offset;
+            offset += columnHandles.get(i).getSqlCommand().isEmpty() ? 1 : columnHandles.get(i).getSqlCommand().size();
+        }
 
-        booleanReadFunctions = new BooleanReadFunction[columnHandles.size()];
-        doubleReadFunctions = new DoubleReadFunction[columnHandles.size()];
-        longReadFunctions = new LongReadFunction[columnHandles.size()];
-        sliceReadFunctions = new SliceReadFunction[columnHandles.size()];
+        booleanReadFunctions = new BooleanReadFunction[offset];
+        doubleReadFunctions = new DoubleReadFunction[offset];
+        longReadFunctions = new LongReadFunction[offset];
+        sliceReadFunctions = new SliceReadFunction[offset];
 
         for (int i = 0; i < this.columnHandles.length; i++) {
-            ReadMapping readMapping = jdbcClient.toPrestoType(session, columnHandles.get(i).getJdbcTypeHandle())
-                    .orElseThrow(() -> new VerifyException("Unsupported column type"));
-            Class<?> javaType = readMapping.getType().getJavaType();
-            ReadFunction readFunction = readMapping.getReadFunction();
+            for (int j = 0; j < columnHandles.get(i).getJdbcTypeHandle().size(); j++) {
+                ReadMapping readMapping = jdbcClient.toPrestoType(session, columnHandles.get(i).getJdbcTypeHandle().get(j))
+                        .orElseThrow(() -> new VerifyException("Unsupported column type"));
+                Class<?> javaType = readMapping.getType().getJavaType();
+                ReadFunction readFunction = readMapping.getReadFunction();
 
-            if (javaType == boolean.class) {
-                booleanReadFunctions[i] = (BooleanReadFunction) readFunction;
-            }
-            else if (javaType == double.class) {
-                doubleReadFunctions[i] = (DoubleReadFunction) readFunction;
-            }
-            else if (javaType == long.class) {
-                longReadFunctions[i] = (LongReadFunction) readFunction;
-            }
-            else if (javaType == Slice.class) {
-                sliceReadFunctions[i] = (SliceReadFunction) readFunction;
-            }
-            else {
-                throw new IllegalStateException(format("Unsupported java type %s", javaType));
+                if (javaType == boolean.class) {
+                    booleanReadFunctions[i] = (BooleanReadFunction) readFunction;
+                }
+                else if (javaType == double.class) {
+                    doubleReadFunctions[i] = (DoubleReadFunction) readFunction;
+                }
+                else if (javaType == long.class) {
+                    longReadFunctions[i] = (LongReadFunction) readFunction;
+                }
+                else if (javaType == Slice.class) {
+                    sliceReadFunctions[i] = (SliceReadFunction) readFunction;
+                }
+                else {
+                    throw new IllegalStateException(format("Unsupported java type %s", javaType));
+                }
             }
         }
 
         try {
             connection = jdbcClient.getConnection(split);
             statement = jdbcClient.buildSql(connection, split, columnHandles);
-            log.debug("Executing: %s", statement.toString());
+            log.info("Executing: %s", statement.toString());
             resultSet = statement.executeQuery();
         }
         catch (SQLException | RuntimeException e) {
@@ -134,7 +143,19 @@ public class JdbcRecordCursor
     {
         checkState(!closed, "cursor is closed");
         try {
-            return booleanReadFunctions[field].readBoolean(resultSet, field + 1);
+            return booleanReadFunctions[field].readBoolean(resultSet, columnOffset[field] + 1);
+        }
+        catch (SQLException | RuntimeException e) {
+            throw handleSqlException(e);
+        }
+    }
+
+    @Override
+    public boolean getBoolean(int field, int offset)
+    {
+        checkState(!closed, "cursor is closed");
+        try {
+            return booleanReadFunctions[field].readBoolean(resultSet, columnOffset[field] + offset + 1);
         }
         catch (SQLException | RuntimeException e) {
             throw handleSqlException(e);
@@ -146,7 +167,20 @@ public class JdbcRecordCursor
     {
         checkState(!closed, "cursor is closed");
         try {
-            return longReadFunctions[field].readLong(resultSet, field + 1);
+            return longReadFunctions[field].readLong(resultSet, columnOffset[field] + 1);
+        }
+        catch (SQLException | RuntimeException e) {
+            throw handleSqlException(e);
+        }
+    }
+
+    @Override
+    public long getLong(int field, int offset)
+    {
+        checkState(!closed, "cursor is closed");
+        try {
+            long value = longReadFunctions[field].readLong(resultSet, columnOffset[field] + offset + 1);
+            return value;
         }
         catch (SQLException | RuntimeException e) {
             throw handleSqlException(e);
@@ -158,7 +192,20 @@ public class JdbcRecordCursor
     {
         checkState(!closed, "cursor is closed");
         try {
-            return doubleReadFunctions[field].readDouble(resultSet, field + 1);
+            return doubleReadFunctions[field].readDouble(resultSet, columnOffset[field] + 1);
+        }
+        catch (SQLException | RuntimeException e) {
+            throw handleSqlException(e);
+        }
+    }
+
+    @Override
+    public double getDouble(int field, int offset)
+    {
+        checkState(!closed, "cursor is closed");
+        try {
+            double value = doubleReadFunctions[field].readDouble(resultSet, columnOffset[field] + offset + 1);
+            return value;
         }
         catch (SQLException | RuntimeException e) {
             throw handleSqlException(e);
@@ -170,7 +217,19 @@ public class JdbcRecordCursor
     {
         checkState(!closed, "cursor is closed");
         try {
-            return sliceReadFunctions[field].readSlice(resultSet, field + 1);
+            return sliceReadFunctions[field].readSlice(resultSet, columnOffset[field] + 1);
+        }
+        catch (SQLException | RuntimeException e) {
+            throw handleSqlException(e);
+        }
+    }
+
+    @Override
+    public Slice getSlice(int field, int offset)
+    {
+        checkState(!closed, "cursor is closed");
+        try {
+            return sliceReadFunctions[field].readSlice(resultSet, columnOffset[field] + offset + 1);
         }
         catch (SQLException | RuntimeException e) {
             throw handleSqlException(e);
@@ -193,7 +252,26 @@ public class JdbcRecordCursor
             // JDBC is kind of dumb: we need to read the field and then ask
             // if it was null, which means we are wasting effort here.
             // We could save the result of the field access if it matters.
-            resultSet.getObject(field + 1);
+            resultSet.getObject(columnOffset[field] + 1);
+
+            return resultSet.wasNull();
+        }
+        catch (SQLException | RuntimeException e) {
+            throw handleSqlException(e);
+        }
+    }
+
+    @Override
+    public boolean isNull(int field, int offset)
+    {
+        checkState(!closed, "cursor is closed");
+        checkArgument(field < columnHandles.length, "Invalid field index");
+
+        try {
+            // JDBC is kind of dumb: we need to read the field and then ask
+            // if it was null, which means we are wasting effort here.
+            // We could save the result of the field access if it matters.
+            resultSet.getObject(columnOffset[field] + offset + 1);
 
             return resultSet.wasNull();
         }

@@ -31,7 +31,7 @@ public final class JdbcColumnHandle
 {
     private final String connectorId;
     private final String columnName;
-    private final JdbcTypeHandle jdbcTypeHandle;
+    private final List<JdbcTypeHandle> jdbcTypeHandle;
     private final Type columnType;
     private final List<String> sqlCommand;
 
@@ -39,7 +39,7 @@ public final class JdbcColumnHandle
     public JdbcColumnHandle(
             @JsonProperty("connectorId") String connectorId,
             @JsonProperty("columnName") String columnName,
-            @JsonProperty("jdbcTypeHandle") JdbcTypeHandle jdbcTypeHandle,
+            @JsonProperty("jdbcTypeHandle") List<JdbcTypeHandle> jdbcTypeHandle,
             @JsonProperty("columnType") Type columnType,
             @JsonProperty("sqlCommand") List<String> sqlCommand)
     {
@@ -57,7 +57,7 @@ public final class JdbcColumnHandle
             Type columnType)
 
     {
-        this(connectorId, columnName, jdbcTypeHandle, columnType, ImmutableList.of());
+        this(connectorId, columnName, ImmutableList.of(jdbcTypeHandle), columnType, ImmutableList.of());
     }
 
     @JsonProperty
@@ -73,7 +73,7 @@ public final class JdbcColumnHandle
     }
 
     @JsonProperty
-    public JdbcTypeHandle getJdbcTypeHandle()
+    public List<JdbcTypeHandle> getJdbcTypeHandle()
     {
         return jdbcTypeHandle;
     }

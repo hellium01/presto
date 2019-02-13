@@ -198,7 +198,17 @@ public class TestMySqlIntegrationSmokeTest
                 "c4 double,\n" +
                 "c5 varchar(100))");
         assertUpdate("INSERT INTO test_aggregation VALUES\n" +
-                " (1, 100, 'test', 1.0, 'test')", 1);
+                        "(1, 100, 'test', 1.0, 'test'),\n" +
+                        "(1, 100, 'test', 3.0, 'test'),\n" +
+                        "(1, 100, 'test', 3.0, 'tes'),\n" +
+                        "(1, 100, 'test', 3.0, 'tets'),\n" +
+                        "(2, 99, 'test', 3.0, 'test'),\n" +
+                        "(2, 100, 'test', 2.0, 'test'),\n" +
+                        "(3, 10, 'ignored', 2.0, 'test'),\n" +
+                        "(101, 10, 'ignored', 2.0, 'test'),\n" +
+                        "(101, -10, 'test', 2.0, 'test'),\n" +
+                        "(4, 100, 'ignored', 2.0, 'ignored')\n",
+                10);
         MaterializedResult actual;
 //                actual = computeActual(
 //                "SELECT c1+c2,  sum(c4), IF(c1>c2, c3), avg(c4), \n" +
@@ -207,11 +217,22 @@ public class TestMySqlIntegrationSmokeTest
 //                        "WHERE c1 > 100 AND c1+c2 > 100 AND c3 IN ('test')\n" +
 //                        "GROUP BY 1, 3, c1");
         actual = computeActual(
-                "SELECT c1+c2,  sum(c4), IF(c1>c2, c3), avg(c4), \n" +
-                        "  count(c3), sum(c4) FILTER (WHERE c1 > 1)\n" +
+                "SELECT c1+c2,  sum(c4), IF(c1<c2, c3), \n" +
+                        "  COUNT(c3), sum(c3), avg(c4)\n" +
                         "FROM test_aggregation\n" +
-                        "WHERE c1 > 100 AND c1+c2 > 100 AND c3 IN ('test')\n" +
+                        "WHERE c1 < 100 AND c1+c2 > 100 AND c3 IN ('test') AND c5 LIKE 'tes%'\n" +
                         "GROUP BY 1, 3, c1");
+        assertEquals(actual.getRowCount(), 3);
+        //Test like pushdown
+        //Test avg --> yield Row(sum, count)
+
+//        actual = computeActual(
+//                "SELECT c1+c2,  sum(c4), IF(c1>c2, c3), avg(c4), \n" +
+//                        "  count(c3), sum(c4) FILTER (WHERE c1 > 1)\n" +
+//                        "FROM test_aggregation\n" +
+//                        "WHERE c1 > 100 AND c1+c2 > 100 AND c3 IN ('test')\n" +
+//                        "GROUP BY 1, 3, c1");
+
 //        actual = computeActual(
 //                "SELECT c1+c2,  sum(c4), IF(c1>c2, c3), approx_distinct(c5), \n" +
 //                        " array_agg(c4 order by c1), count(c3), sum(c4) FILTER (WHERE c1 > 1)\n" +

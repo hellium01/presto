@@ -31,15 +31,45 @@ public interface RecordCursor
 
     boolean getBoolean(int field);
 
+    default boolean getBoolean(int field, int rowOffset)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     long getLong(int field);
+
+    default long getLong(int field, int rowOffset)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     double getDouble(int field);
 
+    default double getDouble(int field, int rowOffset)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     Slice getSlice(int field);
+
+    default Slice getSlice(int field, int rowOffset)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     Object getObject(int field);
 
+    default Object getObject(int field, int rowOffset)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     boolean isNull(int field);
+
+    default boolean isNull(int field, int rowOffset)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     default long getSystemMemoryUsage()
     {

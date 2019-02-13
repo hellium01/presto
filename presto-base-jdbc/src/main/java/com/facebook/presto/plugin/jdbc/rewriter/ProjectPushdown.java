@@ -14,6 +14,7 @@
 package com.facebook.presto.plugin.jdbc.rewriter;
 
 import com.facebook.presto.plugin.jdbc.JdbcColumnHandle;
+import com.facebook.presto.plugin.jdbc.JdbcTypeHandle;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.connector.ConnectorOptimizationRule;
@@ -25,6 +26,7 @@ import com.facebook.presto.spi.relation.Project;
 import com.facebook.presto.spi.relation.Relation;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.TableScan;
+import com.facebook.presto.spi.type.RowType;
 import com.facebook.presto.spi.type.Type;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -133,10 +135,21 @@ public class ProjectPushdown
                     Optional<String> rewritten = translateToSQL(rowExpression);
                     if (rewritten.isPresent()) {
                         Type type = rowExpression.getType();
+                        List<JdbcTypeHandle> jdbcTypeHandles;
+                        if (type instanceof RowType) {
+                            jdbcTypeHandles = ((RowType) type).getFields()
+                                    .stream()
+                                    .map(RowType.Field::getType)
+                                    .map(ExpressionoSqlTranslator::fromPrestoType)
+                                    .collect(toImmutableList());
+                        }
+                        else {
+                            jdbcTypeHandles = ImmutableList.of(fromPrestoType(type));
+                        }
                         ColumnHandle handle = new JdbcColumnHandle(
                                 connectorId,
                                 idAllocator.getNextId(),
-                                fromPrestoType(type),
+                                jdbcTypeHandles,
                                 type,
                                 Splitter.on(";").splitToList(rewritten.get()));
                         ColumnReferenceExpression columnReference = new ColumnReferenceExpression(handle, type);

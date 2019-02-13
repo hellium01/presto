@@ -14,6 +14,9 @@
 package com.facebook.presto.spi;
 
 import com.facebook.presto.spi.block.BlockBuilder;
+import com.facebook.presto.spi.block.RowBlockBuilder;
+import com.facebook.presto.spi.block.SingleRowBlockWriter;
+import com.facebook.presto.spi.type.RowType;
 import com.facebook.presto.spi.type.Type;
 import io.airlift.slice.Slice;
 
@@ -103,23 +106,7 @@ public class RecordPageSource
                     }
                     else {
                         Type type = types.get(column);
-                        Class<?> javaType = type.getJavaType();
-                        if (javaType == boolean.class) {
-                            type.writeBoolean(output, cursor.getBoolean(column));
-                        }
-                        else if (javaType == long.class) {
-                            type.writeLong(output, cursor.getLong(column));
-                        }
-                        else if (javaType == double.class) {
-                            type.writeDouble(output, cursor.getDouble(column));
-                        }
-                        else if (javaType == Slice.class) {
-                            Slice slice = cursor.getSlice(column);
-                            type.writeSlice(output, slice, 0, slice.length());
-                        }
-                        else {
-                            type.writeObject(output, cursor.getObject(column));
-                        }
+                        writeColumn(output, type, column, 0);
                     }
                 }
             }
@@ -134,5 +121,62 @@ public class RecordPageSource
         pageBuilder.reset();
 
         return page;
+    }
+
+    private void writeColumn(BlockBuilder output, Type type, int columnIdx, int offset)
+    {
+        if (type instanceof RowType) {
+            SingleRowBlockWriter rowWriter = ((RowBlockBuilder) output).beginBlockEntry();
+            List<RowType.Field> fields = ((RowType) type).getFields();
+            for (int i = 0; i < fields.size(); i++) {
+                writeColumn(rowWriter, fields.get(i).getType(), columnIdx, offset + i);
+            }
+            output.closeEntry();
+        }
+        else if (output instanceof SingleRowBlockWriter) {
+            if (cursor.isNull(columnIdx, offset)) {
+                output.appendNull();
+            }
+
+            Class<?> javaType = type.getJavaType();
+            if (javaType == boolean.class) {
+                type.writeBoolean(output, cursor.getBoolean(columnIdx, offset));
+            }
+            else if (javaType == long.class) {
+                type.writeLong(output, cursor.getLong(columnIdx, offset));
+            }
+            else if (javaType == double.class) {
+                type.writeDouble(output, cursor.getDouble(columnIdx, offset));
+            }
+            else if (javaType == Slice.class) {
+                Slice slice = cursor.getSlice(columnIdx, offset);
+                type.writeSlice(output, slice, 0, slice.length());
+            }
+            else {
+                type.writeObject(output, cursor.getObject(columnIdx, offset));
+            }
+        }
+        else {
+            if (cursor.isNull(columnIdx)) {
+                output.appendNull();
+            }
+            Class<?> javaType = type.getJavaType();
+            if (javaType == boolean.class) {
+                type.writeBoolean(output, cursor.getBoolean(columnIdx));
+            }
+            else if (javaType == long.class) {
+                type.writeLong(output, cursor.getLong(columnIdx));
+            }
+            else if (javaType == double.class) {
+                type.writeDouble(output, cursor.getDouble(columnIdx));
+            }
+            else if (javaType == Slice.class) {
+                Slice slice = cursor.getSlice(columnIdx);
+                type.writeSlice(output, slice, 0, slice.length());
+            }
+            else {
+                type.writeObject(output, cursor.getObject(columnIdx));
+            }
+        }
     }
 }

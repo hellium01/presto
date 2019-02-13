@@ -18,6 +18,7 @@ import com.facebook.presto.metadata.MetadataManager;
 import com.facebook.presto.operator.aggregation.InternalAggregationFunction;
 import com.facebook.presto.plugin.jdbc.JdbcColumnHandle;
 import com.facebook.presto.plugin.jdbc.JdbcTableLayoutHandle;
+import com.facebook.presto.plugin.jdbc.JdbcTypeHandle;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.connector.ConnectorOptimizationRule;
@@ -31,6 +32,7 @@ import com.facebook.presto.spi.relation.Project;
 import com.facebook.presto.spi.relation.Relation;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.TableScan;
+import com.facebook.presto.spi.type.RowType;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.TypeManager;
 import com.facebook.presto.sql.relational.optimizer.ExpressionOptimizer;
@@ -203,8 +205,19 @@ public class AggregationPushdown
                         sqlCommand = oldColumn.getSqlCommand().get(0);
                     }
 
+                    List<JdbcTypeHandle> jdbcTypeHandles;
+                    if (intermediateType instanceof RowType) {
+                        jdbcTypeHandles = ((RowType) intermediateType).getFields()
+                                .stream()
+                                .map(RowType.Field::getType)
+                                .map(ExpressionoSqlTranslator::fromPrestoType)
+                                .collect(toImmutableList());
+                    }
+                    else {
+                        jdbcTypeHandles = ImmutableList.of(fromPrestoType(intermediateType));
+                    }
                     ColumnReferenceExpression column = new ColumnReferenceExpression(
-                            new JdbcColumnHandle(connectorId, idAllocator.getNextId(), oldColumn.getJdbcTypeHandle(), intermediateType, ImmutableList.of(format("sum(%s)", sqlCommand), "count(*")),
+                            new JdbcColumnHandle(connectorId, idAllocator.getNextId(), oldColumn.getJdbcTypeHandle(), intermediateType, ImmutableList.of(format("sum(%s)", sqlCommand), "count(*)")),
                             intermediateType);
                     RowExpression rewrittenFunction = new CallExpression(call.getSignature(), call.getType(), ImmutableList.of(column));
 
@@ -226,12 +239,23 @@ public class AggregationPushdown
                         checkArgument(oldColumn.getSqlCommand().size() == 1, "Must has only one column for avg");
                         sqlCommand = oldColumn.getSqlCommand().get(0);
                     }
-
+                    Type type = call.getType();
+                    List<JdbcTypeHandle> jdbcTypeHandles;
+                    if (type instanceof RowType) {
+                        jdbcTypeHandles = ((RowType) type).getFields()
+                                .stream()
+                                .map(RowType.Field::getType)
+                                .map(ExpressionoSqlTranslator::fromPrestoType)
+                                .collect(toImmutableList());
+                    }
+                    else {
+                        jdbcTypeHandles = ImmutableList.of(fromPrestoType(type));
+                    }
                     ColumnReferenceExpression column = new ColumnReferenceExpression(
                             new JdbcColumnHandle(
                                     connectorId,
                                     idAllocator.getNextId(),
-                                    fromPrestoType(call.getType()),
+                                    jdbcTypeHandles,
                                     intermediateType,
                                     ImmutableList.of(format("count(%s)", sqlCommand))),
                             intermediateType);

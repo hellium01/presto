@@ -47,6 +47,7 @@ public class JdbcModule
         binder.bind(JdbcSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(JdbcRecordSetProvider.class).in(Scopes.SINGLETON);
         binder.bind(JdbcPageSinkProvider.class).in(Scopes.SINGLETON);
+        binder.bind(JdbcPageSourceProvider.class).in(Scopes.SINGLETON);
         binder.bind(JdbcConnetorRuleProvider.class).toInstance(new JdbcConnetorRuleProvider(connectorId, context));
         binder.bind(JdbcConnector.class).in(Scopes.SINGLETON);
         configBinder(binder).bindConfig(JdbcMetadataConfig.class);

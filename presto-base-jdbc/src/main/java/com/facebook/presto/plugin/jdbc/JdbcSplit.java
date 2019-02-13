@@ -37,6 +37,7 @@ public class JdbcSplit
     private final String tableName;
     private final TupleDomain<ColumnHandle> tupleDomain;
     private final Optional<String> additionalPredicate;
+    private final List<ColumnHandle> groupingKeys;
 
     @JsonCreator
     public JdbcSplit(
@@ -45,7 +46,8 @@ public class JdbcSplit
             @JsonProperty("schemaName") @Nullable String schemaName,
             @JsonProperty("tableName") String tableName,
             @JsonProperty("tupleDomain") TupleDomain<ColumnHandle> tupleDomain,
-            @JsonProperty("additionalProperty") Optional<String> additionalPredicate)
+            @JsonProperty("additionalPredicate") Optional<String> additionalPredicate,
+            @JsonProperty("groupingkeys") List<ColumnHandle> groupingKeys)
     {
         this.connectorId = requireNonNull(connectorId, "connector id is null");
         this.catalogName = catalogName;
@@ -53,6 +55,7 @@ public class JdbcSplit
         this.tableName = requireNonNull(tableName, "table name is null");
         this.tupleDomain = requireNonNull(tupleDomain, "tupleDomain is null");
         this.additionalPredicate = requireNonNull(additionalPredicate, "additionalPredicate is null");
+        this.groupingKeys = requireNonNull(groupingKeys, "groupingKeys is null");
     }
 
     @JsonProperty
@@ -91,6 +94,12 @@ public class JdbcSplit
     public Optional<String> getAdditionalPredicate()
     {
         return additionalPredicate;
+    }
+
+    @JsonProperty
+    public List<ColumnHandle> getGroupingKeys()
+    {
+        return groupingKeys;
     }
 
     @Override

@@ -34,6 +34,7 @@ import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.VarcharType;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.airlift.slice.Slice;
 import org.joda.time.DateTimeZone;
 
@@ -46,13 +47,18 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.facebook.presto.spi.type.DateTimeEncoding.unpackMillisUtc;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.collect.ImmutableList.builder;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.lang.Float.intBitsToFloat;
+import static java.lang.String.format;
 import static java.util.Collections.nCopies;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.DAYS;
@@ -102,14 +108,14 @@ public class QueryBuilder
             String table,
             List<JdbcColumnHandle> columns,
             TupleDomain<ColumnHandle> tupleDomain,
-            Optional<String> additionalPredicate)
+            Optional<String> additionalPredicate,
+            List<ColumnHandle> groupingKeys)
             throws SQLException
     {
         StringBuilder sql = new StringBuilder();
 
         String columnNames = columns.stream()
-                .map(JdbcColumnHandle::getColumnName)
-                .map(this::quote)
+                .map(this::getSqlColumn)
                 .collect(joining(", "));
 
         sql.append("SELECT ");
@@ -139,6 +145,27 @@ public class QueryBuilder
         if (!clauses.isEmpty()) {
             sql.append(" WHERE ")
                     .append(Joiner.on(" AND ").join(clauses));
+        }
+        if (!groupingKeys.isEmpty()) {
+            Set<ColumnHandle> groupingColumns = ImmutableSet.copyOf(groupingKeys);
+            ImmutableList.Builder builder = builder();
+            int idx = 0;
+            for (JdbcColumnHandle column : columns) {
+                if (groupingColumns.contains(column)) {
+                    builder.add(idx+1);
+                }
+                if (column.getSqlCommand().isEmpty()) {
+                    idx++;
+                }
+                else {
+                    idx += column.getSqlCommand().size();
+                }
+            }
+            List<Integer> groupingIdx = builder.build();
+            if (!groupingIdx.isEmpty()) {
+                sql.append("\n GROUP BY ")
+                        .append(Joiner.on(",").join(groupingIdx));
+            }
         }
 
         PreparedStatement statement = client.getPreparedStatement(connection, sql.toString());
@@ -196,6 +223,22 @@ public class QueryBuilder
         return statement;
     }
 
+    private String getSqlColumn(JdbcColumnHandle columnHandle)
+    {
+        List<String> sqlCommands = columnHandle.getSqlCommand();
+        String columnName = columnHandle.getColumnName();
+        if (sqlCommands.size() == 1) {
+            return format("(%s) as %s", sqlCommands.get(0), columnName);
+        }
+        else if (columnHandle.getSqlCommand().size() > 1) {
+            return IntStream.range(0, sqlCommands.size())
+                    .boxed()
+                    .map(i -> format("(%s) as %s_%s", sqlCommands.get(i), columnName, i))
+                    .collect(Collectors.joining(","));
+        }
+        return quote(columnName);
+    }
+
     private static boolean isAcceptedType(Type type)
     {
         Type validType = requireNonNull(type, "type is null");
@@ -217,7 +260,7 @@ public class QueryBuilder
 
     private List<String> toConjuncts(List<JdbcColumnHandle> columns, TupleDomain<ColumnHandle> tupleDomain, List<TypeAndValue> accumulator)
     {
-        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        ImmutableList.Builder<String> builder = builder();
         for (JdbcColumnHandle column : columns) {
             Type type = column.getColumnType();
             if (isAcceptedType(type)) {

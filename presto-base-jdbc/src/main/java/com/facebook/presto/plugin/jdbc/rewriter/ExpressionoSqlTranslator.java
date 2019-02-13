@@ -28,6 +28,7 @@ import com.facebook.presto.spi.type.BooleanType;
 import com.facebook.presto.spi.type.DoubleType;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.VarcharType;
+import com.facebook.presto.type.LikePatternType;
 import com.google.common.base.Joiner;
 import io.airlift.slice.Slice;
 
@@ -88,12 +89,13 @@ public class ExpressionoSqlTranslator
                                     .map(Optional::get)
                                     .collect(toImmutableList());
                             if (results.size() == arguments.size()) {
-                                return format("(%s) IN (%s)", results.get(0), Joiner.on(",").join(results.subList(1, results.size())));
+                                return format("%s IN (%s)", results.get(0), Joiner.on(",").join(results.subList(1, results.size())));
                             }
                             return null;
                         })
                         .add(function("and"), binaryFunction("AND"))
                         .add(function("or"), binaryFunction("OR"))
+                        .add(function("like"), binaryFunction("LIKE"))
                         .add(function("if"), (rewriter, callExpression) -> {
                             List<RowExpression> arguments = callExpression.getArguments();
                             checkArgument(arguments.size() == 3, "must has only 3 argument for IF");
@@ -118,6 +120,9 @@ public class ExpressionoSqlTranslator
                             checkArgument(arguments.size() == 1, "must has only 1 argument for cast");
                             Optional<String> value = rewriter.rewrite(callExpression.getArguments().get(0));
                             if (value.isPresent()) {
+                                if (callExpression.getType() instanceof LikePatternType) {
+                                    return value.get();
+                                }
                                 return format("CAST(%s AS %s)", value.get(), toSqlType(fromPrestoType(callExpression.getType()).getJdbcType()));
                             }
                             return null;
@@ -181,7 +186,7 @@ public class ExpressionoSqlTranslator
     {
         switch (jdbcType) {
             case Types.BIGINT:
-                return "BIGINT";
+                return "SIGNED INTEGER";
             case Types.BOOLEAN:
                 return "BOOLEAN";
             case Types.VARCHAR:
