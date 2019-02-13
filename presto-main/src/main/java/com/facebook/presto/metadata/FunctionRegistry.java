@@ -152,6 +152,7 @@ import com.facebook.presto.spi.function.Signature;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.TypeManager;
 import com.facebook.presto.spi.type.TypeSignature;
+import com.facebook.presto.spi.type.TypeSignatureParameter;
 import com.facebook.presto.spi.type.VarcharType;
 import com.facebook.presto.sql.analyzer.FeaturesConfig;
 import com.facebook.presto.sql.analyzer.TypeSignatureProvider;
@@ -727,6 +728,7 @@ public class FunctionRegistry
                     .map(SqlFunction::getSignature)
                     .filter(signature ->
                             signature.getKind() == AGGREGATE &&
+                                    isSpecializedFunction(signature) &&
                                     getAggregateFunctionImplementation(signature)
                                             .getIntermediateType()
                                             .getTypeSignature()
@@ -780,6 +782,19 @@ public class FunctionRegistry
         }
 
         throw new PrestoException(FUNCTION_NOT_FOUND, message);
+    }
+
+    private boolean isSpecializedFunction(Signature signature)
+    {
+        return isSpecializedType(signature.getReturnType()) && signature.getArgumentTypes().stream()
+                .anyMatch(this::isSpecializedType);
+    }
+
+    private boolean isSpecializedType(TypeSignature typeSignature)
+    {
+        return !typeSignature.getParameters()
+                .stream()
+                .anyMatch(TypeSignatureParameter::isVariable);
     }
 
     private Optional<Signature> matchFunctionExact(List<SqlFunction> candidates, List<TypeSignatureProvider> actualParameters)
@@ -983,7 +998,7 @@ public class FunctionRegistry
         try {
             return specializedAggregationCache.getUnchecked(getSpecializedFunctionKey(signature));
         }
-        catch (UncheckedExecutionException e) {
+        catch (Exception e) {
             throwIfInstanceOf(e.getCause(), PrestoException.class);
             throw e;
         }

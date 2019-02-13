@@ -14,8 +14,8 @@
 package com.facebook.presto.sql.planner.plan;
 
 import com.facebook.presto.metadata.FunctionRegistry;
-import com.facebook.presto.spi.function.Signature;
 import com.facebook.presto.operator.aggregation.InternalAggregationFunction;
+import com.facebook.presto.spi.function.Signature;
 import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.tree.FunctionCall;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -90,6 +90,11 @@ public class AggregationNode
         outputs.addAll(aggregations.keySet());
 
         this.outputs = outputs.build();
+    }
+
+    public AggregationNode withStep(Step step, PlanNodeId newId)
+    {
+        return new AggregationNode(newId, this.source, this.aggregations, this.groupingSets, this.preGroupedSymbols, step, this.hashSymbol, this.groupIdSymbol);
     }
 
     public List<Symbol> getGroupingKeys()
