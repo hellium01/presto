@@ -378,7 +378,12 @@ public class PlanBuilder
                 new TestingTableHandle(),
                 TestingTransactionHandle.create(),
                 Optional.of(TestingHandle.INSTANCE));
-        return tableScan(tableHandle, symbols, assignments, TupleDomain.all(), TupleDomain.all());
+        return tableScan(tableHandle, symbols, assignments, Optional.empty(), TupleDomain.all(), TupleDomain.all());
+    }
+
+    public TableScanNode tableScan(TableHandle tableHandle, List<Symbol> symbols, Map<Symbol, ColumnHandle> assignments)
+    {
+        return tableScan(tableHandle, symbols, assignments, Optional.empty());
     }
 
     public TableScanNode tableScan(

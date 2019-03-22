@@ -17,6 +17,7 @@ import com.facebook.presto.connector.ConnectorId;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.MetadataManager;
 import com.facebook.presto.metadata.TableHandle;
+import com.facebook.presto.metadata.TableLayoutHandle;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.block.SortOrder;
 import com.facebook.presto.spi.function.FunctionHandle;
@@ -77,7 +78,6 @@ import static com.facebook.presto.sql.ExpressionUtils.combineConjuncts;
 import static com.facebook.presto.sql.ExpressionUtils.or;
 import static com.facebook.presto.sql.planner.plan.AggregationNode.globalAggregation;
 import static com.facebook.presto.sql.planner.plan.AggregationNode.singleGroupingSet;
-import static com.facebook.presto.sql.planner.plan.TableScanNode.createTableScanNode;
 import static com.facebook.presto.sql.tree.BooleanLiteral.FALSE_LITERAL;
 import static com.facebook.presto.sql.tree.BooleanLiteral.TRUE_LITERAL;
 import static org.testng.Assert.assertEquals;
@@ -90,6 +90,10 @@ public class TestEffectivePredicateExtractor
             new TestingTableHandle(),
             TestingTransactionHandle.create(),
             Optional.of(TestingHandle.INSTANCE));
+    private static final TableLayoutHandle TESTING_TABLE_LAYOUT = new TableLayoutHandle(
+            new ConnectorId("x"),
+            TestingTransactionHandle.create(),
+            TestingHandle.INSTANCE);
 
     private static final Symbol A = new Symbol("a");
     private static final Symbol B = new Symbol("b");
@@ -126,7 +130,7 @@ public class TestEffectivePredicateExtractor
                 .build();
 
         Map<Symbol, ColumnHandle> assignments = Maps.filterKeys(scanAssignments, Predicates.in(ImmutableList.of(A, B, C, D, E, F)));
-        baseTableScan = createTableScanNode(
+        baseTableScan = new TableScanNode(
                 newId(),
                 DUAL_TABLE_HANDLE,
                 ImmutableList.copyOf(assignments.keySet()),
@@ -321,7 +325,7 @@ public class TestEffectivePredicateExtractor
     {
         // Effective predicate is True if there is no effective predicate
         Map<Symbol, ColumnHandle> assignments = Maps.filterKeys(scanAssignments, Predicates.in(ImmutableList.of(A, B, C, D)));
-        PlanNode node = createTableScanNode(
+        PlanNode node = new TableScanNode(
                 newId(),
                 DUAL_TABLE_HANDLE,
                 ImmutableList.copyOf(assignments.keySet()),
@@ -334,6 +338,7 @@ public class TestEffectivePredicateExtractor
                 DUAL_TABLE_HANDLE,
                 ImmutableList.copyOf(assignments.keySet()),
                 assignments,
+                Optional.of(TESTING_TABLE_LAYOUT),
                 TupleDomain.none(),
                 TupleDomain.all());
         effectivePredicate = effectivePredicateExtractor.extract(node);
@@ -344,6 +349,7 @@ public class TestEffectivePredicateExtractor
                 DUAL_TABLE_HANDLE,
                 ImmutableList.copyOf(assignments.keySet()),
                 assignments,
+                Optional.of(TESTING_TABLE_LAYOUT),
                 TupleDomain.withColumnDomains(ImmutableMap.of(scanAssignments.get(A), Domain.singleValue(BIGINT, 1L))),
                 TupleDomain.all());
         effectivePredicate = effectivePredicateExtractor.extract(node);
@@ -354,6 +360,7 @@ public class TestEffectivePredicateExtractor
                 DUAL_TABLE_HANDLE,
                 ImmutableList.copyOf(assignments.keySet()),
                 assignments,
+                Optional.of(TESTING_TABLE_LAYOUT),
                 TupleDomain.withColumnDomains(ImmutableMap.of(
                         scanAssignments.get(A), Domain.singleValue(BIGINT, 1L),
                         scanAssignments.get(B), Domain.singleValue(BIGINT, 2L))),
@@ -366,6 +373,7 @@ public class TestEffectivePredicateExtractor
                 DUAL_TABLE_HANDLE,
                 ImmutableList.copyOf(assignments.keySet()),
                 assignments,
+                Optional.empty(),
                 TupleDomain.all(),
                 TupleDomain.all());
         effectivePredicate = effectivePredicateExtractor.extract(node);
@@ -704,6 +712,7 @@ public class TestEffectivePredicateExtractor
                 DUAL_TABLE_HANDLE,
                 ImmutableList.copyOf(scanAssignments.keySet()),
                 scanAssignments,
+                Optional.empty(),
                 TupleDomain.all(),
                 TupleDomain.all());
     }

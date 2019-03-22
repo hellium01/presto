@@ -17,6 +17,7 @@ import com.facebook.presto.connector.ConnectorId;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.TableHandle;
+import com.facebook.presto.metadata.TableLayoutHandle;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.facebook.presto.sql.parser.SqlParser;
 import com.facebook.presto.sql.planner.PlanNodeIdAllocator;
@@ -26,6 +27,7 @@ import com.facebook.presto.sql.planner.assertions.BasePlanTest;
 import com.facebook.presto.sql.planner.iterative.rule.test.PlanBuilder;
 import com.facebook.presto.sql.planner.plan.PlanNode;
 import com.facebook.presto.sql.planner.plan.TableScanNode;
+import com.facebook.presto.testing.TestingHandle;
 import com.facebook.presto.testing.TestingTransactionHandle;
 import com.facebook.presto.tpch.TpchColumnHandle;
 import com.facebook.presto.tpch.TpchTableHandle;
@@ -43,7 +45,7 @@ import static com.facebook.presto.sql.planner.plan.AggregationNode.Step.FINAL;
 import static com.facebook.presto.sql.planner.plan.AggregationNode.Step.PARTIAL;
 import static com.facebook.presto.sql.planner.plan.AggregationNode.groupingSets;
 import static com.facebook.presto.sql.planner.plan.ExchangeNode.Scope.LOCAL;
-import static com.facebook.presto.sql.planner.plan.ExchangeNode.Scope.REMOTE_STREAMING;
+import static com.facebook.presto.sql.planner.plan.ExchangeNode.Scope.REMOTE;
 import static com.facebook.presto.sql.planner.plan.ExchangeNode.Type.REPARTITION;
 import static com.facebook.presto.sql.planner.plan.JoinNode.Type.INNER;
 
@@ -63,16 +65,17 @@ public class TestValidateAggregationsWithDefaultValues
         metadata = getQueryRunner().getMetadata();
         builder = new PlanBuilder(new PlanNodeIdAllocator(), metadata);
         ConnectorId connectorId = getCurrentConnectorId();
-        TpchTableHandle tpchTableHandle = new TpchTableHandle("nation", 1.0);
         TableHandle nationTableHandle = new TableHandle(
                 connectorId,
-                tpchTableHandle,
+                new TpchTableHandle("nation", 1.0),
                 TestingTransactionHandle.create(),
-                Optional.of(new TpchTableLayoutHandle(tpchTableHandle, TupleDomain.all())));
-
+                Optional.of(TestingHandle.INSTANCE));
+        TableLayoutHandle nationTableLayoutHandle = new TableLayoutHandle(connectorId,
+                TestingTransactionHandle.create(),
+                new TpchTableLayoutHandle((TpchTableHandle) nationTableHandle.getConnectorHandle(), TupleDomain.all()));
         TpchColumnHandle nationkeyColumnHandle = new TpchColumnHandle("nationkey", BIGINT);
         symbol = new Symbol("nationkey");
-        tableScanNode = builder.tableScan(nationTableHandle, ImmutableList.of(symbol), ImmutableMap.of(symbol, nationkeyColumnHandle));
+        tableScanNode = builder.tableScan(nationTableHandle, ImmutableList.of(symbol), ImmutableMap.of(symbol, nationkeyColumnHandle), Optional.of(nationTableLayoutHandle));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Final aggregation with default value not separated from partial aggregation by remote hash exchange")
@@ -123,7 +126,7 @@ public class TestValidateAggregationsWithDefaultValues
                         .groupingSets(groupingSets(ImmutableList.of(symbol), 2, ImmutableSet.of(0)))
                         .source(builder.exchange(e -> e
                                 .type(REPARTITION)
-                                .scope(REMOTE_STREAMING)
+                                .scope(REMOTE)
                                 .fixedHashDistributionParitioningScheme(ImmutableList.of(symbol), ImmutableList.of(symbol))
                                 .addInputsSet(symbol)
                                 .addSource(builder.aggregation(ap -> ap
