@@ -25,6 +25,7 @@ import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.assertions.BasePlanTest;
 import com.facebook.presto.sql.planner.iterative.rule.test.PlanBuilder;
 import com.facebook.presto.sql.planner.plan.PlanNode;
+import com.facebook.presto.testing.TestingHandle;
 import com.facebook.presto.testing.TestingTransactionHandle;
 import com.facebook.presto.tpch.TpchColumnHandle;
 import com.facebook.presto.tpch.TpchTableHandle;
@@ -60,7 +61,11 @@ public class TestValidateStreamingAggregations
                 connectorId,
                 new TpchTableHandle("nation", 1.0),
                 TestingTransactionHandle.create(),
-                Optional.of(new TpchTableLayoutHandle(new TpchTableHandle("nation", 1.0), TupleDomain.all())));
+                Optional.of(TestingHandle.INSTANCE));
+
+        nationTableLayoutHandle = new TableLayoutHandle(connectorId,
+                TestingTransactionHandle.create(),
+                new TpchTableLayoutHandle((TpchTableHandle) nationTableHandle.getConnectorHandle(), TupleDomain.all()));
     }
 
     @Test
@@ -74,8 +79,8 @@ public class TestValidateStreamingAggregations
                                         p.tableScan(
                                                 nationTableHandle,
                                                 ImmutableList.of(p.symbol("nationkey", BIGINT)),
-                                                ImmutableMap.of(p.symbol("nationkey", BIGINT),
-                                                        new TpchColumnHandle("nationkey", BIGINT))))));
+                                                ImmutableMap.of(p.symbol("nationkey", BIGINT), new TpchColumnHandle("nationkey", BIGINT)),
+                                                Optional.of(nationTableLayoutHandle)))));
 
         validatePlan(
                 p -> p.aggregation(
@@ -87,7 +92,8 @@ public class TestValidateStreamingAggregations
                                                 p.tableScan(
                                                         nationTableHandle,
                                                         ImmutableList.of(p.symbol("nationkey", BIGINT)),
-                                                        ImmutableMap.of(p.symbol("nationkey", BIGINT), new TpchColumnHandle("nationkey", BIGINT)))))));
+                                                        ImmutableMap.of(p.symbol("nationkey", BIGINT), new TpchColumnHandle("nationkey", BIGINT)),
+                                                        Optional.of(nationTableLayoutHandle))))));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Streaming aggregation with input not grouped on the grouping keys")
@@ -102,7 +108,8 @@ public class TestValidateStreamingAggregations
                                         p.tableScan(
                                                 nationTableHandle,
                                                 ImmutableList.of(p.symbol("nationkey", BIGINT)),
-                                                ImmutableMap.of(p.symbol("nationkey", BIGINT), new TpchColumnHandle("nationkey", BIGINT))))));
+                                                ImmutableMap.of(p.symbol("nationkey", BIGINT), new TpchColumnHandle("nationkey", BIGINT)),
+                                                Optional.of(nationTableLayoutHandle)))));
     }
 
     private void validatePlan(Function<PlanBuilder, PlanNode> planProvider)

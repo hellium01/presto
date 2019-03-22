@@ -18,12 +18,12 @@ import com.facebook.presto.connector.ConnectorId;
 import com.facebook.presto.metadata.IndexHandle;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.TableHandle;
+import com.facebook.presto.metadata.TableLayoutHandle;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.block.SortOrder;
 import com.facebook.presto.spi.function.FunctionHandle;
 import com.facebook.presto.spi.predicate.TupleDomain;
-import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.ExpressionUtils;
 import com.facebook.presto.sql.analyzer.TypeSignatureProvider;
@@ -98,10 +98,7 @@ import static com.facebook.presto.spi.type.BigintType.BIGINT;
 import static com.facebook.presto.spi.type.VarbinaryType.VARBINARY;
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.FIXED_HASH_DISTRIBUTION;
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.SINGLE_DISTRIBUTION;
-import static com.facebook.presto.sql.relational.Expressions.constant;
-import static com.facebook.presto.sql.relational.Expressions.constantNull;
 import static com.facebook.presto.testing.TestingSession.testSessionBuilder;
-import static com.facebook.presto.type.UnknownType.UNKNOWN;
 import static com.facebook.presto.util.MoreLists.nElements;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -187,15 +184,15 @@ public class PlanBuilder
         return values(
                 id,
                 ImmutableList.copyOf(columns),
-                nElements(rows, row -> nElements(columns.length, cell -> constantNull(UNKNOWN))));
+                nElements(rows, row -> nElements(columns.length, cell -> (Expression) new NullLiteral())));
     }
 
-    public ValuesNode values(List<Symbol> columns, List<List<RowExpression>> rows)
+    public ValuesNode values(List<Symbol> columns, List<List<Expression>> rows)
     {
         return values(idAllocator.getNextId(), columns, rows);
     }
 
-    public ValuesNode values(PlanNodeId id, List<Symbol> columns, List<List<RowExpression>> rows)
+    public ValuesNode values(PlanNodeId id, List<Symbol> columns, List<List<Expression>> rows)
     {
         return new ValuesNode(id, columns, rows);
     }
@@ -378,21 +375,28 @@ public class PlanBuilder
                 new TestingTableHandle(),
                 TestingTransactionHandle.create(),
                 Optional.of(TestingHandle.INSTANCE));
-        return tableScan(tableHandle, symbols, assignments, TupleDomain.all(), TupleDomain.all());
+        return tableScan(tableHandle, symbols, assignments, Optional.empty(), TupleDomain.all(), TupleDomain.all());
     }
 
-    public TableScanNode tableScan(
-            TableHandle tableHandle,
-            List<Symbol> symbols,
-            Map<Symbol, ColumnHandle> assignments)
+    public TableScanNode tableScan(TableHandle tableHandle, List<Symbol> symbols, Map<Symbol, ColumnHandle> assignments)
     {
-        return tableScan(tableHandle, symbols, assignments, TupleDomain.all(), TupleDomain.all());
+        return tableScan(tableHandle, symbols, assignments, Optional.empty());
     }
 
     public TableScanNode tableScan(
             TableHandle tableHandle,
             List<Symbol> symbols,
             Map<Symbol, ColumnHandle> assignments,
+            Optional<TableLayoutHandle> tableLayout)
+    {
+        return tableScan(tableHandle, symbols, assignments, tableLayout, TupleDomain.all(), TupleDomain.all());
+    }
+
+    public TableScanNode tableScan(
+            TableHandle tableHandle,
+            List<Symbol> symbols,
+            Map<Symbol, ColumnHandle> assignments,
+            Optional<TableLayoutHandle> tableLayout,
             TupleDomain<ColumnHandle> currentConstraint,
             TupleDomain<ColumnHandle> enforcedConstraint)
     {
@@ -401,6 +405,7 @@ public class PlanBuilder
                 tableHandle,
                 symbols,
                 assignments,
+                tableLayout,
                 currentConstraint,
                 enforcedConstraint);
     }
@@ -496,6 +501,7 @@ public class PlanBuilder
                         TestingConnectorTransactionHandle.INSTANCE,
                         TestingConnectorIndexHandle.INSTANCE),
                 tableHandle,
+                Optional.empty(),
                 lookupSymbols,
                 outputSymbols,
                 assignments,
@@ -512,7 +518,7 @@ public class PlanBuilder
     public class ExchangeBuilder
     {
         private ExchangeNode.Type type = ExchangeNode.Type.GATHER;
-        private ExchangeNode.Scope scope = ExchangeNode.Scope.REMOTE_STREAMING;
+        private ExchangeNode.Scope scope = ExchangeNode.Scope.REMOTE;
         private PartitioningScheme partitioningScheme;
         private OrderingScheme orderingScheme;
         private List<PlanNode> sources = new ArrayList<>();
@@ -537,30 +543,24 @@ public class PlanBuilder
 
         public ExchangeBuilder singleDistributionPartitioningScheme(List<Symbol> outputSymbols)
         {
-            return partitioningScheme(new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of(), ImmutableMap.of()), outputSymbols));
+            return partitioningScheme(new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of()), outputSymbols));
         }
 
-        public ExchangeBuilder fixedHashDistributionParitioningScheme(List<Symbol> outputSymbols, List<Symbol> partitioningSymbols, Map<Symbol, Type> types)
+        public ExchangeBuilder fixedHashDistributionParitioningScheme(List<Symbol> outputSymbols, List<Symbol> partitioningSymbols)
         {
-            return partitioningScheme(
-                    new PartitioningScheme(
-                            Partitioning.create(
-                                    FIXED_HASH_DISTRIBUTION,
-                                    ImmutableList.copyOf(partitioningSymbols),
-                                    types),
-                            ImmutableList.copyOf(outputSymbols)));
+            return partitioningScheme(new PartitioningScheme(Partitioning.create(
+                    FIXED_HASH_DISTRIBUTION,
+                    ImmutableList.copyOf(partitioningSymbols)),
+                    ImmutableList.copyOf(outputSymbols)));
         }
 
-        public ExchangeBuilder fixedHashDistributionParitioningScheme(List<Symbol> outputSymbols, List<Symbol> partitioningSymbols, Symbol hashSymbol, Map<Symbol, Type> types)
+        public ExchangeBuilder fixedHashDistributionParitioningScheme(List<Symbol> outputSymbols, List<Symbol> partitioningSymbols, Symbol hashSymbol)
         {
-            return partitioningScheme(
-                    new PartitioningScheme(
-                            Partitioning.create(
-                                    FIXED_HASH_DISTRIBUTION,
-                                    ImmutableList.copyOf(partitioningSymbols),
-                                    ImmutableMap.copyOf(types)),
-                            ImmutableList.copyOf(outputSymbols),
-                            Optional.of(hashSymbol)));
+            return partitioningScheme(new PartitioningScheme(Partitioning.create(
+                    FIXED_HASH_DISTRIBUTION,
+                    ImmutableList.copyOf(partitioningSymbols)),
+                    ImmutableList.copyOf(outputSymbols),
+                    Optional.of(hashSymbol)));
         }
 
         public ExchangeBuilder partitioningScheme(PartitioningScheme partitioningScheme)
@@ -774,13 +774,6 @@ public class PlanBuilder
     {
         return Stream.of(expressions)
                 .map(PlanBuilder::expression)
-                .collect(toImmutableList());
-    }
-
-    public static List<RowExpression> constantExpressions(Type type, Object... values)
-    {
-        return Stream.of(values)
-                .map(value -> constant(value, type))
                 .collect(toImmutableList());
     }
 
