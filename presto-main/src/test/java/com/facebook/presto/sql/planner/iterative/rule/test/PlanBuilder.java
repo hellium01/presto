@@ -505,7 +505,6 @@ public class PlanBuilder
                         TestingConnectorTransactionHandle.INSTANCE,
                         TestingConnectorIndexHandle.INSTANCE),
                 tableHandle,
-                Optional.empty(),
                 lookupSymbols,
                 outputSymbols,
                 assignments,
