@@ -82,7 +82,7 @@ public class SplitManager
                 source = splitManager.getSplits(
                         table.getTransaction(),
                         connectorSession,
-                        metadata.getLayout(session, table, Constraint.alwaysTrue(), Optional.empty()).get().getLayout().getTableHandle().getLayout().get(),
+                        metadata.getLayout(session, table, Constraint.alwaysTrue(), Optional.empty()).get().getLayout().getHandle().getConnectorHandle(),
                         splitSchedulingStrategy);
             }
         }
