@@ -124,7 +124,7 @@ public class SplitSourceFactory
             // get dataSource for table
             SplitSource splitSource = splitSourceProvider.getSplits(
                     session,
-                    node.getLayout().get(),
+                    node.getTable(),
                     stageExecutionDescriptor.isScanGroupedExecution(node.getId()) ? GROUPED_SCHEDULING : UNGROUPED_SCHEDULING);
 
             splitSources.add(splitSource);
