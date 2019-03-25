@@ -17,19 +17,15 @@ import com.facebook.presto.Session;
 import com.facebook.presto.SystemSessionProperties;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.Metadata;
-import com.facebook.presto.metadata.TableProperties;
-import com.facebook.presto.metadata.TableProperties.TablePartitioning;
+import com.facebook.presto.metadata.TableLayout;
+import com.facebook.presto.metadata.TableLayout.TablePartitioning;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConstantProperty;
 import com.facebook.presto.spi.GroupingProperty;
 import com.facebook.presto.spi.LocalProperty;
 import com.facebook.presto.spi.SortingProperty;
 import com.facebook.presto.spi.predicate.NullableValue;
-import com.facebook.presto.spi.relation.RowExpression;
-import com.facebook.presto.spi.relation.SpecialFormExpression;
-import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.spi.type.Type;
-import com.facebook.presto.sql.analyzer.ExpressionAnalyzer;
 import com.facebook.presto.sql.parser.SqlParser;
 import com.facebook.presto.sql.planner.DomainTranslator;
 import com.facebook.presto.sql.planner.ExpressionInterpreter;
@@ -73,6 +69,7 @@ import com.facebook.presto.sql.planner.plan.TopNRowNumberNode;
 import com.facebook.presto.sql.planner.plan.UnnestNode;
 import com.facebook.presto.sql.planner.plan.ValuesNode;
 import com.facebook.presto.sql.planner.plan.WindowNode;
+import com.facebook.presto.sql.tree.CoalesceExpression;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.NodeRef;
 import com.facebook.presto.sql.tree.SymbolReference;
@@ -93,7 +90,6 @@ import java.util.stream.Collectors;
 
 import static com.facebook.presto.SystemSessionProperties.planWithTableNodePartitioning;
 import static com.facebook.presto.spi.predicate.TupleDomain.extractFixedValues;
-import static com.facebook.presto.spi.relation.SpecialFormExpression.Form.COALESCE;
 import static com.facebook.presto.sql.analyzer.ExpressionAnalyzer.getExpressionTypes;
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.ARBITRARY_DISTRIBUTION;
 import static com.facebook.presto.sql.planner.optimizations.ActualProperties.Global.arbitraryPartition;
@@ -103,7 +99,6 @@ import static com.facebook.presto.sql.planner.optimizations.ActualProperties.Glo
 import static com.facebook.presto.sql.planner.optimizations.ActualProperties.Global.streamPartitionedOn;
 import static com.facebook.presto.sql.planner.plan.ExchangeNode.Scope.LOCAL;
 import static com.facebook.presto.sql.planner.plan.ExchangeNode.Scope.REMOTE;
-import static com.facebook.presto.sql.relational.SqlToRowExpressionTranslator.translate;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
@@ -209,7 +204,7 @@ public class PropertyDerivations
             }
 
             return ActualProperties.builderFrom(properties)
-                    .global(partitionedOn(ARBITRARY_DISTRIBUTION, ImmutableList.of(node.getIdColumn()), types.allTypes(), Optional.empty()))
+                    .global(partitionedOn(ARBITRARY_DISTRIBUTION, ImmutableList.of(node.getIdColumn()), Optional.empty()))
                     .local(newLocalProperties.build())
                     .build();
         }
@@ -440,19 +435,11 @@ public class PropertyDerivations
                 case FULL:
                     if (probeProperties.getNodePartitioning().isPresent()) {
                         Partitioning nodePartitioning = probeProperties.getNodePartitioning().get();
-                        ImmutableList.Builder<RowExpression> coalesceExpressions = ImmutableList.builder();
+                        ImmutableList.Builder<Expression> coalesceExpressions = ImmutableList.builder();
                         for (Symbol column : nodePartitioning.getColumns()) {
                             for (JoinNode.EquiJoinClause equality : node.getCriteria()) {
                                 if (equality.getLeft().equals(column) || equality.getRight().equals(column)) {
-                                    Type leftType = types.get(equality.getLeft());
-                                    Type rightType = types.get(equality.getRight());
-                                    checkArgument(leftType.equals(rightType), "left and right side must has same type");
-                                    coalesceExpressions.add(
-                                            new SpecialFormExpression(
-                                                    COALESCE,
-                                                    types.get(equality.getLeft()),
-                                                    new VariableReferenceExpression(equality.getLeft().getName(), leftType),
-                                                    new VariableReferenceExpression(equality.getRight().getName(), rightType)));
+                                    coalesceExpressions.add(new CoalesceExpression(ImmutableList.of(equality.getLeft().toSymbolReference(), equality.getRight().toSymbolReference())));
                                 }
                             }
                         }
@@ -641,13 +628,8 @@ public class PropertyDerivations
             ActualProperties properties = Iterables.getOnlyElement(inputProperties);
 
             Map<Symbol, Symbol> identities = computeIdentityTranslations(node.getAssignments().getMap());
-            // TODO remove following translation once Assignment uses RowExpression
-            Map<Symbol, RowExpression> assignments = node.getAssignments().getMap()
-                    .entrySet()
-                    .stream()
-                    .collect(toMap(Map.Entry::getKey, entry -> toRowExpression(entry.getValue())));
 
-            ActualProperties translatedProperties = properties.translate(column -> Optional.ofNullable(identities.get(column)), expression -> rewriteExpression(assignments, expression));
+            ActualProperties translatedProperties = properties.translate(column -> Optional.ofNullable(identities.get(column)), expression -> rewriteExpression(node.getAssignments().getMap(), expression));
 
             // Extract additional constants
             Map<Symbol, NullableValue> constants = new HashMap<>();
@@ -680,18 +662,6 @@ public class PropertyDerivations
             return ActualProperties.builderFrom(translatedProperties)
                     .constants(constants)
                     .build();
-        }
-
-        private RowExpression toRowExpression(Expression expression)
-        {
-            return translate(
-                    expression,
-                    ExpressionAnalyzer.getExpressionTypes(session, metadata, parser, types, expression, emptyList(), WarningCollector.NOOP),
-                    ImmutableMap.of(),
-                    metadata.getFunctionManager(),
-                    metadata.getTypeManager(),
-                    session,
-                    false);
         }
 
         @Override
@@ -739,7 +709,7 @@ public class PropertyDerivations
         @Override
         public ActualProperties visitTableScan(TableScanNode node, List<ActualProperties> inputProperties)
         {
-            TableProperties layout = metadata.getLayout(session, node.getTable());
+            TableLayout layout = metadata.getLayout(session, node.getTable());
             Map<ColumnHandle, Symbol> assignments = ImmutableBiMap.copyOf(node.getAssignments()).inverse();
 
             ActualProperties.Builder properties = ActualProperties.builder();
@@ -769,7 +739,7 @@ public class PropertyDerivations
             return properties.build();
         }
 
-        private Global deriveGlobalProperties(TableProperties layout, Map<ColumnHandle, Symbol> assignments, Map<ColumnHandle, NullableValue> constants)
+        private Global deriveGlobalProperties(TableLayout layout, Map<ColumnHandle, Symbol> assignments, Map<ColumnHandle, NullableValue> constants)
         {
             Optional<List<Symbol>> streamPartitioning = layout.getStreamPartitioningColumns()
                     .flatMap(columns -> translateToNonConstantSymbols(columns, assignments, constants));
@@ -781,12 +751,12 @@ public class PropertyDerivations
                             .map(assignments::get)
                             .collect(toImmutableList());
 
-                    return partitionedOn(tablePartitioning.getPartitioningHandle(), arguments, types.allTypes(), streamPartitioning);
+                    return partitionedOn(tablePartitioning.getPartitioningHandle(), arguments, streamPartitioning);
                 }
             }
 
             if (streamPartitioning.isPresent()) {
-                return streamPartitionedOn(streamPartitioning.get(), types.allTypes());
+                return streamPartitionedOn(streamPartitioning.get());
             }
             return arbitraryPartition();
         }
@@ -876,17 +846,17 @@ public class PropertyDerivations
         return Optional.empty();
     }
 
-    private static Optional<Symbol> rewriteExpression(Map<Symbol, RowExpression> assignments, RowExpression expression)
+    private static Optional<Symbol> rewriteExpression(Map<Symbol, Expression> assignments, Expression expression)
     {
-        checkArgument(expression instanceof SpecialFormExpression && ((SpecialFormExpression) expression).getForm() == COALESCE, "The rewrite can only handle CoalesceExpression");
-        Set<RowExpression> expressionOperands = ImmutableSet.copyOf(((SpecialFormExpression) expression).getArguments());
-        checkArgument(expressionOperands.stream().allMatch(VariableReferenceExpression.class::isInstance), "Expect operands of Coalesce to be VariableReference");
+        checkArgument(expression instanceof CoalesceExpression, "The rewrite can only handle CoalesceExpression");
+        Set<Expression> expressionOperands = ImmutableSet.copyOf(((CoalesceExpression) expression).getOperands());
+        checkArgument(expressionOperands.stream().allMatch(SymbolReference.class::isInstance), "Expect operands of CoalesceExpression to be SymbolReference");
         // We are using the property that the result of coalesce from full outer join keys would not be null despite of the order
         // of the arguments. Thus we extract and compare the symbols of the CoalesceExpression as a set rather than compare the
         // CoalesceExpression directly.
-        for (Map.Entry<Symbol, RowExpression> entry : assignments.entrySet()) {
-            if (entry.getValue() instanceof SpecialFormExpression && ((SpecialFormExpression) entry.getValue()).getForm() == COALESCE) {
-                Set<RowExpression> assignmentOperands = ImmutableSet.copyOf(((SpecialFormExpression) entry.getValue()).getArguments());
+        for (Map.Entry<Symbol, Expression> entry : assignments.entrySet()) {
+            if (entry.getValue() instanceof CoalesceExpression) {
+                Set<Expression> assignmentOperands = ImmutableSet.copyOf(((CoalesceExpression) entry.getValue()).getOperands());
                 if (!assignmentOperands.stream().allMatch(SymbolReference.class::isInstance)) {
                     return Optional.empty();
                 }

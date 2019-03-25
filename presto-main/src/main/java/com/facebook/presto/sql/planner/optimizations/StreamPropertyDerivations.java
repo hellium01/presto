@@ -15,11 +15,11 @@ package com.facebook.presto.sql.planner.optimizations;
 
 import com.facebook.presto.Session;
 import com.facebook.presto.metadata.Metadata;
-import com.facebook.presto.metadata.TableProperties;
+import com.facebook.presto.metadata.TableLayout;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.LocalProperty;
 import com.facebook.presto.sql.parser.SqlParser;
-import com.facebook.presto.sql.planner.Partitioning;
+import com.facebook.presto.sql.planner.Partitioning.ArgumentBinding;
 import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.plan.AggregationNode;
@@ -248,7 +248,7 @@ public final class StreamPropertyDerivations
         @Override
         public StreamProperties visitTableScan(TableScanNode node, List<StreamProperties> inputProperties)
         {
-            TableProperties layout = metadata.getLayout(session, node.getTable());
+            TableLayout layout = metadata.getLayout(session, node.getTable());
             Map<ColumnHandle, Symbol> assignments = ImmutableBiMap.copyOf(node.getAssignments()).inverse();
 
             // Globally constant assignments
@@ -312,7 +312,7 @@ public final class StreamPropertyDerivations
                     return new StreamProperties(
                             FIXED,
                             Optional.of(node.getPartitioningScheme().getPartitioning().getArguments().stream()
-                                    .map(Partitioning::getSymbol)
+                                    .map(ArgumentBinding::getSymbol)
                                     .collect(toImmutableList())), false);
                 case REPLICATE:
                     return new StreamProperties(MULTIPLE, Optional.empty(), false);

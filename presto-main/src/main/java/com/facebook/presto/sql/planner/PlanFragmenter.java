@@ -20,8 +20,8 @@ import com.facebook.presto.execution.QueryManagerConfig;
 import com.facebook.presto.execution.scheduler.BucketNodeMap;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.Metadata;
-import com.facebook.presto.metadata.TableHandle;
-import com.facebook.presto.metadata.TableProperties.TablePartitioning;
+import com.facebook.presto.metadata.TableLayout.TablePartitioning;
+import com.facebook.presto.metadata.TableLayoutHandle;
 import com.facebook.presto.operator.StageExecutionDescriptor;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.PrestoWarning;
@@ -51,7 +51,6 @@ import com.facebook.presto.sql.planner.plan.ValuesNode;
 import com.facebook.presto.sql.planner.plan.WindowNode;
 import com.facebook.presto.sql.planner.sanity.PlanSanityChecker;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import javax.inject.Inject;
@@ -119,7 +118,7 @@ public class PlanFragmenter
                 warningCollector,
                 sqlParser);
 
-        FragmentProperties properties = new FragmentProperties(new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of(), ImmutableMap.of()), plan.getRoot().getOutputSymbols()));
+        FragmentProperties properties = new FragmentProperties(new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of()), plan.getRoot().getOutputSymbols()));
         if (forceSingleNode || isForceSingleNodeOutput(session)) {
             properties = properties.setSingleNodeDistribution();
         }
@@ -781,12 +780,13 @@ public class PlanFragmenter
                 return node;
             }
 
-            TableHandle newTableHandle = metadata.getAlternativeTableHandle(session, node.getTable(), fragmentPartitioningHandle);
+            TableLayoutHandle newTableLayoutHandle = metadata.getAlternativeLayoutHandle(session, node.getLayout().get(), fragmentPartitioningHandle);
             return new TableScanNode(
                     node.getId(),
-                    newTableHandle,
+                    node.getTable(),
                     node.getOutputSymbols(),
                     node.getAssignments(),
+                    Optional.of(newTableLayoutHandle),
                     node.getCurrentConstraint(),
                     node.getEnforcedConstraint());
         }
