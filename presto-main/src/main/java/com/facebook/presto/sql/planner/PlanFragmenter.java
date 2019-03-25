@@ -22,9 +22,8 @@ import com.facebook.presto.execution.scheduler.BucketNodeMap;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.InsertTableHandle;
 import com.facebook.presto.metadata.Metadata;
+import com.facebook.presto.metadata.TableHandle;
 import com.facebook.presto.metadata.TableLayout.TablePartitioning;
-import com.facebook.presto.metadata.TableLayoutHandle;
-import com.facebook.presto.metadata.TableLayoutResult;
 import com.facebook.presto.operator.StageExecutionDescriptor;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
@@ -1060,13 +1059,13 @@ public class PlanFragmenter
                 return node;
             }
 
-            TableLayoutHandle newTableLayoutHandle = metadata.getAlternativeLayoutHandle(session, node.getLayout().get(), fragmentPartitioningHandle);
+            TableHandle newTableHandle = metadata.getAlternativeTableHandle(session, node.getTable(), fragmentPartitioningHandle);
             return new TableScanNode(
                     node.getId(),
-                    node.getTable(),
+                    newTableHandle,
                     node.getOutputSymbols(),
                     node.getAssignments(),
-                    Optional.of(newTableLayoutHandle),
+                    Optional.empty(),
                     node.getCurrentConstraint(),
                     node.getEnforcedConstraint());
         }
