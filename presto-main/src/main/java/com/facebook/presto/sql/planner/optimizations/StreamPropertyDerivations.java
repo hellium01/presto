@@ -15,7 +15,7 @@ package com.facebook.presto.sql.planner.optimizations;
 
 import com.facebook.presto.Session;
 import com.facebook.presto.metadata.Metadata;
-import com.facebook.presto.metadata.TableProperties;
+import com.facebook.presto.metadata.TableLayout;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.LocalProperty;
 import com.facebook.presto.sql.parser.SqlParser;
@@ -82,6 +82,7 @@ import static com.facebook.presto.sql.planner.SystemPartitioningHandle.FIXED_ARB
 import static com.facebook.presto.sql.planner.optimizations.StreamPropertyDerivations.StreamProperties.StreamDistribution.FIXED;
 import static com.facebook.presto.sql.planner.optimizations.StreamPropertyDerivations.StreamProperties.StreamDistribution.MULTIPLE;
 import static com.facebook.presto.sql.planner.optimizations.StreamPropertyDerivations.StreamProperties.StreamDistribution.SINGLE;
+import static com.facebook.presto.sql.planner.plan.ExchangeNode.Scope.REMOTE;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -247,7 +248,7 @@ public final class StreamPropertyDerivations
         @Override
         public StreamProperties visitTableScan(TableScanNode node, List<StreamProperties> inputProperties)
         {
-            TableProperties layout = metadata.getTableProperties(session, node.getTable());
+            TableLayout layout = metadata.getLayout(session, node.getTable());
             Map<ColumnHandle, Symbol> assignments = ImmutableBiMap.copyOf(node.getAssignments()).inverse();
 
             // Globally constant assignments
@@ -295,7 +296,7 @@ public final class StreamPropertyDerivations
                 return StreamProperties.ordered();
             }
 
-            if (node.getScope().isRemote()) {
+            if (node.getScope() == REMOTE) {
                 // TODO: correctly determine if stream is parallelised
                 // based on session properties
                 return StreamProperties.fixedStreams();
@@ -311,7 +312,7 @@ public final class StreamPropertyDerivations
                     return new StreamProperties(
                             FIXED,
                             Optional.of(node.getPartitioningScheme().getPartitioning().getArguments().stream()
-                                    .map(ArgumentBinding::getColumn)
+                                    .map(ArgumentBinding::getSymbol)
                                     .collect(toImmutableList())), false);
                 case REPLICATE:
                     return new StreamProperties(MULTIPLE, Optional.empty(), false);

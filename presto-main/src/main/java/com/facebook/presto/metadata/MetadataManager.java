@@ -20,11 +20,11 @@ import com.facebook.presto.spi.CatalogSchemaName;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ConnectorInsertTableHandle;
-import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.ConnectorOutputTableHandle;
 import com.facebook.presto.spi.ConnectorResolvedIndex;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorTableHandle;
+import com.facebook.presto.spi.ConnectorTableLayout;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutResult;
 import com.facebook.presto.spi.ConnectorTableMetadata;
@@ -40,7 +40,6 @@ import com.facebook.presto.spi.connector.ConnectorCapabilities;
 import com.facebook.presto.spi.connector.ConnectorMetadata;
 import com.facebook.presto.spi.connector.ConnectorOutputMetadata;
 import com.facebook.presto.spi.connector.ConnectorPartitioningHandle;
-import com.facebook.presto.spi.connector.ConnectorPartitioningMetadata;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.facebook.presto.spi.function.OperatorType;
 import com.facebook.presto.spi.predicate.TupleDomain;
@@ -91,7 +90,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.facebook.presto.metadata.QualifiedObjectName.convertFromSchemaTableName;
-import static com.facebook.presto.metadata.TableProperties.fromConnectorLayoutProperties;
+import static com.facebook.presto.metadata.TableLayout.fromConnectorLayout;
 import static com.facebook.presto.metadata.ViewDefinition.ViewColumn;
 import static com.facebook.presto.spi.Constraint.alwaysTrue;
 import static com.facebook.presto.spi.StandardErrorCode.INVALID_VIEW;
@@ -394,6 +393,7 @@ public class MetadataManager
 
         CatalogMetadata catalogMetadata = getCatalogMetadata(session, connectorId);
         ConnectorMetadata metadata = catalogMetadata.getMetadataFor(connectorId);
+        ConnectorTransactionHandle transaction = catalogMetadata.getTransactionHandleFor(connectorId);
         ConnectorSession connectorSession = session.toConnectorSession(connectorId);
         List<ConnectorTableLayoutResult> layouts = metadata.getTableLayouts(connectorSession, connectorTable, constraint, desiredColumns);
         if (layouts.isEmpty()) {
@@ -403,33 +403,31 @@ public class MetadataManager
         if (layouts.size() > 1) {
             throw new PrestoException(NOT_SUPPORTED, format("Connector returned multiple layouts for table %s", table));
         }
-        return Optional.of(new TableLayoutResult(
-                fromConnectorLayoutProperties(
-                        table.withLayout(Optional.of(layouts.get(0).getTableLayout().getHandle())),
-                        layouts.get(0).getTableLayout()),
-                layouts.get(0).getUnenforcedConstraint()));
+
+        return Optional.of(new TableLayoutResult(fromConnectorLayout(connectorId, transaction, layouts.get(0).getTableLayout()), layouts.get(0).getUnenforcedConstraint()));
     }
 
     @Override
-    public TableProperties getTableProperties(Session session, TableHandle handle)
+    public TableLayout getLayout(Session session, TableHandle handle)
     {
         ConnectorId connectorId = handle.getConnectorId();
         CatalogMetadata catalogMetadata = getCatalogMetadata(session, connectorId);
         ConnectorMetadata metadata = catalogMetadata.getMetadataFor(connectorId);
-        ConnectorLayoutProperties layout = metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle));
-        return fromConnectorLayoutProperties(handle.withLayout(Optional.of(layout.getHandle())), metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle)));
+        ConnectorTransactionHandle transaction = catalogMetadata.getTransactionHandleFor(connectorId);
+        return fromConnectorLayout(connectorId, transaction, metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle)));
     }
 
     @Override
-    public TableHandle getAlternativeTableHandle(Session session, TableHandle tableHandle, PartitioningHandle partitioningHandle)
+    public TableLayoutHandle getAlternativeLayoutHandle(Session session, TableLayoutHandle tableLayoutHandle, PartitioningHandle partitioningHandle)
     {
         checkArgument(partitioningHandle.getConnectorId().isPresent(), "Expect partitioning handle from connector, got system partitioning handle");
         ConnectorId connectorId = partitioningHandle.getConnectorId().get();
-        checkArgument(connectorId.equals(tableHandle.getConnectorId()), "ConnectorId of tableLayoutHandle and partitioningHandle does not match");
+        checkArgument(connectorId.equals(tableLayoutHandle.getConnectorId()), "ConnectorId of tableLayoutHandle and partitioningHandle does not match");
         CatalogMetadata catalogMetadata = getCatalogMetadata(session, connectorId);
         ConnectorMetadata metadata = catalogMetadata.getMetadataFor(connectorId);
-        ConnectorTableLayoutHandle newTableLayoutHandle = metadata.getAlternativeLayoutHandle(session.toConnectorSession(connectorId), tableHandle.getLayout().get(), partitioningHandle.getConnectorHandle());
-        return tableHandle.withLayout(Optional.of(newTableLayoutHandle));
+        ConnectorTransactionHandle transaction = catalogMetadata.getTransactionHandleFor(connectorId);
+        ConnectorTableLayoutHandle newTableLayoutHandle = metadata.getAlternativeLayoutHandle(session.toConnectorSession(connectorId), tableLayoutHandle.getConnectorHandle(), partitioningHandle.getConnectorHandle());
+        return new TableLayoutHandle(connectorId, transaction, newTableLayoutHandle);
     }
 
     @Override
@@ -467,7 +465,7 @@ public class MetadataManager
     {
         ConnectorId connectorId = handle.getConnectorId();
         ConnectorMetadata metadata = getMetadata(session, connectorId);
-        ConnectorLayoutProperties tableLayout = metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle));
+        ConnectorTableLayout tableLayout = metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle));
         return metadata.getInfo(tableLayout.getHandle());
     }
 
@@ -615,31 +613,6 @@ public class MetadataManager
         ConnectorId connectorId = catalogMetadata.getConnectorId();
         ConnectorMetadata metadata = catalogMetadata.getMetadata();
         metadata.createTable(session.toConnectorSession(connectorId), tableMetadata, ignoreExisting);
-    }
-
-    @Override
-    public TableHandle createTemporaryTable(Session session, String catalogName, List<ColumnMetadata> columns, Optional<PartitioningMetadata> partitioningMetadata)
-    {
-        CatalogMetadata catalogMetadata = getCatalogMetadataForWrite(session, catalogName);
-        ConnectorId connectorId = catalogMetadata.getConnectorId();
-        ConnectorMetadata metadata = catalogMetadata.getMetadata();
-        ConnectorTableHandle connectorTableHandle = metadata.createTemporaryTable(
-                session.toConnectorSession(connectorId),
-                columns,
-                partitioningMetadata.map(partitioning -> createConnectorPartitioningMetadata(connectorId, partitioning)));
-        return new TableHandle(connectorId, connectorTableHandle);
-    }
-
-    private static ConnectorPartitioningMetadata createConnectorPartitioningMetadata(ConnectorId connectorId, PartitioningMetadata partitioningMetadata)
-    {
-        ConnectorId partitioningConnectorId = partitioningMetadata.getPartitioningHandle().getConnectorId()
-                .orElseThrow(() -> new IllegalArgumentException("connectorId is expected to be present in the connector partitioning handle"));
-        checkArgument(
-                connectorId.equals(partitioningConnectorId),
-                "Unexpected partitioning handle connector: %s. Expected: %s.",
-                partitioningConnectorId,
-                connectorId);
-        return new ConnectorPartitioningMetadata(partitioningMetadata.getPartitioningHandle().getConnectorHandle(), partitioningMetadata.getPartitionColumns());
     }
 
     @Override
@@ -1250,7 +1223,7 @@ public class MetadataManager
         }
         Optional<TableLayoutResult> result = getLayout(session, tableHandle, alwaysTrue(), Optional.empty());
         checkArgument(result.isPresent(), "Must be able to get a layout from connector %s", tableHandle);
-        return result.get().getLayout().getTableHandle().getLayout().get();
+        return result.get().getLayout().getHandle().getConnectorHandle();
     }
 
     @VisibleForTesting

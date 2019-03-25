@@ -17,15 +17,14 @@ import com.facebook.presto.Session;
 import com.facebook.presto.SystemSessionProperties;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.Metadata;
+import com.facebook.presto.metadata.TableLayout;
 import com.facebook.presto.metadata.TableLayoutResult;
-import com.facebook.presto.metadata.TableProperties;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.Constraint;
 import com.facebook.presto.spi.DiscretePredicates;
 import com.facebook.presto.spi.predicate.NullableValue;
 import com.facebook.presto.spi.predicate.TupleDomain;
-import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.planner.DeterminismEvaluator;
 import com.facebook.presto.sql.planner.LiteralEncoder;
@@ -45,6 +44,7 @@ import com.facebook.presto.sql.planner.plan.SortNode;
 import com.facebook.presto.sql.planner.plan.TableScanNode;
 import com.facebook.presto.sql.planner.plan.TopNNode;
 import com.facebook.presto.sql.planner.plan.ValuesNode;
+import com.facebook.presto.sql.tree.Expression;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -55,7 +55,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.facebook.presto.sql.relational.Expressions.constant;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -138,12 +137,12 @@ public class MetadataQueryOptimizer
 
             // Materialize the list of partitions and replace the TableScan node
             // with a Values node
-            TableProperties layout = null;
+            TableLayout layout = null;
             if (!tableScan.getTable().getLayout().isPresent()) {
                 layout = metadata.getLayout(session, tableScan.getTable(), Constraint.alwaysTrue(), Optional.empty()).map(TableLayoutResult::getLayout).get();
             }
             else {
-                layout = metadata.getTableProperties(session, tableScan.getTable());
+                layout = metadata.getLayout(session, tableScan.getTable());
             }
 
             if (layout == null || !layout.getDiscretePredicates().isPresent()) {
@@ -156,12 +155,12 @@ public class MetadataQueryOptimizer
                 return context.defaultRewrite(node);
             }
 
-            ImmutableList.Builder<List<RowExpression>> rowsBuilder = ImmutableList.builder();
+            ImmutableList.Builder<List<Expression>> rowsBuilder = ImmutableList.builder();
             for (TupleDomain<ColumnHandle> domain : predicates.getPredicates()) {
                 if (!domain.isNone()) {
                     Map<ColumnHandle, NullableValue> entries = TupleDomain.extractFixedValues(domain).get();
 
-                    ImmutableList.Builder<RowExpression> rowBuilder = ImmutableList.builder();
+                    ImmutableList.Builder<Expression> rowBuilder = ImmutableList.builder();
                     // for each input column, add a literal expression using the entry value
                     for (Symbol input : inputs) {
                         ColumnHandle column = columns.get(input);
@@ -172,7 +171,7 @@ public class MetadataQueryOptimizer
                             return context.defaultRewrite(node);
                         }
                         else {
-                            rowBuilder.add(constant(value.getValue(), type));
+                            rowBuilder.add(literalEncoder.toExpression(value.getValue(), type));
                         }
                     }
                     rowsBuilder.add(rowBuilder.build());

@@ -76,16 +76,16 @@ public interface Metadata
 
     Optional<TableLayoutResult> getLayout(Session session, TableHandle tableHandle, Constraint<ColumnHandle> constraint, Optional<Set<ColumnHandle>> desiredColumns);
 
-    TableProperties getTableProperties(Session session, TableHandle handle);
+    TableLayout getLayout(Session session, TableHandle handle);
 
     /**
-     * Return a table handle whose partitioning is converted to the provided partitioning handle,
+     * Return a table layout handle whose partitioning is converted to the provided partitioning handle,
      * but otherwise identical to the provided table layout handle.
      * The provided table layout handle must be one that the connector can transparently convert to from
      * the original partitioning handle associated with the provided table layout handle,
      * as promised by {@link #getCommonPartitioning}.
      */
-    TableHandle getAlternativeTableHandle(Session session, TableHandle tableHandle, PartitioningHandle partitioningHandle);
+    TableLayoutHandle getAlternativeLayoutHandle(Session session, TableLayoutHandle tableLayoutHandle, PartitioningHandle partitioningHandle);
 
     /**
      * Return a partitioning handle which the connector can transparently convert both {@code left} and {@code right} into.
@@ -156,15 +156,6 @@ public interface Metadata
      * @throws PrestoException with {@code ALREADY_EXISTS} if the table already exists and {@param ignoreExisting} is not set
      */
     void createTable(Session session, String catalogName, ConnectorTableMetadata tableMetadata, boolean ignoreExisting);
-
-    /**
-     * Creates a temporary table with optional partitioning requirements.
-     * Temporary table might have different default storage format, compression scheme, replication factor, etc,
-     * and gets automatically dropped when the transaction ends.
-     *
-     * This SPI is unstable and subject to change in the future.
-     */
-    TableHandle createTemporaryTable(Session session, String catalogName, List<ColumnMetadata> columns, Optional<PartitioningMetadata> partitioningMetadata);
 
     /**
      * Rename the specified table.
