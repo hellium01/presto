@@ -428,7 +428,6 @@ public class PruneUnreferencedOutputs
                     node.getTable(),
                     newOutputs,
                     newAssignments,
-                    node.getLayout(),
                     node.getCurrentConstraint(),
                     node.getEnforcedConstraint());
         }

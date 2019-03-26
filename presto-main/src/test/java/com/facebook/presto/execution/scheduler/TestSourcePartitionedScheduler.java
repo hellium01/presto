@@ -83,6 +83,7 @@ import static com.facebook.presto.sql.planner.SystemPartitioningHandle.SINGLE_DI
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.SOURCE_DISTRIBUTION;
 import static com.facebook.presto.sql.planner.plan.ExchangeNode.Type.GATHER;
 import static com.facebook.presto.sql.planner.plan.JoinNode.Type.INNER;
+import static com.facebook.presto.sql.planner.plan.TableScanNode.createTableScanNode;
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static java.lang.Integer.min;
@@ -455,9 +456,14 @@ public class TestSourcePartitionedScheduler
         Symbol symbol = new Symbol("column");
 
         // table scan with splitCount splits
-        TableScanNode tableScan = new TableScanNode(
-                TABLE_SCAN_NODE_ID,
-                new TableHandle(CONNECTOR_ID, new TestingTableHandle()),
+        PlanNodeId tableScanNodeId = new PlanNodeId("plan_id");
+        TableScanNode tableScan = createTableScanNode(
+                tableScanNodeId,
+                new TableHandle(
+                        CONNECTOR_ID,
+                        new TestingTableHandle(),
+                        TestingTransactionHandle.create(),
+                        Optional.of(TestingHandle.INSTANCE)),
                 ImmutableList.of(symbol),
                 ImmutableMap.of(symbol, new TestingColumnHandle("column")));
 
