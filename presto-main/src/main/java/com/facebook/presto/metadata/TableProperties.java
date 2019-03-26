@@ -15,9 +15,10 @@ package com.facebook.presto.metadata;
 
 import com.facebook.presto.connector.ConnectorId;
 import com.facebook.presto.spi.ColumnHandle;
-import com.facebook.presto.spi.ConnectorLayoutProperties;
+import com.facebook.presto.spi.ConnectorTableLayout;
 import com.facebook.presto.spi.DiscretePredicates;
 import com.facebook.presto.spi.LocalProperty;
+import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.facebook.presto.sql.planner.PartitioningHandle;
 import com.google.common.collect.ImmutableList;
@@ -31,10 +32,10 @@ import static java.util.Objects.requireNonNull;
 
 public class TableProperties
 {
-    private final TableHandle handle;
-    private final ConnectorLayoutProperties layout;
+    private final TableLayoutHandle handle;
+    private final ConnectorTableLayout layout;
 
-    public TableProperties(TableHandle handle, ConnectorLayoutProperties layout)
+    public TableProperties(TableLayoutHandle handle, ConnectorTableLayout layout)
     {
         requireNonNull(handle, "handle is null");
         requireNonNull(layout, "layout is null");
@@ -63,7 +64,7 @@ public class TableProperties
         return layout.getLocalProperties();
     }
 
-    public TableHandle getTableHandle()
+    public TableLayoutHandle getHandle()
     {
         return handle;
     }
@@ -74,7 +75,7 @@ public class TableProperties
                 .map(nodePartitioning -> new TablePartitioning(
                         new PartitioningHandle(
                                 Optional.of(handle.getConnectorId()),
-                                Optional.of(handle.getTransaction()),
+                                Optional.of(handle.getTransactionHandle()),
                                 nodePartitioning.getPartitioningHandle()),
                         nodePartitioning.getPartitioningColumns()));
     }
@@ -89,9 +90,9 @@ public class TableProperties
         return layout.getDiscretePredicates();
     }
 
-    public static TableProperties fromConnectorLayoutProperties(TableHandle table, ConnectorLayoutProperties layoutProperties)
+    public static TableProperties fromConnectorLayout(ConnectorId connectorId, ConnectorTransactionHandle transactionHandle, ConnectorTableLayout layout)
     {
-        return new TableProperties(table, layoutProperties);
+        return new TableProperties(new TableLayoutHandle(connectorId, transactionHandle, layout.getHandle()), layout);
     }
 
     public static class TablePartitioning

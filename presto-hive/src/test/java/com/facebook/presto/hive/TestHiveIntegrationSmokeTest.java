@@ -21,8 +21,8 @@ import com.facebook.presto.metadata.InsertTableHandle;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.QualifiedObjectName;
 import com.facebook.presto.metadata.TableHandle;
-import com.facebook.presto.metadata.TableMetadata;
 import com.facebook.presto.metadata.TableProperties;
+import com.facebook.presto.metadata.TableMetadata;
 import com.facebook.presto.spi.CatalogSchemaTableName;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ConnectorSession;
@@ -977,24 +977,6 @@ public class TestHiveIntegrationSmokeTest
     }
 
     @Test
-    public void testCreateEmptyUnpartitionedBucketedTable()
-    {
-        String tableName = "test_create_empty_bucketed_table";
-        assertUpdate("" +
-                "CREATE TABLE " + tableName + " " +
-                "WITH (" +
-                "   bucketed_by = ARRAY[ 'custkey' ], " +
-                "   bucket_count = 11 " +
-                ") " +
-                "AS " +
-                "SELECT custkey, comment " +
-                "FROM customer " +
-                "WHERE custkey < 0", 0);
-        assertQuery("SELECT count(*) FROM " + tableName, "SELECT 0");
-        assertUpdate("DROP TABLE " + tableName);
-    }
-
-    @Test
     public void testCreateEmptyBucketedPartition()
     {
         for (TestingHiveStorageFormat storageFormat : getAllTestingHiveStorageFormat()) {
@@ -1696,7 +1678,7 @@ public class TestHiveIntegrationSmokeTest
                     TableProperties layout = metadata.getLayout(transactionSession, tableHandle.get(), Constraint.alwaysTrue(), Optional.empty())
                             .get()
                             .getLayout();
-                    return propertyGetter.apply((HiveTableLayoutHandle) layout.getTableHandle().getLayout().get());
+                    return propertyGetter.apply((HiveTableLayoutHandle) layout.getHandle().getConnectorHandle());
                 });
     }
 
@@ -2207,35 +2189,6 @@ public class TestHiveIntegrationSmokeTest
     }
 
     @Test
-    public void testCreateUnpartitionedTableAndQuery()
-    {
-        Session session = getSession();
-
-        List<MaterializedRow> expected = MaterializedResult.resultBuilder(session, BIGINT, BIGINT)
-                .row(101L, 1L)
-                .row(201L, 2L)
-                .row(202L, 2L)
-                .row(301L, 3L)
-                .row(302L, 3L)
-                .build()
-                .getMaterializedRows();
-
-        transaction(getQueryRunner().getTransactionManager(), getQueryRunner().getAccessControl())
-                .execute(session, transactionSession -> {
-                    assertUpdate(
-                            transactionSession,
-                            "CREATE TABLE tmp_create_query AS " +
-                                    "SELECT * from (VALUES (CAST (101 AS BIGINT), CAST (1 AS BIGINT)), (201, 2), (202, 2), (301, 3), (302, 3)) t(a, z)",
-                            5);
-                    MaterializedResult actualFromCurrentTransaction = computeActual(transactionSession, "SELECT * FROM tmp_create_query");
-                    assertEqualsIgnoreOrder(actualFromCurrentTransaction, expected);
-                });
-
-        MaterializedResult actualAfterTransaction = computeActual(session, "SELECT * FROM tmp_create_query");
-        assertEqualsIgnoreOrder(actualAfterTransaction, expected);
-    }
-
-    @Test
     public void testAddColumn()
     {
         assertUpdate("CREATE TABLE test_add_column (a bigint COMMENT 'test comment AAA')");
@@ -2361,12 +2314,12 @@ public class TestHiveIntegrationSmokeTest
     {
         try {
             assertUpdate(
-                    "CREATE TABLE test_mismatch_bucketing_with_predicate_8\n" +
+                    "CREATE TABLE test_mismatch_bucketing8\n" +
                             "WITH (bucket_count = 8, bucketed_by = ARRAY['key8']) AS\n" +
                             "SELECT custkey key8, comment value8 FROM orders",
                     15000);
             assertUpdate(
-                    "CREATE TABLE test_mismatch_bucketing_with_predicate_32\n" +
+                    "CREATE TABLE test_mismatch_bucketing32\n" +
                             "WITH (bucket_count = 32, bucketed_by = ARRAY['key32']) AS\n" +
                             "SELECT custkey key32, comment value32 FROM orders",
                     15000);
@@ -2383,18 +2336,18 @@ public class TestHiveIntegrationSmokeTest
             @Language("SQL") String query = "SELECT count(*) AS count\n" +
                     "FROM (\n" +
                     "  SELECT key32\n" +
-                    "  FROM test_mismatch_bucketing_with_predicate_32\n" +
+                    "  FROM test_mismatch_bucketing32\n" +
                     "  WHERE \"$bucket\" between 16 AND 31\n" +
                     ") a\n" +
-                    "JOIN test_mismatch_bucketing_with_predicate_8 b\n" +
+                    "JOIN test_mismatch_bucketing8 b\n" +
                     "ON a.key32 = b.key8";
 
             assertQuery(withMismatchOptimization, query, "SELECT 130361");
             assertQuery(withoutMismatchOptimization, query, "SELECT 130361");
         }
         finally {
-            assertUpdate("DROP TABLE IF EXISTS test_mismatch_bucketing_with_predicate_8");
-            assertUpdate("DROP TABLE IF EXISTS test_mismatch_bucketing_with_predicate_32");
+            assertUpdate("DROP TABLE IF EXISTS test_mismatch_bucketing8");
+            assertUpdate("DROP TABLE IF EXISTS test_mismatch_bucketing32");
         }
     }
 
@@ -2984,7 +2937,7 @@ public class TestHiveIntegrationSmokeTest
         return plan ->
         {
             int actualRemoteExchangesCount = searchFrom(plan.getRoot())
-                    .where(node -> node instanceof ExchangeNode && ((ExchangeNode) node).getScope().isRemote())
+                    .where(node -> node instanceof ExchangeNode && ((ExchangeNode) node).getScope() == ExchangeNode.Scope.REMOTE)
                     .findAll()
                     .size();
             if (actualRemoteExchangesCount != expectedRemoteExchangesCount) {

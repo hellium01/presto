@@ -121,7 +121,7 @@ public abstract class AbstractMockMetadata
     }
 
     @Override
-    public TableLayout getLayout(Session session, TableHandle handle)
+    public TableProperties getLayout(Session session, TableHandle handle)
     {
         throw new UnsupportedOperationException();
     }
