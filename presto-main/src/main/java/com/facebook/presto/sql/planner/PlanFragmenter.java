@@ -21,7 +21,7 @@ import com.facebook.presto.execution.scheduler.BucketNodeMap;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.TableHandle;
-import com.facebook.presto.metadata.TableLayout.TablePartitioning;
+import com.facebook.presto.metadata.TableProperties.TablePartitioning;
 import com.facebook.presto.operator.StageExecutionDescriptor;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.PrestoWarning;

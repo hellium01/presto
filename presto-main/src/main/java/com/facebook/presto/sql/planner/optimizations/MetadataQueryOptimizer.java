@@ -17,7 +17,7 @@ import com.facebook.presto.Session;
 import com.facebook.presto.SystemSessionProperties;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.Metadata;
-import com.facebook.presto.metadata.TableLayout;
+import com.facebook.presto.metadata.TableProperties;
 import com.facebook.presto.metadata.TableLayoutResult;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
@@ -137,7 +137,7 @@ public class MetadataQueryOptimizer
 
             // Materialize the list of partitions and replace the TableScan node
             // with a Values node
-            TableLayout layout = null;
+            TableProperties layout = null;
             if (!tableScan.getTable().getLayout().isPresent()) {
                 layout = metadata.getLayout(session, tableScan.getTable(), Constraint.alwaysTrue(), Optional.empty()).map(TableLayoutResult::getLayout).get();
             }
