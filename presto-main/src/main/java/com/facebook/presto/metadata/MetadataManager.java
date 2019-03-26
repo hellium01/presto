@@ -91,7 +91,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.facebook.presto.metadata.QualifiedObjectName.convertFromSchemaTableName;
-import static com.facebook.presto.metadata.TableLayout.fromConnectorLayout;
+import static com.facebook.presto.metadata.TableProperties.fromConnectorLayout;
 import static com.facebook.presto.metadata.ViewDefinition.ViewColumn;
 import static com.facebook.presto.spi.Constraint.alwaysTrue;
 import static com.facebook.presto.spi.StandardErrorCode.INVALID_VIEW;
@@ -409,7 +409,7 @@ public class MetadataManager
     }
 
     @Override
-    public TableLayout getLayout(Session session, TableHandle handle)
+    public TableProperties getLayout(Session session, TableHandle handle)
     {
         ConnectorId connectorId = handle.getConnectorId();
         CatalogMetadata catalogMetadata = getCatalogMetadata(session, connectorId);

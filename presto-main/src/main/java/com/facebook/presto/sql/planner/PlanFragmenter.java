@@ -23,7 +23,7 @@ import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.InsertTableHandle;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.TableHandle;
-import com.facebook.presto.metadata.TableLayout.TablePartitioning;
+import com.facebook.presto.metadata.TableProperties.TablePartitioning;
 import com.facebook.presto.operator.StageExecutionDescriptor;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;

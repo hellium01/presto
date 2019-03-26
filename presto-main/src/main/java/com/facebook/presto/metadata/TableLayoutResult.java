@@ -25,16 +25,16 @@ import static java.util.Objects.requireNonNull;
 
 public class TableLayoutResult
 {
-    private final TableLayout layout;
+    private final TableProperties layout;
     private final TupleDomain<ColumnHandle> unenforcedConstraint;
 
-    public TableLayoutResult(TableLayout layout, TupleDomain<ColumnHandle> unenforcedConstraint)
+    public TableLayoutResult(TableProperties layout, TupleDomain<ColumnHandle> unenforcedConstraint)
     {
         this.layout = requireNonNull(layout, "layout is null");
         this.unenforcedConstraint = requireNonNull(unenforcedConstraint, "unenforcedConstraint is null");
     }
 
-    public TableLayout getLayout()
+    public TableProperties getLayout()
     {
         return layout;
     }

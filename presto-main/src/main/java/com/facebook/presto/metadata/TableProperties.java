@@ -30,12 +30,12 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
-public class TableLayout
+public class TableProperties
 {
     private final TableLayoutHandle handle;
     private final ConnectorTableLayout layout;
 
-    public TableLayout(TableLayoutHandle handle, ConnectorTableLayout layout)
+    public TableProperties(TableLayoutHandle handle, ConnectorTableLayout layout)
     {
         requireNonNull(handle, "handle is null");
         requireNonNull(layout, "layout is null");
@@ -90,9 +90,9 @@ public class TableLayout
         return layout.getDiscretePredicates();
     }
 
-    public static TableLayout fromConnectorLayout(ConnectorId connectorId, ConnectorTransactionHandle transactionHandle, ConnectorTableLayout layout)
+    public static TableProperties fromConnectorLayout(ConnectorId connectorId, ConnectorTransactionHandle transactionHandle, ConnectorTableLayout layout)
     {
-        return new TableLayout(new TableLayoutHandle(connectorId, transactionHandle, layout.getHandle()), layout);
+        return new TableProperties(new TableLayoutHandle(connectorId, transactionHandle, layout.getHandle()), layout);
     }
 
     public static class TablePartitioning
