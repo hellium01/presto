@@ -18,7 +18,7 @@ import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorTableHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutResult;
 import com.facebook.presto.spi.ConnectorTableMetadata;
@@ -81,14 +81,14 @@ public class SystemTablesMetadata
     public List<ConnectorTableLayoutResult> getTableLayouts(ConnectorSession session, ConnectorTableHandle table, Constraint<ColumnHandle> constraint, Optional<Set<ColumnHandle>> desiredColumns)
     {
         SystemTableHandle tableHandle = (SystemTableHandle) table;
-        ConnectorTableLayout layout = new ConnectorTableLayout(new SystemTableLayoutHandle(tableHandle.getConnectorId(), tableHandle, constraint.getSummary()));
+        ConnectorLayoutProperties layout = new ConnectorLayoutProperties(new SystemTableLayoutHandle(tableHandle.getConnectorId(), tableHandle, constraint.getSummary()));
         return ImmutableList.of(new ConnectorTableLayoutResult(layout, constraint.getSummary()));
     }
 
     @Override
-    public ConnectorTableLayout getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle)
+    public ConnectorLayoutProperties getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle)
     {
-        return new ConnectorTableLayout(handle);
+        return new ConnectorLayoutProperties(handle);
     }
 
     @Override

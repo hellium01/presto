@@ -48,7 +48,7 @@ import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.ConnectorSplitSource;
 import com.facebook.presto.spi.ConnectorTableHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutResult;
 import com.facebook.presto.spi.ConnectorTableMetadata;
@@ -588,8 +588,8 @@ public abstract class AbstractTestHiveClient
 
     protected int partitionCount;
     protected TupleDomain<ColumnHandle> tupleDomain;
-    protected ConnectorTableLayout tableLayout;
-    protected ConnectorTableLayout unpartitionedTableLayout;
+    protected ConnectorLayoutProperties tableLayout;
+    protected ConnectorLayoutProperties unpartitionedTableLayout;
     protected ConnectorTableLayoutHandle invalidTableLayoutHandle;
 
     protected DateTimeZone timeZone;
@@ -688,7 +688,7 @@ public abstract class AbstractTestHiveClient
                 .build();
         partitionCount = partitions.size();
         tupleDomain = TupleDomain.fromFixedValues(ImmutableMap.of(dsColumn, NullableValue.of(createUnboundedVarcharType(), utf8Slice("2012-12-29"))));
-        tableLayout = new ConnectorTableLayout(
+        tableLayout = new ConnectorLayoutProperties(
                 new HiveTableLayoutHandle(tablePartitionFormat, partitionColumns, partitions, tupleDomain, tupleDomain, Optional.empty(), Optional.empty()),
                 Optional.empty(),
                 TupleDomain.withColumnDomains(ImmutableMap.of(
@@ -716,7 +716,7 @@ public abstract class AbstractTestHiveClient
                                 dummyColumn, Domain.create(ValueSet.ofRanges(Range.equal(INTEGER, 4L)), false)))))),
                 ImmutableList.of());
         List<HivePartition> unpartitionedPartitions = ImmutableList.of(new HivePartition(tableUnpartitioned));
-        unpartitionedTableLayout = new ConnectorTableLayout(new HiveTableLayoutHandle(tableUnpartitioned, ImmutableList.of(), unpartitionedPartitions, TupleDomain.all(), TupleDomain.all(), Optional.empty(), Optional.empty()));
+        unpartitionedTableLayout = new ConnectorLayoutProperties(new HiveTableLayoutHandle(tableUnpartitioned, ImmutableList.of(), unpartitionedPartitions, TupleDomain.all(), TupleDomain.all(), Optional.empty(), Optional.empty()));
         timeZone = DateTimeZone.forTimeZone(TimeZone.getTimeZone(timeZoneId));
     }
 
@@ -1151,7 +1151,7 @@ public abstract class AbstractTestHiveClient
         }
     }
 
-    protected void assertExpectedTableLayout(ConnectorTableLayout actualTableLayout, ConnectorTableLayout expectedTableLayout)
+    protected void assertExpectedTableLayout(ConnectorLayoutProperties actualTableLayout, ConnectorLayoutProperties expectedTableLayout)
     {
         assertExpectedTableLayoutHandle(actualTableLayout.getHandle(), expectedTableLayout.getHandle());
         assertEquals(actualTableLayout.getPredicate(), expectedTableLayout.getPredicate());

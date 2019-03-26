@@ -23,7 +23,7 @@ import java.util.Set;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
-public class ConnectorTableLayout
+public class ConnectorLayoutProperties
 {
     private final ConnectorTableLayoutHandle handle;
     private final Optional<List<ColumnHandle>> columns;
@@ -33,7 +33,7 @@ public class ConnectorTableLayout
     private final Optional<DiscretePredicates> discretePredicates;
     private final List<LocalProperty<ColumnHandle>> localProperties;
 
-    public ConnectorTableLayout(ConnectorTableLayoutHandle handle)
+    public ConnectorLayoutProperties(ConnectorTableLayoutHandle handle)
     {
         this(handle,
                 Optional.empty(),
@@ -44,7 +44,7 @@ public class ConnectorTableLayout
                 emptyList());
     }
 
-    public ConnectorTableLayout(
+    public ConnectorLayoutProperties(
             ConnectorTableLayoutHandle handle,
             Optional<List<ColumnHandle>> columns,
             TupleDomain<ColumnHandle> predicate,
@@ -153,7 +153,7 @@ public class ConnectorTableLayout
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        ConnectorTableLayout other = (ConnectorTableLayout) obj;
+        ConnectorLayoutProperties other = (ConnectorLayoutProperties) obj;
         return Objects.equals(this.handle, other.handle)
                 && Objects.equals(this.columns, other.columns)
                 && Objects.equals(this.predicate, other.predicate)

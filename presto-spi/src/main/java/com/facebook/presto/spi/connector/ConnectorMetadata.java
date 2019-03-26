@@ -21,7 +21,7 @@ import com.facebook.presto.spi.ConnectorOutputTableHandle;
 import com.facebook.presto.spi.ConnectorResolvedIndex;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorTableHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutResult;
 import com.facebook.presto.spi.ConnectorTableMetadata;
@@ -116,7 +116,7 @@ public interface ConnectorMetadata
             Constraint<ColumnHandle> constraint,
             Optional<Set<ColumnHandle>> desiredColumns);
 
-    ConnectorTableLayout getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle);
+    ConnectorLayoutProperties getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle);
 
     /**
      * Return a table layout handle whose partitioning is converted to the provided partitioning handle,
@@ -315,7 +315,7 @@ public interface ConnectorMetadata
      */
     default Optional<ConnectorNewTableLayout> getInsertLayout(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
-        List<ConnectorTableLayout> layouts = getTableLayouts(session, tableHandle, new Constraint<>(TupleDomain.all(), map -> true), Optional.empty())
+        List<ConnectorLayoutProperties> layouts = getTableLayouts(session, tableHandle, new Constraint<>(TupleDomain.all(), map -> true), Optional.empty())
                 .stream()
                 .map(ConnectorTableLayoutResult::getTableLayout)
                 .filter(layout -> layout.getTablePartitioning().isPresent())
@@ -329,7 +329,7 @@ public interface ConnectorMetadata
             throw new PrestoException(NOT_SUPPORTED, "Tables with multiple layouts can not be written");
         }
 
-        ConnectorTableLayout layout = layouts.get(0);
+        ConnectorLayoutProperties layout = layouts.get(0);
         ConnectorPartitioningHandle partitioningHandle = layout.getTablePartitioning().get().getPartitioningHandle();
         Map<ColumnHandle, String> columnNamesByHandle = getColumnHandles(session, tableHandle).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

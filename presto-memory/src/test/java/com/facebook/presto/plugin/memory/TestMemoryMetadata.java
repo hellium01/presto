@@ -15,7 +15,7 @@ package com.facebook.presto.plugin.memory;
 
 import com.facebook.presto.spi.ConnectorOutputTableHandle;
 import com.facebook.presto.spi.ConnectorTableHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutResult;
 import com.facebook.presto.spi.ConnectorTableMetadata;
@@ -149,7 +149,7 @@ public class TestMemoryMetadata
         ConnectorTableHandle tableHandle = metadata.getTableHandle(SESSION, tableName);
         List<ConnectorTableLayoutResult> tableLayouts = metadata.getTableLayouts(SESSION, tableHandle, Constraint.alwaysTrue(), Optional.empty());
         assertTrue(tableLayouts.size() == 1, "Expected exactly one layout.");
-        ConnectorTableLayout tableLayout = tableLayouts.get(0).getTableLayout();
+        ConnectorLayoutProperties tableLayout = tableLayouts.get(0).getTableLayout();
         ConnectorTableLayoutHandle tableLayoutHandle = tableLayout.getHandle();
         assertTrue(tableLayoutHandle instanceof MemoryTableLayoutHandle);
         assertTrue(((MemoryTableLayoutHandle) tableLayoutHandle).getDataFragments().isEmpty(), "Data fragments should be empty");

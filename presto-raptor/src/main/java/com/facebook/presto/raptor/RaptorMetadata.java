@@ -30,7 +30,7 @@ import com.facebook.presto.spi.ConnectorNewTableLayout;
 import com.facebook.presto.spi.ConnectorOutputTableHandle;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorTableHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutResult;
 import com.facebook.presto.spi.ConnectorTableMetadata;
@@ -303,21 +303,21 @@ public class RaptorMetadata
     public List<ConnectorTableLayoutResult> getTableLayouts(ConnectorSession session, ConnectorTableHandle table, Constraint<ColumnHandle> constraint, Optional<Set<ColumnHandle>> desiredColumns)
     {
         RaptorTableHandle handle = (RaptorTableHandle) table;
-        ConnectorTableLayout layout = getTableLayout(session, handle, constraint.getSummary());
+        ConnectorLayoutProperties layout = getTableLayout(session, handle, constraint.getSummary());
         return ImmutableList.of(new ConnectorTableLayoutResult(layout, constraint.getSummary()));
     }
 
     @Override
-    public ConnectorTableLayout getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle)
+    public ConnectorLayoutProperties getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle)
     {
         RaptorTableLayoutHandle raptorHandle = (RaptorTableLayoutHandle) handle;
         return getTableLayout(session, raptorHandle.getTable(), raptorHandle.getConstraint());
     }
 
-    private ConnectorTableLayout getTableLayout(ConnectorSession session, RaptorTableHandle handle, TupleDomain<ColumnHandle> constraint)
+    private ConnectorLayoutProperties getTableLayout(ConnectorSession session, RaptorTableHandle handle, TupleDomain<ColumnHandle> constraint)
     {
         if (!handle.getDistributionId().isPresent()) {
-            return new ConnectorTableLayout(new RaptorTableLayoutHandle(handle, constraint, Optional.empty()));
+            return new ConnectorLayoutProperties(new RaptorTableLayoutHandle(handle, constraint, Optional.empty()));
         }
 
         List<RaptorColumnHandle> bucketColumnHandles = getBucketColumnHandles(handle.getTableId());
@@ -326,7 +326,7 @@ public class RaptorMetadata
 
         boolean oneSplitPerBucket = handle.getBucketCount().getAsInt() >= getOneSplitPerBucketThreshold(session);
 
-        return new ConnectorTableLayout(
+        return new ConnectorLayoutProperties(
                 new RaptorTableLayoutHandle(handle, constraint, Optional.of(partitioning)),
                 Optional.empty(),
                 TupleDomain.all(),

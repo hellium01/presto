@@ -24,7 +24,7 @@ import com.facebook.presto.spi.ConnectorOutputTableHandle;
 import com.facebook.presto.spi.ConnectorResolvedIndex;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorTableHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutResult;
 import com.facebook.presto.spi.ConnectorTableMetadata;
@@ -91,7 +91,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.facebook.presto.metadata.QualifiedObjectName.convertFromSchemaTableName;
-import static com.facebook.presto.metadata.TableProperties.fromConnectorLayout;
+import static com.facebook.presto.metadata.TableProperties.fromConnectorLayoutProperties;
 import static com.facebook.presto.metadata.ViewDefinition.ViewColumn;
 import static com.facebook.presto.spi.Constraint.alwaysTrue;
 import static com.facebook.presto.spi.StandardErrorCode.INVALID_VIEW;
@@ -405,7 +405,7 @@ public class MetadataManager
             throw new PrestoException(NOT_SUPPORTED, format("Connector returned multiple layouts for table %s", table));
         }
 
-        return Optional.of(new TableLayoutResult(fromConnectorLayout(connectorId, transaction, layouts.get(0).getTableLayout()), layouts.get(0).getUnenforcedConstraint()));
+        return Optional.of(new TableLayoutResult(fromConnectorLayoutProperties(connectorId, transaction, layouts.get(0).getTableLayout()), layouts.get(0).getUnenforcedConstraint()));
     }
 
     @Override
@@ -415,7 +415,7 @@ public class MetadataManager
         CatalogMetadata catalogMetadata = getCatalogMetadata(session, connectorId);
         ConnectorMetadata metadata = catalogMetadata.getMetadataFor(connectorId);
         ConnectorTransactionHandle transaction = catalogMetadata.getTransactionHandleFor(connectorId);
-        return fromConnectorLayout(connectorId, transaction, metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle)));
+        return fromConnectorLayoutProperties(connectorId, transaction, metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle)));
     }
 
     @Override
@@ -465,7 +465,7 @@ public class MetadataManager
     {
         ConnectorId connectorId = handle.getConnectorId();
         ConnectorMetadata metadata = getMetadata(session, connectorId);
-        ConnectorTableLayout tableLayout = metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle));
+        ConnectorLayoutProperties tableLayout = metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle));
         return metadata.getInfo(tableLayout.getHandle());
     }
 

@@ -17,7 +17,7 @@ import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorTableHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutResult;
 import com.facebook.presto.spi.ConnectorTableMetadata;
@@ -90,7 +90,7 @@ public class GlobalSystemConnector
             }
 
             @Override
-            public ConnectorTableLayout getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle)
+            public ConnectorLayoutProperties getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle)
             {
                 throw new UnsupportedOperationException();
             }

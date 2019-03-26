@@ -19,7 +19,7 @@ import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ColumnNotFoundException;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorTableHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutResult;
 import com.facebook.presto.spi.ConnectorTableMetadata;
@@ -104,14 +104,14 @@ public class AtopMetadata
             }
         }
         AtopTableLayoutHandle layoutHandle = new AtopTableLayoutHandle(tableHandle, startTimeDomain, endTimeDomain);
-        ConnectorTableLayout tableLayout = getTableLayout(session, layoutHandle);
+        ConnectorLayoutProperties tableLayout = getTableLayout(session, layoutHandle);
         return ImmutableList.of(new ConnectorTableLayoutResult(tableLayout, constraint.getSummary()));
     }
 
     @Override
-    public ConnectorTableLayout getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle tableLayoutHandle)
+    public ConnectorLayoutProperties getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle tableLayoutHandle)
     {
-        return new ConnectorTableLayout(tableLayoutHandle);
+        return new ConnectorLayoutProperties(tableLayoutHandle);
     }
 
     @Override

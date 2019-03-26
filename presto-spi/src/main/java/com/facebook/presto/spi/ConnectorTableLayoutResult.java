@@ -19,16 +19,16 @@ import static java.util.Objects.requireNonNull;
 
 public class ConnectorTableLayoutResult
 {
-    private final ConnectorTableLayout layout;
+    private final ConnectorLayoutProperties layout;
     private final TupleDomain<ColumnHandle> unenforcedConstraint;
 
-    public ConnectorTableLayoutResult(ConnectorTableLayout layout, TupleDomain<ColumnHandle> unenforcedConstraint)
+    public ConnectorTableLayoutResult(ConnectorLayoutProperties layout, TupleDomain<ColumnHandle> unenforcedConstraint)
     {
         this.layout = requireNonNull(layout, "layout is null");
         this.unenforcedConstraint = requireNonNull(unenforcedConstraint, "unenforcedConstraint is null");
     }
 
-    public ConnectorTableLayout getTableLayout()
+    public ConnectorLayoutProperties getTableLayout()
     {
         return layout;
     }

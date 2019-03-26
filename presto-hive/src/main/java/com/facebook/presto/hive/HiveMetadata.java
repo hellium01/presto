@@ -37,7 +37,7 @@ import com.facebook.presto.spi.ConnectorNewTableLayout;
 import com.facebook.presto.spi.ConnectorOutputTableHandle;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorTableHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutResult;
 import com.facebook.presto.spi.ConnectorTableMetadata;
@@ -1754,7 +1754,7 @@ public class HiveMetadata
     }
 
     @Override
-    public ConnectorTableLayout getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle layoutHandle)
+    public ConnectorLayoutProperties getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle layoutHandle)
     {
         HiveTableLayoutHandle hiveLayoutHandle = (HiveTableLayoutHandle) layoutHandle;
         List<ColumnHandle> partitionColumns = hiveLayoutHandle.getPartitionColumns();
@@ -1785,7 +1785,7 @@ public class HiveMetadata
                             .collect(toList())));
         }
 
-        return new ConnectorTableLayout(
+        return new ConnectorLayoutProperties(
                 hiveLayoutHandle,
                 Optional.empty(),
                 predicate,

@@ -15,7 +15,7 @@ package com.facebook.presto.metadata;
 
 import com.facebook.presto.connector.ConnectorId;
 import com.facebook.presto.spi.ColumnHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
+import com.facebook.presto.spi.ConnectorLayoutProperties;
 import com.facebook.presto.spi.DiscretePredicates;
 import com.facebook.presto.spi.LocalProperty;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
@@ -33,9 +33,9 @@ import static java.util.Objects.requireNonNull;
 public class TableProperties
 {
     private final TableLayoutHandle handle;
-    private final ConnectorTableLayout layout;
+    private final ConnectorLayoutProperties layout;
 
-    public TableProperties(TableLayoutHandle handle, ConnectorTableLayout layout)
+    public TableProperties(TableLayoutHandle handle, ConnectorLayoutProperties layout)
     {
         requireNonNull(handle, "handle is null");
         requireNonNull(layout, "layout is null");
@@ -90,7 +90,7 @@ public class TableProperties
         return layout.getDiscretePredicates();
     }
 
-    public static TableProperties fromConnectorLayout(ConnectorId connectorId, ConnectorTransactionHandle transactionHandle, ConnectorTableLayout layout)
+    public static TableProperties fromConnectorLayoutProperties(ConnectorId connectorId, ConnectorTransactionHandle transactionHandle, ConnectorLayoutProperties layout)
     {
         return new TableProperties(new TableLayoutHandle(connectorId, transactionHandle, layout.getHandle()), layout);
     }
