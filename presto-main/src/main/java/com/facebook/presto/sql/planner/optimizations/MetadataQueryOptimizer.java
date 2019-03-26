@@ -17,8 +17,8 @@ import com.facebook.presto.Session;
 import com.facebook.presto.SystemSessionProperties;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.Metadata;
-import com.facebook.presto.metadata.TableProperties;
 import com.facebook.presto.metadata.TableLayoutResult;
+import com.facebook.presto.metadata.TableProperties;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.Constraint;
@@ -143,7 +143,7 @@ public class MetadataQueryOptimizer
                 layout = metadata.getLayout(session, tableScan.getTable(), Constraint.alwaysTrue(), Optional.empty()).map(TableLayoutResult::getLayout).get();
             }
             else {
-                layout = metadata.getLayout(session, tableScan.getTable());
+                layout = metadata.getTableProperties(session, tableScan.getTable());
             }
 
             if (layout == null || !layout.getDiscretePredicates().isPresent()) {

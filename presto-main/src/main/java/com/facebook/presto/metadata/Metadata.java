@@ -76,7 +76,7 @@ public interface Metadata
 
     Optional<TableLayoutResult> getLayout(Session session, TableHandle tableHandle, Constraint<ColumnHandle> constraint, Optional<Set<ColumnHandle>> desiredColumns);
 
-    TableProperties getLayout(Session session, TableHandle handle);
+    TableProperties getTableProperties(Session session, TableHandle handle);
 
     /**
      * Return a table handle whose partitioning is converted to the provided partitioning handle,

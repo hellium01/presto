@@ -90,9 +90,9 @@ public class TableProperties
         return layout.getDiscretePredicates();
     }
 
-    public static TableProperties fromConnectorLayoutProperties(ConnectorId connectorId, ConnectorTransactionHandle transactionHandle, ConnectorLayoutProperties layout)
+    public static TableProperties fromConnectorLayoutProperties(ConnectorId connectorId, ConnectorTransactionHandle transactionHandle, ConnectorLayoutProperties layoutProperties)
     {
-        return new TableProperties(new TableLayoutHandle(connectorId, transactionHandle, layout.getHandle()), layout);
+        return new TableProperties(new TableLayoutHandle(connectorId, transactionHandle, layoutProperties.getHandle()), layoutProperties);
     }
 
     public static class TablePartitioning
