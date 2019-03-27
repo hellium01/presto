@@ -394,7 +394,6 @@ public class MetadataManager
 
         CatalogMetadata catalogMetadata = getCatalogMetadata(session, connectorId);
         ConnectorMetadata metadata = catalogMetadata.getMetadataFor(connectorId);
-        ConnectorTransactionHandle transaction = catalogMetadata.getTransactionHandleFor(connectorId);
         ConnectorSession connectorSession = session.toConnectorSession(connectorId);
         List<ConnectorTableLayoutResult> layouts = metadata.getTableLayouts(connectorSession, connectorTable, constraint, desiredColumns);
         if (layouts.isEmpty()) {
@@ -404,8 +403,11 @@ public class MetadataManager
         if (layouts.size() > 1) {
             throw new PrestoException(NOT_SUPPORTED, format("Connector returned multiple layouts for table %s", table));
         }
-
-        return Optional.of(new TableLayoutResult(fromConnectorLayoutProperties(connectorId, transaction, layouts.get(0).getTableLayout()), layouts.get(0).getUnenforcedConstraint()));
+        return Optional.of(new TableLayoutResult(
+                fromConnectorLayoutProperties(
+                        table.withLayout(Optional.of(layouts.get(0).getTableLayout().getHandle())),
+                        layouts.get(0).getTableLayout()),
+                layouts.get(0).getUnenforcedConstraint()));
     }
 
     @Override
@@ -414,8 +416,8 @@ public class MetadataManager
         ConnectorId connectorId = handle.getConnectorId();
         CatalogMetadata catalogMetadata = getCatalogMetadata(session, connectorId);
         ConnectorMetadata metadata = catalogMetadata.getMetadataFor(connectorId);
-        ConnectorTransactionHandle transaction = catalogMetadata.getTransactionHandleFor(connectorId);
-        return fromConnectorLayoutProperties(connectorId, transaction, metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle)));
+        ConnectorLayoutProperties layout = metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle));
+        return fromConnectorLayoutProperties(handle.withLayout(Optional.of(layout.getHandle())), metadata.getTableLayout(session.toConnectorSession(connectorId), resolveTableLayout(session, handle)));
     }
 
     @Override
@@ -1248,7 +1250,7 @@ public class MetadataManager
         }
         Optional<TableLayoutResult> result = getLayout(session, tableHandle, alwaysTrue(), Optional.empty());
         checkArgument(result.isPresent(), "Must be able to get a layout from connector %s", tableHandle);
-        return result.get().getLayout().getHandle().getConnectorHandle();
+        return result.get().getLayout().getTableHandle().getLayout().get();
     }
 
     @VisibleForTesting
