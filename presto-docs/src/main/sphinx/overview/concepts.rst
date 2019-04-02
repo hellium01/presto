@@ -17,7 +17,7 @@ While it's easy to understand statements and queries, as an end-user
 you should have familiarity with concepts such as stages and splits to
 take full advantage of Presto to execute efficient queries.  As a
 Presto administrator or a Presto contributor you should understand how
-Presto's concepts of stages map to tasks and how tasks contain a set
+Presto's concepts of stages delegatedMap to tasks and how tasks contain a set
 of drivers which process data.
 
 This section provides a solid definition for the core concepts

@@ -15,4 +15,9 @@ package com.facebook.presto.spi.trait;
 
 public interface Trait
 {
+    TraitType getType();
+
+    boolean satisfies(Trait target);
+
+    Trait getCoverage(Trait target);
 }

@@ -221,7 +221,7 @@ export class WorkerStatus extends React.Component {
             <div>
                 <table className="table">
                     <tbody>
-                    {Object.keys(queries).map(key => WorkerStatus.renderPoolQuery(key, queries[key][0], queries[key][1], size))}
+                    {Object.keys(queries).delegatedMap(key => WorkerStatus.renderPoolQuery(key, queries[key][0], queries[key][1], size))}
                     </tbody>
                 </table>
             </div>

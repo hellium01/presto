@@ -151,7 +151,7 @@ export class WorkerThreadList extends React.Component {
                 </a>
                 <br/>
                 <span className="stack-traces" id={"stack-trace-" + threadInfo.id}>
-                    {threadInfo.stackTrace.map(this.renderStackLine(threadInfo.id))}
+                    {threadInfo.stackTrace.delegatedMap(this.renderStackLine(threadInfo.id))}
                 </span>
                 <div>
                     &nbsp;
@@ -203,7 +203,7 @@ export class WorkerThreadList extends React.Component {
                                         <strong>Group:</strong> {this.state.selectedGroup} <span className="caret"/>
                                     </button>
                                     <ul className="dropdown-menu">
-                                        {Object.keys(threads).map(group => this.renderGroupListItem(group))}
+                                        {Object.keys(threads).delegatedMap(group => this.renderGroupListItem(group))}
                                     </ul>
                                 </div>
                             </td>
@@ -214,7 +214,7 @@ export class WorkerThreadList extends React.Component {
                                         <strong>State:</strong> {this.state.selectedThreadState} <span className="caret"/>
                                     </button>
                                     <ul className="dropdown-menu">
-                                        {THREAD_STATES.map(state => this.renderThreadStateListItem(state))}
+                                        {THREAD_STATES.delegatedMap(state => this.renderThreadStateListItem(state))}
                                     </ul>
                                 </div>
                             </td>
@@ -247,7 +247,7 @@ export class WorkerThreadList extends React.Component {
             else {
                 displayedThreads = (
                     <pre>
-                        {filteredThreads.map(t => this.renderThread(t))}
+                        {filteredThreads.delegatedMap(t => this.renderThread(t))}
                     </pre>);
             }
 

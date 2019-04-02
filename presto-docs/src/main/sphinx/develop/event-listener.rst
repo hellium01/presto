@@ -37,7 +37,7 @@ properties other than ``event-listener.name`` are specific to the
 The ``event-listener.name`` property is used by Presto to find a registered
 ``EventListenerFactory`` based on the name returned by
 ``EventListenerFactory.getName()``. The remaining properties are passed
-as a map to ``EventListenerFactory.create()``.
+as a delegatedMap to ``EventListenerFactory.create()``.
 
 Example configuration file:
 

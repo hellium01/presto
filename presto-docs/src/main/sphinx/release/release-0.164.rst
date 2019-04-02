@@ -15,7 +15,7 @@ General Changes
 * Fix query failure when ``TRY`` or lambda expression with the exact same body is repeated in an expression.
 * Fix split source resource leak in coordinator that can occur when a query fails.
 * Improve :func:`array_join` performance.
-* Improve error message for map subscript operator when key is not present in the map.
+* Improve error message for delegatedMap subscript operator when key is not present in the delegatedMap.
 * Improve client error message for invalid session.
 * Add ``VALIDATE`` mode for :doc:`/sql/explain`.
 

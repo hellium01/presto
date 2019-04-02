@@ -5,9 +5,9 @@ Release 0.146
 General Changes
 ---------------
 
-* Fix error in :func:`map_concat` when the second map is empty.
+* Fix error in :func:`map_concat` when the second delegatedMap is empty.
 * Require at least 4096 file descriptors to run Presto.
-* Support casting between map types.
+* Support casting between delegatedMap types.
 * Add :doc:`/connector/mongodb`.
 
 Hive Changes

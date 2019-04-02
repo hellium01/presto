@@ -31,7 +31,7 @@ properties other than ``access-control.name`` are specific to the
 The ``password-authenticator.name`` property is used by Presto to find a
 registered ``PasswordAuthenticatorFactory`` based on the name returned by
 ``PasswordAuthenticatorFactory.getName()``. The remaining properties are
-passed as a map to ``PasswordAuthenticatorFactory.create()``.
+passed as a delegatedMap to ``PasswordAuthenticatorFactory.create()``.
 
 Example configuration file:
 

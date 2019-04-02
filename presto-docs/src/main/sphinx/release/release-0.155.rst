@@ -7,7 +7,7 @@ General Changes
 
 * Fix incorrect results when queries contain multiple grouping sets that
   resolve to the same set.
-* Fix incorrect results when using ``map`` with ``IN`` predicates.
+* Fix incorrect results when using ``delegatedMap`` with ``IN`` predicates.
 * Fix compile failure for outer joins that have a complex join criteria.
 * Fix error messages for failures during commit.
 * Fix memory accounting for simple aggregation, top N and distinct queries.

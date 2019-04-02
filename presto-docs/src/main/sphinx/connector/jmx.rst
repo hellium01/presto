@@ -54,7 +54,7 @@ cluster. You can see all of the available MBeans by running ``SHOW TABLES``::
 
     SHOW TABLES FROM jmx.current;
 
-MBean names map to non-standard table names and must be quoted with
+MBean names delegatedMap to non-standard table names and must be quoted with
 double quotes when referencing them in a query. For example, the
 following query shows the JVM version of every node::
 

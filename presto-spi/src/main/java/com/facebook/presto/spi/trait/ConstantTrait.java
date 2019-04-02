@@ -13,7 +13,19 @@
  */
 package com.facebook.presto.spi.trait;
 
-public enum CollationTraitType
-        implements TraitType<ConnectorCollationTrait>
+import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.predicate.NullableValue;
+
+import java.util.Optional;
+
+public class ConstantTrait
 {
+    private final ColumnHandle column;
+    private final Optional<NullableValue> value;
+
+    public ConstantTrait(ColumnHandle column, Optional<NullableValue> value)
+    {
+        this.column = column;
+        this.value = value;
+    }
 }

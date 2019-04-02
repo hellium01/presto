@@ -6,7 +6,7 @@ General Changes
 ---------------
 
 * Fix correctness issue for queries involving aggregations over the result of an outer join (:issue:`10592`).
-* Fix :func:`map` to raise an error on duplicate keys rather than silently producing a corrupted map.
+* Fix :func:`delegatedMap` to raise an error on duplicate keys rather than silently producing a corrupted delegatedMap.
 * Fix :func:`map_from_entries` to raise an error when input array contains a ``null`` entry.
 * Fix out-of-memory error for bucketed execution by scheduling new splits on the same worker as
   the recently finished one.

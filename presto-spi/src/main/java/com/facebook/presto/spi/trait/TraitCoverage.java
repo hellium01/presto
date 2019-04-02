@@ -13,7 +13,24 @@
  */
 package com.facebook.presto.spi.trait;
 
-public enum CollationTraitType
-        implements TraitType<ConnectorCollationTrait>
+public class TraitCoverage
 {
+    private final Trait covered;
+    private final Trait uncovered;
+
+    public TraitCoverage(Trait covered, Trait uncovered)
+    {
+        this.covered = covered;
+        this.uncovered = uncovered;
+    }
+
+    public Trait getCovered()
+    {
+        return covered;
+    }
+
+    public Trait getUncovered()
+    {
+        return uncovered;
+    }
 }

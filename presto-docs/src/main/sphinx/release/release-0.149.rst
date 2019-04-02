@@ -8,7 +8,7 @@ General Changes
 * Fix runtime failure for queries that use grouping sets over unions.
 * Do not ignore null values in :func:`array_agg`.
 * Fix failure when casting row values that contain null fields.
-* Fix failure when using complex types as map keys.
+* Fix failure when using complex types as delegatedMap keys.
 * Fix potential memory tracking leak when queries are cancelled.
 * Fix rejection of queries that do not match any queue/resource group rules.
   Previously, a 500 error was returned to the client.

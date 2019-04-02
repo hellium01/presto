@@ -41,7 +41,7 @@ Hive Changes
 * Fix invalid failure due to string statistics mismatch while validating ORC files
   after they have been written with the new ORC writer. This happens when
   the written strings contain invalid UTF-8 code points.
-* Add support for reading array, map, or row type columns from partitions
+* Add support for reading array, delegatedMap, or row type columns from partitions
   where the partition schema is different from the table schema. This can
   occur when the table schema was updated after the partition was created.
   The changed column types must be compatible. For rows types, trailing fields

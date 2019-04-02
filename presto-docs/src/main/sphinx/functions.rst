@@ -21,7 +21,7 @@ Functions and Operators
     functions/aggregate
     functions/window
     functions/array
-    functions/map
+    functions/delegatedMap
     functions/url
     functions/geospatial
     functions/hyperloglog

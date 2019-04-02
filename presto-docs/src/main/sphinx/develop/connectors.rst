@@ -35,7 +35,7 @@ look at the :doc:`example-http` and the Cassandra connector. If
 your underlying data source supports schemas, tables and columns, this
 interface should be straightforward to implement. If you are attempting
 to adapt something that is not a relational database (as the Example HTTP
-connector does), you may need to get creative about how you map your
+connector does), you may need to get creative about how you delegatedMap your
 data source to Presto's schema, table, and column concepts.
 
 ConnectorSplitManger

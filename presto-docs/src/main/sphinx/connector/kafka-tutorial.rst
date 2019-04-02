@@ -144,7 +144,7 @@ Step 4: Basic data querying
 
 Kafka data is unstructured and it has no metadata to describe the format of
 the messages. Without further configuration, the Kafka connector can access
-the data and map it in raw form but there are no actual columns besides the
+the data and delegatedMap it in raw form but there are no actual columns besides the
 built-in ones:
 
 .. code-block:: none

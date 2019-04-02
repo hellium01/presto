@@ -161,20 +161,20 @@ Bitwise Aggregate Functions
 Map Aggregate Functions
 -----------------------
 
-.. function:: histogram(x) -> map(K,bigint)
+.. function:: histogram(x) -> delegatedMap(K,bigint)
 
-    Returns a map containing the count of the number of times each input value occurs.
+    Returns a delegatedMap containing the count of the number of times each input value occurs.
 
-.. function:: map_agg(key, value) -> map(K,V)
+.. function:: map_agg(key, value) -> delegatedMap(K,V)
 
-    Returns a map created from the input ``key`` / ``value`` pairs.
+    Returns a delegatedMap created from the input ``key`` / ``value`` pairs.
 
-.. function:: map_union(x(K,V)) -> map(K,V)
+.. function:: map_union(x(K,V)) -> delegatedMap(K,V)
 
    Returns the union of all the input maps. If a key is found in multiple
-   input maps, that key's value in the resulting map comes from an arbitrary input map.
+   input maps, that key's value in the resulting delegatedMap comes from an arbitrary input delegatedMap.
 
-.. function:: multimap_agg(key, value) -> map(K,array(V))
+.. function:: multimap_agg(key, value) -> delegatedMap(K,array(V))
 
     Returns a multimap created from the input ``key`` / ``value`` pairs.
     Each key can be associated with multiple values.
@@ -274,7 +274,7 @@ Approximate Aggregate Functions
 
     See :doc:`qdigest`.
 
-.. function:: numeric_histogram(buckets, value, weight) -> map<double, double>
+.. function:: numeric_histogram(buckets, value, weight) -> delegatedMap<double, double>
 
     Computes an approximate histogram with up to ``buckets`` number of buckets
     for all ``value``\ s with a per-item weight of ``weight``. The algorithm
@@ -287,7 +287,7 @@ Approximate Aggregate Functions
 
     ``buckets`` must be a ``bigint``. ``value`` and ``weight`` must be numeric.
 
-.. function:: numeric_histogram(buckets, value) -> map<double, double>
+.. function:: numeric_histogram(buckets, value) -> delegatedMap<double, double>
 
     Computes an approximate histogram with up to ``buckets`` number of buckets
     for all ``value``\ s. This function is equivalent to the variant of

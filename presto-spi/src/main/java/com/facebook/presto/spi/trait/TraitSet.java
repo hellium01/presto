@@ -13,9 +13,11 @@
  */
 package com.facebook.presto.spi.trait;
 
+import java.util.List;
+
 public class TraitSet
 {
-    private Trait[] traits;
+    private List<Trait> traits;
 
     public static TraitSet emptySet()
     {

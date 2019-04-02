@@ -12,7 +12,7 @@ General Changes
   ``GROUP BY`` clause.
 * Fix communication failures caused by lock contention in the local scheduler.
 * Improve performance of :func:`element_at` for maps to be constant time rather than
-  proportional to the size of the map.
+  proportional to the size of the delegatedMap.
 * Improve performance of queries with gathering exchanges.
 * Require ``coalesce()`` to have at least two arguments, as mandated by the SQL standard.
 * Add :func:`hamming_distance` function.

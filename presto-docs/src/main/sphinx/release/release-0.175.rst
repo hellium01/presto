@@ -14,8 +14,8 @@ General Changes
 * Fix execution failure for certain ``DELETE`` queries.
 * Reduce occurrences of *"Method code too large"* errors.
 * Reduce memory utilization for certain queries involving ``ORDER BY``.
-* Improve performance of map subscript from O(n) to O(1) when the map is
-  produced by an eligible operation, including the map constructor and
+* Improve performance of delegatedMap subscript from O(n) to O(1) when the delegatedMap is
+  produced by an eligible operation, including the delegatedMap constructor and
   Hive readers (except ORC and optimized Parquet). More read and write
   operations will take advantage of this in future releases.
 * Add ``enable_intermediate_aggregations`` session property to enable the

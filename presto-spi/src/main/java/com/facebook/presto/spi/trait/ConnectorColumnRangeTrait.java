@@ -13,7 +13,16 @@
  */
 package com.facebook.presto.spi.trait;
 
-public enum CollationTraitType
-        implements TraitType<ConnectorCollationTrait>
+import com.facebook.presto.spi.ColumnHandle;
+
+import java.util.List;
+
+public class ConnectorColumnRangeTrait
 {
+    private final List<ColumnHandle> columns;
+
+    public ConnectorColumnRangeTrait(List<ColumnHandle> columns)
+    {
+        this.columns = columns;
+    }
 }

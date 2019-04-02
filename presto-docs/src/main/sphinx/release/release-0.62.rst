@@ -4,7 +4,7 @@ Release 0.62
 
 * Fix an issue with active queries JMX counter reporting incorrect numbers
 
-* Hive binary map keys were not being decoded correctly
+* Hive binary delegatedMap keys were not being decoded correctly
 
 * Performance improvements for ``APPROX_DISTINCT``
 

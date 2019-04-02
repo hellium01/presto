@@ -14,7 +14,7 @@ General Changes
 * Fix parsing failure when ``NFD``, ``NFC``, ``NFKD`` or ``NFKC`` are used as identifiers.
 * Fix a memory leak on the coordinator that manifests itself with canceled queries.
 * Fix excessive GC overhead caused by captured lambda expressions.
-* Reduce the memory usage of map/array aggregation functions.
+* Reduce the memory usage of delegatedMap/array aggregation functions.
 * Redact sensitive config property values in the server log.
 * Update timezone database to version 2017b.
 * Add :func:`repeat` function.

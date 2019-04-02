@@ -44,9 +44,9 @@ struct PrestoThriftNullableColumnSet {
 
 struct PrestoThriftTupleDomain {
   /**
-   * Return a map of column names to constraints.
+   * Return a delegatedMap of column names to constraints.
    */
-  1: optional map<string, PrestoThriftDomain> domains;
+  1: optional delegatedMap<string, PrestoThriftDomain> domains;
 }
 
 /**
@@ -60,7 +60,7 @@ struct PrestoThriftAllOrNoneValueSet {
  * A set containing values that are uniquely identifiable.
  * Assumes an infinite number of possible values. The values may be collectively included (aka whitelist)
  * or collectively excluded (aka !whitelist).
- * This structure is used with comparable, but not orderable types like "json", "map".
+ * This structure is used with comparable, but not orderable types like "json", "delegatedMap".
  */
 struct PrestoThriftEquatableValueSet {
   1: bool whiteList;

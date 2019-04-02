@@ -7,7 +7,7 @@ General Changes
 
 * Add support for inequality ``INNER JOIN`` when each term of the condition refers to only one side of the join.
 * Add :func:`ntile` function.
-* Add :func:`map` function to create a map from arrays of keys and values.
+* Add :func:`delegatedMap` function to create a delegatedMap from arrays of keys and values.
 * Add :func:`min_by` aggregation function.
 * Add support for concatenating arrays with the ``||`` operator.
 * Add support for ``=`` and ``!=`` to ``JSON`` type.

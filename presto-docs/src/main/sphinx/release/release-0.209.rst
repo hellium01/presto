@@ -30,7 +30,7 @@ General Changes
   input tables with constraints and the output table in JSON format.
 * Add :doc:`/connector/kudu`.
 * Raise required Java version to 8u151. This avoids correctness issues for
-  map to map cast when running under some earlier JVM versions, including 8u92.
+  delegatedMap to delegatedMap cast when running under some earlier JVM versions, including 8u92.
 
 Web UI Changes
 --------------

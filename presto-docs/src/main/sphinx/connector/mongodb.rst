@@ -129,7 +129,7 @@ This property is optional; the default is ``false``.
 ``mongodb.read-preference``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The read preference to use for queries, map-reduce, aggregation, and count.
+The read preference to use for queries, delegatedMap-reduce, aggregation, and count.
 The available values are ``PRIMARY``, ``PRIMARY_PREFERRED``, ``SECONDARY``, ``SECONDARY_PREFERRED`` and ``NEAREST``.
 
 This property is optional; the default is ``PRIMARY``.

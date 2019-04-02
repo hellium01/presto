@@ -6,7 +6,7 @@ General Changes
 ---------------
 
 * Fix issue where aggregations may produce the wrong result when ``task.concurrency`` is set to ``1``.
-* Fix query failure when ``array``, ``map``, or ``row`` type is used in non-equi ``JOIN``.
+* Fix query failure when ``array``, ``delegatedMap``, or ``row`` type is used in non-equi ``JOIN``.
 * Fix performance regression for queries using ``OUTER JOIN``.
 * Fix query failure when using the :func:`arbitrary` aggregation function on ``integer`` type.
 * Add various math functions that operate directly on ``float`` type.

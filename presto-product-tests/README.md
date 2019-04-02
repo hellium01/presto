@@ -326,7 +326,7 @@ The format of `/etc/hosts` entries is `<ip> <host>`:
 
         - Docker Toolbox:
         Add the following mapping to `/etc/hosts`: `<docker machine ip> hadoop-master mysql postgres cassandra`.
-        Since Docker containers run inside a Linux VM, on OS X we map the VM IP to
+        Since Docker containers run inside a Linux VM, on OS X we delegatedMap the VM IP to
         the `hadoop-master`, `mysql`, `postgres` and `cassandra` hostnames. To obtain the IP of the Linux VM run:
 
             ```

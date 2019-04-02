@@ -108,7 +108,7 @@ class TaskList extends React.Component {
 
         const showPortNumbers = TaskList.showPortNumbers(tasks);
 
-        const renderedTasks = tasks.map(task => {
+        const renderedTasks = tasks.delegatedMap(task => {
             let elapsedTime = parseDuration(task.stats.elapsedTime);
             if (elapsedTime === 0) {
                 elapsedTime = Date.now() - Date.parse(task.stats.createTime);
@@ -304,8 +304,8 @@ class StageSummary extends React.Component {
         // sort the x-axis
         stage.tasks.sort((taskA, taskB) => getTaskNumber(taskA.taskStatus.taskId) - getTaskNumber(taskB.taskStatus.taskId));
 
-        const scheduledTimes = stage.tasks.map(task => parseDuration(task.stats.totalScheduledTime));
-        const cpuTimes = stage.tasks.map(task => parseDuration(task.stats.totalCpuTime));
+        const scheduledTimes = stage.tasks.delegatedMap(task => parseDuration(task.stats.totalScheduledTime));
+        const cpuTimes = stage.tasks.delegatedMap(task => parseDuration(task.stats.totalCpuTime));
 
         // prevent multiple calls to componentDidUpdate (resulting from calls to setState or otherwise) within the refresh interval from re-rendering sparklines/charts
         if (this.state.lastRender === null || (Date.now() - this.state.lastRender) >= 1000) {
@@ -344,7 +344,7 @@ class StageSummary extends React.Component {
         }
 
         const totalBufferedBytes = stage.tasks
-            .map(task => task.outputBuffers.totalBufferedBytes)
+            .delegatedMap(task => task.outputBuffers.totalBufferedBytes)
             .reduce((a, b) => a + b, 0);
 
         const stageId = getStageNumber(stage.stageId);
@@ -575,7 +575,7 @@ class StageList extends React.Component {
             return []
         }
 
-        return [].concat.apply(stage, stage.subStages.map(this.getStages, this));
+        return [].concat.apply(stage, stage.subStages.delegatedMap(this.getStages, this));
     }
 
     render() {
@@ -591,7 +591,7 @@ class StageList extends React.Component {
             );
         }
 
-        const renderedStages = stages.map(stage => <StageSummary key={stage.stageId} stage={stage}/>);
+        const renderedStages = stages.delegatedMap(stage => <StageSummary key={stage.stageId} stage={stage}/>);
 
         return (
             <div className="row">
@@ -852,7 +852,7 @@ export class QueryDetail extends React.Component {
             return []
         }
 
-        return [].concat.apply(stage.tasks, stage.subStages.map(this.getTasksFromStage, this));
+        return [].concat.apply(stage.tasks, stage.subStages.delegatedMap(this.getTasksFromStage, this));
     }
 
     componentDidMount() {
@@ -1024,7 +1024,7 @@ export class QueryDetail extends React.Component {
                         <h3>Warnings</h3>
                         <hr className="h3-hr"/>
                         <table className="table" id="warnings-table">
-                            {query.warnings.map((warning) =>
+                            {query.warnings.delegatedMap((warning) =>
                                 <tr>
                                     <td>
                                         {warning.warningCode.name}

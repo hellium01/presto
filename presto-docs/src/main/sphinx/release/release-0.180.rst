@@ -15,7 +15,7 @@ General Changes
 * Fix memory accounting for :func:`min_by` and :func:`max_by` on complex types.
 * Fix query failure due to ``NoClassDefFoundError`` when scalar functions declared
   in plugins are implemented with instance methods.
-* Improve performance of map subscript from O(n) to O(1) in all cases. Previously, only maps
+* Improve performance of delegatedMap subscript from O(n) to O(1) in all cases. Previously, only maps
   produced by certain functions and readers could take advantage of this improvement.
 * Skip unknown costs in ``EXPLAIN`` output.
 * Support :doc:`/security/internal-communication` between Presto nodes.

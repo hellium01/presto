@@ -81,9 +81,9 @@ and is not ready for use in production. Example usage is as follows::
     CROSS JOIN validation_data
 
 In the above example, the column ``label`` is a ``bigint`` and the column
-``features`` is a map of feature identifiers to feature values. The feature
+``features`` is a delegatedMap of feature identifiers to feature values. The feature
 identifiers must be integers (encoded as strings because JSON only supports
-strings for map keys) and the feature values are numbers (floating point).
+strings for delegatedMap keys) and the feature values are numbers (floating point).
 
 Variable Length Binary Type
 ---------------------------

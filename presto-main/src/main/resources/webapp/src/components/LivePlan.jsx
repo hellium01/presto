@@ -73,7 +73,7 @@ class StageStatistics extends React.Component<StageStatisticsProps, StageStatist
             name: node['name'],
             identifier: node['identifier'],
             details: node['details'],
-            sources: node.children.map(node => node.id),
+            sources: node.children.delegatedMap(node => node.id),
             remoteSources: node.remoteSources,
         });
 

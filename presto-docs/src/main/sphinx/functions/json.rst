@@ -8,8 +8,8 @@ Cast to JSON
     Casting from ``BOOLEAN``, ``TINYINT``, ``SMALLINT``, ``INTEGER``,
     ``BIGINT``, ``REAL``, ``DOUBLE`` or ``VARCHAR`` is supported.
     Casting from ``ARRAY``, ``MAP`` or ``ROW`` is supported when the element type of
-    the array is one of the supported types, or when the key type of the map
-    is ``VARCHAR`` and value type of the map is one of the supported types,
+    the array is one of the supported types, or when the key type of the delegatedMap
+    is ``VARCHAR`` and value type of the delegatedMap is one of the supported types,
     or when every field type of the row is one of the supported types.
     Behaviors of the casts are shown with the examples below::
 
@@ -29,7 +29,7 @@ Cast to JSON
 
     Casting from NULL to ``JSON`` is not straightforward. Casting
     from a standalone ``NULL`` will produce a SQL ``NULL`` instead of
-    ``JSON 'null'``. However, when casting from arrays or map containing
+    ``JSON 'null'``. However, when casting from arrays or delegatedMap containing
     ``NULL``\s, the produced ``JSON`` will have ``null``\s in it.
 
 .. note::
@@ -44,8 +44,8 @@ Cast from JSON
     Casting to ``BOOLEAN``, ``TINYINT``, ``SMALLINT``, ``INTEGER``,
     ``BIGINT``, ``REAL``, ``DOUBLE`` or ``VARCHAR`` is supported.
     Casting to ``ARRAY`` and ``MAP`` is supported when the element type of
-    the array is one of the supported types, or when the key type of the map
-    is ``VARCHAR`` and value type of the map is one of the supported types.
+    the array is one of the supported types, or when the key type of the delegatedMap
+    is ``VARCHAR`` and value type of the delegatedMap is one of the supported types.
     Behaviors of the casts are shown with the examples below::
 
         SELECT CAST(JSON 'null' AS VARCHAR); -- NULL

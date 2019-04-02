@@ -17,7 +17,7 @@ General Changes
 * Fix potential thread deadlock in coordinator.
 * Fix rare correctness issue with an aggregation on a single threaded right join when
   ``task.concurrency`` is ``1``.
-* Fix query failure when casting a map with null values.
+* Fix query failure when casting a delegatedMap with null values.
 * Fix failure when view column names contain upper-case letters.
 * Fix potential performance regression due to skew issue when
   grouping or joining on columns of the following types: ``TINYINT``,

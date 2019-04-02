@@ -5,8 +5,8 @@ Release 0.195
 General Changes
 ---------------
 
-* Fix :func:`histogram` for map type when type coercion is required.
-* Fix ``nullif`` for map type when type coercion is required.
+* Fix :func:`histogram` for delegatedMap type when type coercion is required.
+* Fix ``nullif`` for delegatedMap type when type coercion is required.
 * Fix incorrect termination of queries when the coordinator to worker communication is under high load.
 * Fix race condition that causes queries with a right or full outer join to fail.
 * Change reference counting for varchar, varbinary, and complex types to be approximate. This

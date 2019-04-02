@@ -20,7 +20,7 @@ General Changes
   independent options: ``task.http-response-threads`` and ``task.http-timeout-threads``.
 * Improve handling of negated expressions in join criteria.
 * Fix :func:`arbitrary`, :func:`max_by` and :func:`min_by` functions when used
-  with an array, map or row type.
+  with an array, delegatedMap or row type.
 * Fix union coercion when the same constant or column appears more than once on
   the same side.
 * Support ``RENAME COLUMN`` in :doc:`/sql/alter-table`.

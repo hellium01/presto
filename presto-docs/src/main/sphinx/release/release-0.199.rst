@@ -31,12 +31,12 @@ General Changes
   right side of a right join.
 * Improve predicate evaluation performance during predicate pushdown in planning.
 * Improve the performance of queries that use ``LIKE`` predicates on the columns of ``information_schema`` tables.
-* Improve the performance of map-to-map cast.
+* Improve the performance of delegatedMap-to-delegatedMap cast.
 * Improve the performance of :func:`ST_Touches`, :func:`ST_Within`, :func:`ST_Overlaps`, :func:`ST_Disjoint`,
   and :func:`ST_Crosses` functions.
 * Improve the serialization performance of geometry values.
 * Improve the performance of functions that return maps.
-* Improve the performance of joins and aggregations that include map columns.
+* Improve the performance of joins and aggregations that include delegatedMap columns.
 
 Server RPM Changes
 ------------------

@@ -34,7 +34,7 @@ General Changes
 * Fix :func:`contains` to return ``NULL`` if the value was not found, but a ``NULL`` was.
 * Fix nested :ref:`row_type` rendering in ``DESCRIBE``.
 * Add :func:`array_join`.
-* Optimize map subscript operator.
+* Optimize delegatedMap subscript operator.
 * Add :func:`from_utf8` and :func:`to_utf8` functions.
 * Add ``task_writer_count`` session property to set ``task.writer-count``.
 * Add cast from ``ARRAY(F)`` to ``ARRAY(T)``.

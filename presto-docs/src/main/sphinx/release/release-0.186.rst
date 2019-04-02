@@ -10,7 +10,7 @@ Release 0.186
 General Changes
 ---------------
 
-* Fix excessive GC overhead caused by map to map cast.
+* Fix excessive GC overhead caused by delegatedMap to delegatedMap cast.
 * Fix implicit coercions for ``ROW`` types, allowing operations between
   compatible types such as ``ROW(INTEGER)`` and ``ROW(BIGINT)``.
 * Fix issue that may cause queries containing expensive functions, such as regular

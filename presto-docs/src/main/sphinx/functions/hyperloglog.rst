@@ -9,7 +9,7 @@ Data Structures
 ---------------
 
 Presto implements HyperLogLog data sketches as a set of 32-bit buckets which
-store a *maximum hash*. They can be stored sparsely (as a map from bucket ID
+store a *maximum hash*. They can be stored sparsely (as a delegatedMap from bucket ID
 to bucket), or densely (as a contiguous memory block). The HyperLogLog data
 structure starts as the sparse representation, switching to dense when it is
 more efficient. The P4HyperLogLog structure is initialized densely and

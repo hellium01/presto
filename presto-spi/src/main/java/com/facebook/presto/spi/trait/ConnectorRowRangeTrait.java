@@ -15,21 +15,57 @@ package com.facebook.presto.spi.trait;
 
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
+import com.facebook.presto.spi.predicate.NullableValue;
 import com.facebook.presto.spi.predicate.TupleDomain;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.StreamSupport;
 
 public class ConnectorRowRangeTrait
-        implements Trait
 {
-    private final ConnectorTableLayoutHandle handle;
+    private final Optional<ConnectorTableLayoutHandle> handle;
     private final Iterable<TupleDomain<ColumnHandle>> domains;
-    private final List<ColumnHandle> partitionColumns;
+    private final Optional<List<ColumnHandle>> partitionColumns;
+    private final Optional<Predicate<Map<ColumnHandle, NullableValue>>> predicateFunction;
 
-    public ConnectorRowRangeTrait(ConnectorTableLayoutHandle handle, Iterable<TupleDomain<ColumnHandle>> domains, List<ColumnHandle> partitionColumns)
+    public ConnectorRowRangeTrait(
+            Optional<ConnectorTableLayoutHandle> handle,
+            Iterable<TupleDomain<ColumnHandle>> domains,
+            Optional<List<ColumnHandle>> partitionColumns,
+            Optional<Predicate<Map<ColumnHandle, NullableValue>>> predicate)
     {
         this.handle = handle;
         this.domains = domains;
         this.partitionColumns = partitionColumns;
+        this.predicateFunction = predicate;
+    }
+
+    public Optional<ConnectorTableLayoutHandle> getHandle()
+    {
+        return handle;
+    }
+
+    public Iterable<TupleDomain<ColumnHandle>> getDomains()
+    {
+        return domains;
+    }
+
+    public TupleDomain<ColumnHandle> getDomain()
+    {
+        return StreamSupport.stream(domains.spliterator(), false)
+                .reduce(TupleDomain.all(), (l, r) -> l.intersect(r));
+    }
+
+    public Optional<List<ColumnHandle>> getPartitionColumns()
+    {
+        return partitionColumns;
+    }
+
+    public Optional<Predicate<Map<ColumnHandle, NullableValue>>> getPredicateFunction()
+    {
+        return predicateFunction;
     }
 }

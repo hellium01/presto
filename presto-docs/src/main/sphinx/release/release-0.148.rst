@@ -62,7 +62,7 @@ This release fixes several problems with large and negative intervals.
 Functions and Language Features
 -------------------------------
 
-* Add :func:`element_at` function for map type.
+* Add :func:`element_at` function for delegatedMap type.
 * Add :func:`split_to_map` function.
 * Add :func:`zip` function.
 * Add :func:`map_union` aggregation function.

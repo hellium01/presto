@@ -116,10 +116,10 @@ function renderTimeline(data) {
     function getTasks(stage) {
         return [].concat.apply(
                 stage.tasks,
-                stage.subStages.map(getTasks));
+                stage.subStages.delegatedMap(getTasks));
     }
     tasks = getTasks(data.outputStage);
-    tasks = tasks.map(function(task) {
+    tasks = tasks.delegatedMap(function(task) {
         return {
             taskId: task.taskStatus.taskId.substring(task.taskStatus.taskId.indexOf('.') + 1),
             time: {

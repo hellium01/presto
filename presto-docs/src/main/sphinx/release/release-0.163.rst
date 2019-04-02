@@ -13,8 +13,8 @@ General Changes
 * Make ``ALL``, ``SOME`` and ``ANY`` non-reserved keywords.
 * Add :func:`from_big_endian_64` function.
 * Change :func:`xxhash64` return type from ``BIGINT`` to ``VARBINARY``.
-* Change subscript operator for map types to fail if the key is not present in the map. The former
-  behavior (returning ``NULL``) can be restored by setting the ``deprecated.legacy-map-subscript``
+* Change subscript operator for delegatedMap types to fail if the key is not present in the delegatedMap. The former
+  behavior (returning ``NULL``) can be restored by setting the ``deprecated.legacy-delegatedMap-subscript``
   config option.
 * Improve ``EXPLAIN ANALYZE`` to render stats more accurately and to include input statistics.
 * Improve tolerance to communication errors for long running queries. This can be adjusted

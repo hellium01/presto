@@ -14,10 +14,10 @@
     {
         "name":"a_map",
         "type": {
-                    "type": "map",
+                    "type": "delegatedMap",
                     "values": "string"
                 }
     }
 ],
-  "doc:" : "A avro schema with array and map datatypes product tests"
+  "doc:" : "A avro schema with array and delegatedMap datatypes product tests"
 }

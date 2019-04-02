@@ -119,7 +119,7 @@ const BAR_CHART_PROPERTIES = {
 class OperatorStatistic extends React.Component {
     componentDidMount() {
         const operators = this.props.operators;
-        const statistic = operators.map(this.props.supplier);
+        const statistic = operators.delegatedMap(this.props.supplier);
         const numTasks = operators.length;
 
         const tooltipValueLookups = {'offset': {}};
@@ -325,7 +325,7 @@ class OperatorDetail extends React.Component {
                         </div>
                     </div>
                     {
-                        this.state.selectedStatistics.map(function (statistic) {
+                        this.state.selectedStatistics.delegatedMap(function (statistic) {
                             return (
                                 <OperatorStatistic
                                     key={statistic.id}
@@ -404,7 +404,7 @@ class StageOperatorGraph extends React.Component {
         const result = new Map();
         pipelineOperators.forEach((pipelineOperators, pipelineId) => {
             // sort deep-copied operators in this pipeline from source to sink
-            const linkedOperators = pipelineOperators.map(a => Object.assign({}, a)).sort((a, b) => a.operatorId - b.operatorId);
+            const linkedOperators = pipelineOperators.delegatedMap(a => Object.assign({}, a)).sort((a, b) => a.operatorId - b.operatorId);
             const sinkOperator = linkedOperators[linkedOperators.length - 1];
             const sourceOperator = linkedOperators[0];
 
@@ -673,7 +673,7 @@ export class StageDetail extends React.Component {
                                         Select Stage <span className="caret"/>
                                     </button>
                                     <ul className="dropdown-menu">
-                                        {allStages.map(stageId => (<li key={stageId}><a onClick={() => this.setState({selectedStageId: stageId})}>{stageId}</a></li>))}
+                                        {allStages.delegatedMap(stageId => (<li key={stageId}><a onClick={() => this.setState({selectedStageId: stageId})}>{stageId}</a></li>))}
                                     </ul>
                                 </div>
                             </div>

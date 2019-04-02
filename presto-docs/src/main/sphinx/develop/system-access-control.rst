@@ -41,7 +41,7 @@ implementation.
 The ``access-control.name`` property is used by Presto to find a registered
 ``SystemAccessControlFactory`` based on the name returned by
 ``SystemAccessControlFactory.getName()``. The remaining properties are passed
-as a map to ``SystemAccessControlFactory.create()``.
+as a delegatedMap to ``SystemAccessControlFactory.create()``.
 
 Example configuration file:
 

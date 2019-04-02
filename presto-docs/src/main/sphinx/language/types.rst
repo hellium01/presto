@@ -203,7 +203,7 @@ Structural
 ``MAP``
 ^^^^^^^
 
-    A map between the given component types.
+    A delegatedMap between the given component types.
 
     Example: ``MAP(ARRAY['foo', 'bar'], ARRAY[1, 2])``
 

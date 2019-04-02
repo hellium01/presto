@@ -62,7 +62,7 @@ SPI Changes
 -----------
 
 * Make ``ConnectorBucketNodeMap`` a top level class.
-* Use list instead of map for bucket-to-node mapping.
+* Use list instead of delegatedMap for bucket-to-node mapping.
 
 .. note::
 

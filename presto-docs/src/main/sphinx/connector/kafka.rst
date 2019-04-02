@@ -207,7 +207,7 @@ Key and Message in Kafka
 ------------------------
 
 Starting with Kafka 0.8, each message in a topic can have an optional key.
-A table definition file contains sections for both key and message to map
+A table definition file contains sections for both key and message to delegatedMap
 the data onto table columns.
 
 Each of the ``key`` and ``message`` fields in the table definition is a
@@ -252,7 +252,7 @@ There is no limit on field descriptions for either key or message.
 Row Decoding
 ------------
 
-For key and message, a decoder is used to map message and key data onto table columns.
+For key and message, a decoder is used to delegatedMap message and key data onto table columns.
 
 The Kafka connector contains the following decoders:
 
@@ -358,7 +358,7 @@ Table below lists supported Presto types which can be used in ``type`` and decod
 | ``DOUBLE``                          | Decoded using Java ``Double.parseDouble()``                                    |
 +-------------------------------------+--------------------------------------------------------------------------------+
 | ``BOOLEAN``                         | "true" character sequence maps to ``true``;                                    |
-|                                     | Other character sequences map to ``false``                                     |
+|                                     | Other character sequences delegatedMap to ``false``                                     |
 +-------------------------------------+--------------------------------------------------------------------------------+
 | ``VARCHAR`` / ``VARCHAR(x)``        | Used as is                                                                     |
 +-------------------------------------+--------------------------------------------------------------------------------+

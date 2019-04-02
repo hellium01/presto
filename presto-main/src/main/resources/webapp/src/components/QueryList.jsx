@@ -195,7 +195,7 @@ export class QueryListItem extends React.Component {
 
 class DisplayedQueriesList extends React.Component {
     render() {
-        const queryNodes = this.props.queries.map(function (query) {
+        const queryNodes = this.props.queries.delegatedMap(function (query) {
             return (
                 <QueryListItem key={query.queryId} query={query}/>
             );
@@ -327,9 +327,9 @@ export class QueryList extends React.Component {
         clearTimeout(this.searchTimeoutId);
 
         $.get('/v1/query', function (queryList) {
-            const queryMap = queryList.reduce(function (map, query) {
-                map[query.queryId] = query;
-                return map;
+            const queryMap = queryList.reduce(function (delegatedMap, query) {
+                delegatedMap[query.queryId] = query;
+                return delegatedMap;
             }, {});
 
             let updatedQueries = [];

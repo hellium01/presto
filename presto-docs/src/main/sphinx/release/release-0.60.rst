@@ -114,7 +114,7 @@ Bug fixes
 
 * JSON conversion of complex Hive types
 
-  Presto converts complex Hive types (array, map, struct and union) into JSON.
+  Presto converts complex Hive types (array, delegatedMap, struct and union) into JSON.
   Previously, numeric keys in maps were converted to numbers, not strings,
   which is invalid as JSON only allows strings for object keys. This prevented
   the :doc:`/functions/json` from working.

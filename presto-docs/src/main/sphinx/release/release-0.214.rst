@@ -13,7 +13,7 @@ General Changes
   during query creation.
 * Improve error message when an invalid comparator is provided to the
   :func:`array_sort` function.
-* Improve performance of lookup operations on map data types.
+* Improve performance of lookup operations on delegatedMap data types.
 * Improve planning and query performance for queries with ``TINYINT``,
   ``SMALLINT`` and ``VARBINARY`` literals.
 * Fix issue where queries containing distributed ``ORDER BY`` and aggregation

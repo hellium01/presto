@@ -6,7 +6,7 @@ General Changes
 ---------------
 
 * Fix regression in 0.214 that could cause queries to produce incorrect results for queries
-  using map types.
+  using delegatedMap types.
 * Fix reporting of the processed input data for source stages in ``EXPLAIN ANALYZE``.
 * Fail queries that use non-leaf resource groups. Previously, they would remain queued forever.
 * Improve CPU usage for specific queries (:issue:`11757`).

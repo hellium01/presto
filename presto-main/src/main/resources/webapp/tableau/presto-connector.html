@@ -44,7 +44,7 @@
     }
 
     function isComplexType(typeName) {
-        return (typeName.indexOf('map') === 0) ||
+        return (typeName.indexOf('delegatedMap') === 0) ||
                (typeName.indexOf('array') === 0) ||
                (typeName.indexOf('row') === 0);
     }
@@ -243,7 +243,7 @@
             headersPushed = false;
             tableau.connectionData = null;
 
-            // create a map of session parameters { name->value }
+            // create a delegatedMap of session parameters { name->value }
             var i = 0;
             var paramName;
             var sessionParameters = {};
