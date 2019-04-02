@@ -55,6 +55,7 @@ public class IterativeOptimizer
     private final CostCalculator costCalculator;
     private final List<PlanOptimizer> legacyRules;
     private final RuleIndex ruleIndex;
+    private final Optional<TraitSetPropagator> traitPropagator = Optional.empty();
 
     public IterativeOptimizer(RuleStatsRecorder stats, StatsCalculator statsCalculator, CostCalculator costCalculator, Set<Rule<?>> rules)
     {
@@ -87,6 +88,9 @@ public class IterativeOptimizer
         }
 
         Memo memo = new Memo(idAllocator, plan);
+        if (traitPropagator.isPresent()) {
+            memo.pushDownExpectedTrait(traitPropagator.get(), memo.getRootGroup());
+        }
         Lookup lookup = Lookup.from(planNode -> Stream.of(memo.resolve(planNode)));
         Matcher matcher = new PlanNodeMatcher(lookup);
 
@@ -140,6 +144,13 @@ public class IterativeOptimizer
 
                 if (result.getTransformedPlan().isPresent()) {
                     node = context.memo.replace(group, result.getTransformedPlan().get(), rule.getClass().getName());
+
+                    context.memo.updateProvidedTraits(group, result.getProvidedTraitSet());
+                    if (traitPropagator.isPresent()) {
+                        for (int parent : context.memo.getParent(group)) {
+                            context.memo.pushDownExpectedTrait(traitPropagator.get(), parent);
+                        }
+                    }
 
                     done = false;
                     progress = true;

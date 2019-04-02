@@ -15,6 +15,7 @@ package com.facebook.presto.sql.planner.iterative;
 
 import com.facebook.presto.cost.PlanCostEstimate;
 import com.facebook.presto.cost.PlanNodeStatsEstimate;
+import com.facebook.presto.spi.trait.TraitSet;
 import com.facebook.presto.sql.planner.PlanNodeIdAllocator;
 import com.facebook.presto.sql.planner.plan.PlanNode;
 import com.google.common.collect.HashMultiset;
@@ -24,6 +25,7 @@ import javax.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -71,6 +73,8 @@ public class Memo
     private final Map<Integer, Group> groups = new HashMap<>();
 
     private int nextGroupId = ROOT_GROUP_REF + 1;
+
+    private final Optional<TraitSetPropagator> traitPropagator = Optional.empty();
 
     public Memo(PlanNodeIdAllocator idAllocator, PlanNode plan)
     {
@@ -133,6 +137,67 @@ public class Memo
         evictStatisticsAndCost(group);
 
         return node;
+    }
+
+    public void pushDownExpectedTrait(TraitSetPropagator traitPropagator, int rootGroup)
+    {
+        PlanNode node = getNode(rootGroup);
+        TraitSet expectedTraitSet = traitPropagator.makeLocal(node, Optional.ofNullable(getGroup(rootGroup).expectedTraits).orElse(TraitSet.emptySet()));
+        List<TraitSet> expectedInputs = traitPropagator.getExpectedInput(node, expectedTraitSet);
+        checkArgument(expectedInputs.size() == node.getSources().size(), "expected inputs must has same size of sources");
+        for (int i = 0; i < expectedInputs.size(); i++) {
+            pushDown(traitPropagator, node.getSources().get(i), expectedInputs.get(i));
+        }
+    }
+
+    public TraitSet getTraitSet(int group)
+    {
+        TraitSet traitSet = getGroup(group).providedTraits;
+        if (traitSet != null) {
+            return traitSet;
+        }
+    }
+
+    private void pullUp(PlanNode node, List<TraitSet> inputTraits)
+    {
+        if (traitPropagator.isPresent()) {
+        }
+    }
+
+    private void pushDown(TraitSetPropagator traitPropagator, PlanNode planNode, TraitSet expected)
+    {
+        if (planNode instanceof GroupReference) {
+            int group = ((GroupReference) planNode).getGroupId();
+            PlanNode node = getNode(group);
+            List<TraitSet> expectedInputs = traitPropagator.getExpectedInput(node, expected);
+            checkArgument(expectedInputs.size() == node.getSources().size(), "expected inputs must has same size of sources");
+            for (int i = 0; i < expectedInputs.size(); i++) {
+                pushDown(traitPropagator, node.getSources().get(i), expectedInputs.get(i));
+            }
+        }
+    }
+
+    public Multiset<Integer> getParent(int group)
+    {
+        return getGroup(group).incomingReferences;
+    }
+
+    public void updateProvidedTraits(int group, Optional<TraitSet> newTraitSet)
+    {
+        evictProvidedTraits(group);
+        if (newTraitSet.isPresent()) {
+            getGroup(group).providedTraits = newTraitSet.get();
+        }
+    }
+
+    private void evictProvidedTraits(int group)
+    {
+        getGroup(group).providedTraits = null;
+        for (int parentGroup : getGroup(group).incomingReferences.elementSet()) {
+            if (parentGroup != ROOT_GROUP_REF) {
+                evictProvidedTraits(parentGroup);
+            }
+        }
     }
 
     private void evictStatisticsAndCost(int group)
@@ -255,6 +320,10 @@ public class Memo
         private final Multiset<Integer> incomingReferences = HashMultiset.create();
         @Nullable
         private PlanNodeStatsEstimate stats;
+        @Nullable
+        private TraitSet expectedTraits;
+        @Nullable
+        private TraitSet providedTraits;
         @Nullable
         private PlanCostEstimate cost;
 

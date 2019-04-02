@@ -13,19 +13,27 @@
  */
 package com.facebook.presto.spi.trait;
 
-import com.facebook.presto.spi.ColumnHandle;
-import com.facebook.presto.spi.predicate.NullableValue;
+import com.facebook.presto.spi.relation.ConstantExpression;
 
 import java.util.Optional;
 
-public class ConstantTrait
-{
-    private final ColumnHandle column;
-    private final Optional<NullableValue> value;
+import static com.facebook.presto.spi.trait.ConstantTraitType.CONSTANT;
 
-    public ConstantTrait(ColumnHandle column, Optional<NullableValue> value)
+public class ConstantTrait<T>
+        implements Trait
+{
+    private final T column;
+    private final Optional<ConstantExpression> value;
+
+    public ConstantTrait(T column, Optional<ConstantExpression> value)
     {
         this.column = column;
         this.value = value;
+    }
+
+    @Override
+    public TraitType getType()
+    {
+        return CONSTANT;
     }
 }

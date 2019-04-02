@@ -13,18 +13,30 @@
  */
 package com.facebook.presto.spi.trait;
 
-import java.util.Optional;
-import java.util.function.Function;
+import com.facebook.presto.spi.block.SortOrder;
 
-public interface Trait
+import java.util.List;
+import java.util.Map;
+
+public class CollationTrait<T>
+        implements Trait
 {
-    TraitType getType();
+    protected final UnmodifiableLinkedHashMap<T, SortOrder> orders;
 
-    default <T extends Trait, X extends T, Y extends T> Optional<Y> translate(Class<X> type, Function<X, Optional<Y>> translator)
+    public CollationTrait(List<T> columns, Map<T, SortOrder> columnOrders)
     {
-        if (type.isInstance(this)) {
-            return translator.apply((X) this);
-        }
-        return Optional.empty();
+        this.orders = new UnmodifiableLinkedHashMap.Builder<>(columns, columnOrders)
+                .build();
+    }
+
+    protected CollationTrait(UnmodifiableLinkedHashMap<T, SortOrder> orders)
+    {
+        this.orders = orders;
+    }
+
+    @Override
+    public TraitType getType()
+    {
+        return null;
     }
 }

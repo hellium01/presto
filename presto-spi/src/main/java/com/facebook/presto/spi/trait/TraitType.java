@@ -13,6 +13,13 @@
  */
 package com.facebook.presto.spi.trait;
 
-public  interface TraitType<T extends Trait>
+import java.util.Optional;
+import java.util.function.Function;
+
+public interface TraitType<T extends Trait>
 {
+    default <X extends T, Y extends T> Optional<Y> translate(X inputTrait, Function<X, Optional<Y>> translator)
+    {
+        return translator.apply(inputTrait);
+    }
 }

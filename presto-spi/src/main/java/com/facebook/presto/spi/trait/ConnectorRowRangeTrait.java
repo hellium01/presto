@@ -15,8 +15,8 @@ package com.facebook.presto.spi.trait;
 
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
-import com.facebook.presto.spi.predicate.NullableValue;
 import com.facebook.presto.spi.predicate.TupleDomain;
+import com.facebook.presto.spi.relation.ConstantExpression;
 
 import java.util.List;
 import java.util.Map;
@@ -29,13 +29,13 @@ public class ConnectorRowRangeTrait
     private final Optional<ConnectorTableLayoutHandle> handle;
     private final Iterable<TupleDomain<ColumnHandle>> domains;
     private final Optional<List<ColumnHandle>> partitionColumns;
-    private final Optional<Predicate<Map<ColumnHandle, NullableValue>>> predicateFunction;
+    private final Optional<Predicate<Map<ColumnHandle, ConstantExpression>>> predicateFunction;
 
     public ConnectorRowRangeTrait(
             Optional<ConnectorTableLayoutHandle> handle,
             Iterable<TupleDomain<ColumnHandle>> domains,
             Optional<List<ColumnHandle>> partitionColumns,
-            Optional<Predicate<Map<ColumnHandle, NullableValue>>> predicate)
+            Optional<Predicate<Map<ColumnHandle, ConstantExpression>>> predicate)
     {
         this.handle = handle;
         this.domains = domains;
@@ -64,7 +64,7 @@ public class ConnectorRowRangeTrait
         return partitionColumns;
     }
 
-    public Optional<Predicate<Map<ColumnHandle, NullableValue>>> getPredicateFunction()
+    public Optional<Predicate<Map<ColumnHandle, ConstantExpression>>> getPredicateFunction()
     {
         return predicateFunction;
     }

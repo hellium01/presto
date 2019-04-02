@@ -20,6 +20,7 @@ import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.spi.GroupingProperty;
 import com.facebook.presto.spi.LocalProperty;
 import com.facebook.presto.spi.SortingProperty;
+import com.facebook.presto.spi.trait.TraitSet;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.parser.SqlParser;
 import com.facebook.presto.sql.planner.DomainTranslator;
@@ -31,6 +32,7 @@ import com.facebook.presto.sql.planner.PlanNodeIdAllocator;
 import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.planner.SymbolAllocator;
 import com.facebook.presto.sql.planner.TypeProvider;
+import com.facebook.presto.sql.planner.iterative.TraitSetPropagator;
 import com.facebook.presto.sql.planner.iterative.rule.PickTableLayout;
 import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.ApplyNode;
@@ -182,7 +184,11 @@ public class AddExchanges
         @Override
         public PlanWithProperties visitProject(ProjectNode node, PreferredProperties preferredProperties)
         {
+            // only push down preferred if just symbol mapping
             Map<Symbol, Symbol> identities = computeIdentityTranslations(node.getAssignments());
+
+            TraitSet preferedTraitSet;
+            TraitSetPropagator preferedTraitSet
             PreferredProperties translatedPreferred = preferredProperties.translate(symbol -> Optional.ofNullable(identities.get(symbol)));
 
             return rebaseAndDeriveProperties(node, planChild(node, translatedPreferred));

@@ -11,20 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.spi.trait;
+package com.facebook.presto.trait;
 
-import java.util.Optional;
-import java.util.function.Function;
+import com.facebook.presto.spi.trait.TraitSet;
+import com.facebook.presto.sql.planner.plan.PlanNode;
 
-public interface Trait
+public interface TraitSetProvider
 {
-    TraitType getType();
+    // get the TraitSet provided by output of the planNode
+    TraitSet getProviedTraitSet(PlanNode planNode);
 
-    default <T extends Trait, X extends T, Y extends T> Optional<Y> translate(Class<X> type, Function<X, Optional<Y>> translator)
-    {
-        if (type.isInstance(this)) {
-            return translator.apply((X) this);
-        }
-        return Optional.empty();
-    }
+    // get the TraitSet preferred by parent planNode
+    TraitSet getPreferredTraitSet(PlanNode planNode);
 }

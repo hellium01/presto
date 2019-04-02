@@ -14,6 +14,7 @@
 package com.facebook.presto.spi.trait;
 
 public enum CollationTraitType
-        implements TraitType<ConnectorCollationTrait>
+        implements TraitType<CollationTrait>
 {
+
 }

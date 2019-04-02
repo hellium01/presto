@@ -13,18 +13,16 @@
  */
 package com.facebook.presto.spi.trait;
 
+import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.relation.ConstantExpression;
+
 import java.util.Optional;
-import java.util.function.Function;
 
-public interface Trait
+public class ConnectorConstantTrait
+        extends ConstantTrait<ColumnHandle>
 {
-    TraitType getType();
-
-    default <T extends Trait, X extends T, Y extends T> Optional<Y> translate(Class<X> type, Function<X, Optional<Y>> translator)
+    public ConnectorConstantTrait(ColumnHandle column, Optional<ConstantExpression> value)
     {
-        if (type.isInstance(this)) {
-            return translator.apply((X) this);
-        }
-        return Optional.empty();
+        super(column, value);
     }
 }

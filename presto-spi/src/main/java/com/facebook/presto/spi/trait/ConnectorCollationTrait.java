@@ -25,18 +25,16 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
 
 public class ConnectorCollationTrait
+        extends CollationTrait<ColumnHandle>
 {
-    private UnmodifiableLinkedHashMap<ColumnHandle, SortOrder> orders;
-
     public ConnectorCollationTrait(List<ColumnHandle> columns, Map<ColumnHandle, SortOrder> columnOrders)
     {
-        this.orders = new UnmodifiableLinkedHashMap.Builder<>(columns, columnOrders)
-                .build();
+        super(columns, columnOrders);
     }
 
     private ConnectorCollationTrait(UnmodifiableLinkedHashMap<ColumnHandle, SortOrder> orders)
     {
-        this.orders = orders;
+        super(orders);
     }
 
     public List<ColumnHandle> getColumns()

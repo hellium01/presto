@@ -13,18 +13,13 @@
  */
 package com.facebook.presto.spi.trait;
 
-import java.util.Optional;
-import java.util.function.Function;
-
-public interface Trait
+public class ConstantTraitType
+        implements TraitType<ConstantTrait>
 {
-    TraitType getType();
+    public static final ConstantTraitType CONSTANT = new ConstantTraitType();
 
-    default <T extends Trait, X extends T, Y extends T> Optional<Y> translate(Class<X> type, Function<X, Optional<Y>> translator)
+    public Class<ConstantTrait> getTraitClass()
     {
-        if (type.isInstance(this)) {
-            return translator.apply((X) this);
-        }
-        return Optional.empty();
+        return ConstantTrait.class;
     }
 }

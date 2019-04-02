@@ -13,18 +13,13 @@
  */
 package com.facebook.presto.spi.trait;
 
-import java.util.Optional;
-import java.util.function.Function;
-
-public interface Trait
+public class PartitionTraitType
+        implements TraitType<PartitionTrait>
 {
-    TraitType getType();
+    public static final PartitionTraitType PARTITION = new PartitionTraitType();
 
-    default <T extends Trait, X extends T, Y extends T> Optional<Y> translate(Class<X> type, Function<X, Optional<Y>> translator)
+    Class<PartitionTrait> getTraitClass()
     {
-        if (type.isInstance(this)) {
-            return translator.apply((X) this);
-        }
-        return Optional.empty();
+        return PartitionTrait.class;
     }
 }

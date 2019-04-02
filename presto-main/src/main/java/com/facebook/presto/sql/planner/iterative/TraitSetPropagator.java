@@ -11,20 +11,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.spi.trait;
+package com.facebook.presto.sql.planner.iterative;
 
+import com.facebook.presto.spi.trait.TraitSet;
+import com.facebook.presto.sql.planner.plan.PlanNode;
+
+import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
-public interface Trait
+public interface TraitSetPropagator
 {
-    TraitType getType();
+    List<TraitSet> getExpectedInput(PlanNode planNode, TraitSet expectedOutput);
 
-    default <T extends Trait, X extends T, Y extends T> Optional<Y> translate(Class<X> type, Function<X, Optional<Y>> translator)
-    {
-        if (type.isInstance(this)) {
-            return translator.apply((X) this);
-        }
-        return Optional.empty();
-    }
+    TraitSet makeLocal(PlanNode planNode, TraitSet traitSet);
+
+    TraitSet getExpectedTraitSet(PlanNode planNode, TraitSet parentExpection);
+
+    Optional<TraitSet> getProvidedTraitSet(PlanNode planNode, List<TraitSet> traitSet);
 }
