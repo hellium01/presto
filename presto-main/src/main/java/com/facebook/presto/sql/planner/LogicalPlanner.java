@@ -427,7 +427,7 @@ public class LogicalPlanner
             List<Symbol> outputLayout = new ArrayList<>(symbols);
 
             partitioningScheme = Optional.of(new PartitioningScheme(
-                    Partitioning.create(writeTableLayout.get().getPartitioning(), partitionFunctionArguments),
+                    Partitioning.create(writeTableLayout.get().getPartitioning(), partitionFunctionArguments, symbolAllocator.getTypes().allTypes()),
                     outputLayout));
         }
 

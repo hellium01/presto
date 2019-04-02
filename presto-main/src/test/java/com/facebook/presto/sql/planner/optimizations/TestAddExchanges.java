@@ -17,9 +17,12 @@ import com.facebook.presto.spi.ConstantProperty;
 import com.facebook.presto.spi.GroupingProperty;
 import com.facebook.presto.spi.SortingProperty;
 import com.facebook.presto.spi.block.SortOrder;
+import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.planner.optimizations.ActualProperties.Global;
+import com.facebook.presto.type.UnknownType;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.testng.annotations.Test;
@@ -29,7 +32,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static com.facebook.presto.spi.block.SortOrder.ASC_NULLS_FIRST;
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.FIXED_HASH_DISTRIBUTION;
@@ -39,6 +44,7 @@ import static com.facebook.presto.sql.planner.optimizations.ActualProperties.Glo
 import static com.facebook.presto.sql.planner.optimizations.ActualProperties.builder;
 import static com.facebook.presto.sql.planner.optimizations.AddExchanges.streamingExecutionPreference;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static java.util.stream.Collectors.toMap;
 import static org.testng.Assert.assertEquals;
 
 /**
@@ -753,17 +759,24 @@ public class TestAddExchanges
 
     private static Global hashDistributedOn(String... columnNames)
     {
-        return partitionedOn(FIXED_HASH_DISTRIBUTION, arguments(columnNames), Optional.of(arguments(columnNames)));
+        return partitionedOn(
+                FIXED_HASH_DISTRIBUTION,
+                arguments(columnNames),
+                ImmutableMap.of(
+                        new Symbol("a"), UnknownType.UNKNOWN,
+                        new Symbol("b"), UnknownType.UNKNOWN),
+                Optional.of(arguments(columnNames)));
     }
 
     public static Global singleStream()
     {
-        return Global.streamPartitionedOn(ImmutableList.of());
+        return Global.streamPartitionedOn(ImmutableList.of(), ImmutableMap.of());
     }
 
     private static Global streamPartitionedOn(String... columnNames)
     {
-        return Global.streamPartitionedOn(arguments(columnNames));
+        List<Symbol> symbols = arguments(columnNames);
+        return Global.streamPartitionedOn(symbols, getTestTypes(symbols));
     }
 
     private static ConstantProperty<Symbol> constant(String column)
@@ -791,5 +804,11 @@ public class TestAddExchanges
         return Arrays.asList(columnNames).stream()
                 .map(Symbol::new)
                 .collect(toImmutableList());
+    }
+
+    private static Map<Symbol, Type> getTestTypes(List<Symbol> symbols)
+    {
+        return symbols.stream()
+                .collect(toMap(Function.identity(), symbol -> UnknownType.UNKNOWN));
     }
 }

@@ -537,24 +537,30 @@ public class PlanBuilder
 
         public ExchangeBuilder singleDistributionPartitioningScheme(List<Symbol> outputSymbols)
         {
-            return partitioningScheme(new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of()), outputSymbols));
+            return partitioningScheme(new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of(), ImmutableMap.of()), outputSymbols));
         }
 
-        public ExchangeBuilder fixedHashDistributionParitioningScheme(List<Symbol> outputSymbols, List<Symbol> partitioningSymbols)
+        public ExchangeBuilder fixedHashDistributionParitioningScheme(List<Symbol> outputSymbols, List<Symbol> partitioningSymbols, Map<Symbol, Type> types)
         {
-            return partitioningScheme(new PartitioningScheme(Partitioning.create(
-                    FIXED_HASH_DISTRIBUTION,
-                    ImmutableList.copyOf(partitioningSymbols)),
-                    ImmutableList.copyOf(outputSymbols)));
+            return partitioningScheme(
+                    new PartitioningScheme(
+                            Partitioning.create(
+                                    FIXED_HASH_DISTRIBUTION,
+                                    ImmutableList.copyOf(partitioningSymbols),
+                                    types),
+                            ImmutableList.copyOf(outputSymbols)));
         }
 
-        public ExchangeBuilder fixedHashDistributionParitioningScheme(List<Symbol> outputSymbols, List<Symbol> partitioningSymbols, Symbol hashSymbol)
+        public ExchangeBuilder fixedHashDistributionParitioningScheme(List<Symbol> outputSymbols, List<Symbol> partitioningSymbols, Symbol hashSymbol, Map<Symbol, Type> types)
         {
-            return partitioningScheme(new PartitioningScheme(Partitioning.create(
-                    FIXED_HASH_DISTRIBUTION,
-                    ImmutableList.copyOf(partitioningSymbols)),
-                    ImmutableList.copyOf(outputSymbols),
-                    Optional.of(hashSymbol)));
+            return partitioningScheme(
+                    new PartitioningScheme(
+                            Partitioning.create(
+                                    FIXED_HASH_DISTRIBUTION,
+                                    ImmutableList.copyOf(partitioningSymbols),
+                                    ImmutableMap.copyOf(types)),
+                            ImmutableList.copyOf(outputSymbols),
+                            Optional.of(hashSymbol)));
         }
 
         public ExchangeBuilder partitioningScheme(PartitioningScheme partitioningScheme)

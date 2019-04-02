@@ -13,7 +13,7 @@
  */
 package com.facebook.presto.util;
 
-import com.facebook.presto.sql.planner.Partitioning.ArgumentBinding;
+import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.sql.planner.PlanFragment;
 import com.facebook.presto.sql.planner.SubPlan;
 import com.facebook.presto.sql.planner.Symbol;
@@ -56,6 +56,7 @@ import com.facebook.presto.sql.planner.plan.WindowNode;
 import com.facebook.presto.sql.tree.ComparisonExpression;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.SymbolReference;
+import com.facebook.presto.type.UnknownType;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -67,12 +68,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.facebook.presto.sql.planner.Partitioning.toArgumentBinding;
 import static com.facebook.presto.sql.planner.plan.ExchangeNode.Type.REPARTITION;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Maps.immutableEnumMap;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toMap;
 
 public final class GraphvizPrinter
 {
@@ -318,9 +321,9 @@ public final class GraphvizPrinter
         @Override
         public Void visitExchange(ExchangeNode node, Void context)
         {
-            List<ArgumentBinding> symbols = node.getOutputSymbols().stream()
-                    .map(ArgumentBinding::columnBinding)
-                    .collect(toImmutableList());
+            List<RowExpression> symbols = toArgumentBinding(node.getOutputSymbols(), node.getOutputSymbols().stream()
+                    .collect(toMap(Function.identity(), ignored -> UnknownType.UNKNOWN)));
+
             if (node.getType() == REPARTITION) {
                 symbols = node.getPartitioningScheme().getPartitioning().getArguments();
             }

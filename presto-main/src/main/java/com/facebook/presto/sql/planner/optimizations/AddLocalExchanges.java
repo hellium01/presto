@@ -296,6 +296,7 @@ public class AddLocalExchanges
                                 LOCAL,
                                 child.getNode(),
                                 groupingKeys,
+                                types.allTypes(),
                                 Optional.empty()),
                         child.getProperties());
                 return rebaseAndDeriveProperties(node, ImmutableList.of(exchange));
@@ -533,7 +534,7 @@ public class AddLocalExchanges
                         idAllocator.getNextId(),
                         GATHER,
                         LOCAL,
-                        new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of()), node.getOutputSymbols()),
+                        new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of(), types.allTypes()), node.getOutputSymbols()),
                         sources,
                         inputLayouts,
                         Optional.empty());
@@ -547,7 +548,7 @@ public class AddLocalExchanges
                         REPARTITION,
                         LOCAL,
                         new PartitioningScheme(
-                                Partitioning.create(FIXED_HASH_DISTRIBUTION, preferredPartitionColumns.get()),
+                                Partitioning.create(FIXED_HASH_DISTRIBUTION, preferredPartitionColumns.get(), types.allTypes()),
                                 node.getOutputSymbols(),
                                 Optional.empty()),
                         sources,
@@ -561,7 +562,7 @@ public class AddLocalExchanges
                     idAllocator.getNextId(),
                     REPARTITION,
                     LOCAL,
-                    new PartitioningScheme(Partitioning.create(FIXED_ARBITRARY_DISTRIBUTION, ImmutableList.of()), node.getOutputSymbols()),
+                    new PartitioningScheme(Partitioning.create(FIXED_ARBITRARY_DISTRIBUTION, ImmutableList.of(), types.allTypes()), node.getOutputSymbols()),
                     sources,
                     inputLayouts,
                     Optional.empty());
@@ -710,6 +711,7 @@ public class AddLocalExchanges
                         LOCAL,
                         planWithProperties.getNode(),
                         requiredPartitionColumns.get(),
+                        types.allTypes(),
                         Optional.empty());
                 return deriveProperties(exchangeNode, planWithProperties.getProperties());
             }

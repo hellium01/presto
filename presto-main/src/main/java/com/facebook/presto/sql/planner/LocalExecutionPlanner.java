@@ -105,9 +105,10 @@ import com.facebook.presto.spi.RecordSet;
 import com.facebook.presto.spi.block.BlockEncodingSerde;
 import com.facebook.presto.spi.block.SortOrder;
 import com.facebook.presto.spi.function.FunctionHandle;
-import com.facebook.presto.spi.predicate.NullableValue;
+import com.facebook.presto.spi.relation.ConstantExpression;
 import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
 import com.facebook.presto.spi.relation.RowExpression;
+import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.spi.type.FunctionType;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spiller.PartitioningSpillerFactory;
@@ -239,7 +240,9 @@ import static com.facebook.presto.spi.type.TypeUtils.writeNativeValue;
 import static com.facebook.presto.sql.analyzer.ExpressionAnalyzer.getExpressionTypes;
 import static com.facebook.presto.sql.gen.LambdaBytecodeGenerator.compileLambdaProvider;
 import static com.facebook.presto.sql.planner.ExpressionNodeInliner.replaceExpression;
-import static com.facebook.presto.sql.planner.RowExpressionInterpreter.rowExpressionInterpreter;
+import static com.facebook.presto.sql.planner.Partitioning.getSymbol;
+import static com.facebook.presto.sql.planner.Partitioning.isConstant;
+import static com.facebook.presto.sql.planner.Partitioning.isSymbolReference;
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.COORDINATOR_DISTRIBUTION;
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.FIXED_ARBITRARY_DISTRIBUTION;
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.FIXED_BROADCAST_DISTRIBUTION;
@@ -247,6 +250,7 @@ import static com.facebook.presto.sql.planner.SystemPartitioningHandle.SCALED_WR
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.SINGLE_DISTRIBUTION;
 import static com.facebook.presto.sql.planner.plan.AggregationNode.Step.FINAL;
 import static com.facebook.presto.sql.planner.plan.AggregationNode.Step.PARTIAL;
+import static com.facebook.presto.sql.planner.plan.ExchangeNode.Scope.LOCAL;
 import static com.facebook.presto.sql.planner.plan.JoinNode.Type.FULL;
 import static com.facebook.presto.sql.planner.plan.JoinNode.Type.INNER;
 import static com.facebook.presto.sql.planner.plan.JoinNode.Type.RIGHT;
@@ -377,7 +381,7 @@ public class LocalExecutionPlanner
 
         // We can convert the symbols directly into channels, because the root must be a sink and therefore the layout is fixed
         List<Integer> partitionChannels;
-        List<Optional<NullableValue>> partitionConstants;
+        List<Optional<ConstantExpression>> partitionConstants;
         List<Type> partitionChannelTypes;
         if (partitioningScheme.getHashColumn().isPresent()) {
             partitionChannels = ImmutableList.of(outputLayout.indexOf(partitioningScheme.getHashColumn().get()));
@@ -387,26 +391,27 @@ public class LocalExecutionPlanner
         else {
             partitionChannels = partitioningScheme.getPartitioning().getArguments().stream()
                     .map(argument -> {
-                        if (argument.isConstant()) {
+                        if (isConstant(argument)) {
                             return -1;
                         }
-                        return outputLayout.indexOf(argument.getColumn());
+                        return outputLayout.indexOf(getSymbol(argument));
                     })
                     .collect(toImmutableList());
             partitionConstants = partitioningScheme.getPartitioning().getArguments().stream()
                     .map(argument -> {
-                        if (argument.isConstant()) {
-                            return Optional.of(argument.getConstant());
+                        if (isConstant(argument)) {
+                            return Optional.of((ConstantExpression) argument);
                         }
-                        return Optional.<NullableValue>empty();
+                        return Optional.<ConstantExpression>empty();
                     })
                     .collect(toImmutableList());
             partitionChannelTypes = partitioningScheme.getPartitioning().getArguments().stream()
                     .map(argument -> {
-                        if (argument.isConstant()) {
-                            return argument.getConstant().getType();
+                        if (isConstant(argument)) {
+                            return argument.getType();
                         }
-                        return types.get(argument.getColumn());
+                        checkArgument(isSymbolReference(argument), "argument must be either SymbolReference or Null");
+                        return types.get(new Symbol(((VariableReferenceExpression) argument).getName()));
                     })
                     .collect(toImmutableList());
         }
@@ -1281,11 +1286,20 @@ public class LocalExecutionPlanner
 
             List<Type> outputTypes = getSymbolTypes(node.getOutputSymbols(), context.getTypes());
             PageBuilder pageBuilder = new PageBuilder(node.getRows().size(), outputTypes);
-            for (List<RowExpression> row : node.getRows()) {
+            for (List<Expression> row : node.getRows()) {
                 pageBuilder.declarePosition();
+                Map<NodeRef<Expression>, Type> expressionTypes = getExpressionTypes(
+                        context.getSession(),
+                        metadata,
+                        sqlParser,
+                        TypeProvider.empty(),
+                        ImmutableList.copyOf(row),
+                        emptyList(),
+                        NOOP,
+                        false);
                 for (int i = 0; i < row.size(); i++) {
                     // evaluate the literal value
-                    Object result = rowExpressionInterpreter(row.get(i), metadata, context.getSession()).evaluate();
+                    Object result = ExpressionInterpreter.expressionInterpreter(row.get(i), metadata, context.getSession(), expressionTypes).evaluate();
                     writeNativeValue(outputTypes.get(i), pageBuilder.getBlockBuilder(i), result);
                 }
             }
@@ -2331,7 +2345,7 @@ public class LocalExecutionPlanner
         @Override
         public PhysicalOperation visitExchange(ExchangeNode node, LocalExecutionPlanContext context)
         {
-            checkArgument(node.getScope().isLocal(), "Only local exchanges are supported in the local planner");
+            checkArgument(node.getScope() == LOCAL, "Only local exchanges are supported in the local planner");
 
             if (node.getOrderingScheme().isPresent()) {
                 return createLocalMerge(node, context);
@@ -2408,7 +2422,7 @@ public class LocalExecutionPlanner
 
             List<Type> types = getSourceOperatorTypes(node, context.getTypes());
             List<Integer> channels = node.getPartitioningScheme().getPartitioning().getArguments().stream()
-                    .map(argument -> node.getOutputSymbols().indexOf(argument.getColumn()))
+                    .map(argument -> node.getOutputSymbols().indexOf(getSymbol(argument)))
                     .collect(toImmutableList());
             Optional<Integer> hashChannel = node.getPartitioningScheme().getHashColumn()
                     .map(symbol -> node.getOutputSymbols().indexOf(symbol));

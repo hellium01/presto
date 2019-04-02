@@ -176,7 +176,7 @@ public class TestSqlStageExecution
                 types.build(),
                 SOURCE_DISTRIBUTION,
                 ImmutableList.of(planNode.getId()),
-                new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of()), planNode.getOutputSymbols()),
+                new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of(), ImmutableMap.of()), planNode.getOutputSymbols()),
                 StageExecutionDescriptor.ungroupedExecution(),
                 StatsAndCosts.empty(),
                 Optional.empty());

@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.testng.annotations.Test;
 
+import static com.facebook.presto.spi.type.BigintType.BIGINT;
 import static com.facebook.presto.sql.planner.assertions.PlanMatchPattern.exchange;
 import static com.facebook.presto.sql.planner.assertions.PlanMatchPattern.expression;
 import static com.facebook.presto.sql.planner.assertions.PlanMatchPattern.project;
@@ -131,7 +132,8 @@ public class TestPushProjectionThroughExchange
                                     .fixedHashDistributionParitioningScheme(
                                             ImmutableList.of(a, b, h),
                                             ImmutableList.of(b),
-                                            h)));
+                                            h,
+                                            ImmutableMap.of(a, BIGINT, b, BIGINT, h, BIGINT))));
                 })
                 .matches(
                         project(

@@ -18,6 +18,8 @@ import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.spi.ConstantProperty;
 import com.facebook.presto.spi.LocalProperty;
 import com.facebook.presto.spi.predicate.NullableValue;
+import com.facebook.presto.spi.relation.RowExpression;
+import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.planner.Partitioning;
 import com.facebook.presto.sql.planner.PartitioningHandle;
 import com.facebook.presto.sql.planner.Symbol;
@@ -153,17 +155,21 @@ public class ActualProperties
 
     public ActualProperties translate(Function<Symbol, Optional<Symbol>> translator)
     {
-        Map<Symbol, NullableValue> translatedConstants = new HashMap<>();
-        for (Map.Entry<Symbol, NullableValue> entry : constants.entrySet()) {
-            Optional<Symbol> translatedKey = translator.apply(entry.getKey());
-            if (translatedKey.isPresent()) {
-                translatedConstants.put(translatedKey.get(), entry.getValue());
-            }
-        }
         return builder()
-                .global(global.translate(translator, symbol -> Optional.ofNullable(constants.get(symbol))))
+                .global(global.translate(new Partitioning.Translator(translator, symbol -> Optional.ofNullable(constants.get(symbol)), expression -> Optional.empty())))
                 .local(LocalProperties.translate(localProperties, translator))
-                .constants(translatedConstants)
+                .constants(translateConstants(translator))
+                .build();
+    }
+
+    public ActualProperties translate(
+            Function<Symbol, Optional<Symbol>> translator,
+            Function<RowExpression, Optional<Symbol>> expressionTranslator)
+    {
+        return builder()
+                .global(global.translate(new Partitioning.Translator(translator, symbol -> Optional.ofNullable(constants.get(symbol)), expressionTranslator)))
+                .local(LocalProperties.translate(localProperties, translator))
+                .constants(translateConstants(translator))
                 .build();
     }
 
@@ -197,6 +203,18 @@ public class ActualProperties
     public static Builder builderFrom(ActualProperties properties)
     {
         return new Builder(properties.global, properties.localProperties, properties.constants);
+    }
+
+    private Map<Symbol, NullableValue> translateConstants(Function<Symbol, Optional<Symbol>> translator)
+    {
+        Map<Symbol, NullableValue> translatedConstants = new HashMap<>();
+        for (Map.Entry<Symbol, NullableValue> entry : constants.entrySet()) {
+            Optional<Symbol> translatedKey = translator.apply(entry.getKey());
+            if (translatedKey.isPresent()) {
+                translatedConstants.put(translatedKey.get(), entry.getValue());
+            }
+        }
+        return translatedConstants;
     }
 
     public static class Builder
@@ -321,6 +339,7 @@ public class ActualProperties
             return partitionedOn(
                     COORDINATOR_DISTRIBUTION,
                     ImmutableList.of(),
+                    ImmutableMap.of(),
                     Optional.of(ImmutableList.of()));
         }
 
@@ -329,6 +348,7 @@ public class ActualProperties
             return partitionedOn(
                     SINGLE_DISTRIBUTION,
                     ImmutableList.of(),
+                    ImmutableMap.of(),
                     Optional.of(ImmutableList.of()));
         }
 
@@ -337,11 +357,11 @@ public class ActualProperties
             return new Global(Optional.empty(), Optional.empty(), false);
         }
 
-        public static Global partitionedOn(PartitioningHandle nodePartitioningHandle, List<Symbol> nodePartitioning, Optional<List<Symbol>> streamPartitioning)
+        public static Global partitionedOn(PartitioningHandle nodePartitioningHandle, List<Symbol> nodePartitioning, Map<Symbol, Type> types, Optional<List<Symbol>> streamPartitioning)
         {
             return new Global(
-                    Optional.of(Partitioning.create(nodePartitioningHandle, nodePartitioning)),
-                    streamPartitioning.map(columns -> Partitioning.create(SOURCE_DISTRIBUTION, columns)),
+                    Optional.of(Partitioning.create(nodePartitioningHandle, nodePartitioning, types)),
+                    streamPartitioning.map(columns -> Partitioning.create(SOURCE_DISTRIBUTION, columns, types)),
                     false);
         }
 
@@ -353,11 +373,11 @@ public class ActualProperties
                     false);
         }
 
-        public static Global streamPartitionedOn(List<Symbol> streamPartitioning)
+        public static Global streamPartitionedOn(List<Symbol> streamPartitioning, Map<Symbol, Type> types)
         {
             return new Global(
                     Optional.empty(),
-                    Optional.of(Partitioning.create(SOURCE_DISTRIBUTION, streamPartitioning)),
+                    Optional.of(Partitioning.create(SOURCE_DISTRIBUTION, streamPartitioning, types)),
                     false);
         }
 
@@ -448,11 +468,11 @@ public class ActualProperties
             return (!streamPartitioning.isPresent() || streamPartitioning.get().isRepartitionEffective(keys, constants)) && !nullsAndAnyReplicated;
         }
 
-        private Global translate(Function<Symbol, Optional<Symbol>> translator, Function<Symbol, Optional<NullableValue>> constants)
+        private Global translate(Partitioning.Translator translator)
         {
             return new Global(
-                    nodePartitioning.flatMap(partitioning -> partitioning.translate(translator, constants)),
-                    streamPartitioning.flatMap(partitioning -> partitioning.translate(translator, constants)),
+                    nodePartitioning.flatMap(partitioning -> partitioning.translate(translator)),
+                    streamPartitioning.flatMap(partitioning -> partitioning.translate(translator)),
                     nullsAndAnyReplicated);
         }
 
