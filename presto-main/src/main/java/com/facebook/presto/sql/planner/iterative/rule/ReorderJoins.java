@@ -30,7 +30,12 @@ import com.facebook.presto.sql.planner.PlanVariableAllocator;
 import com.facebook.presto.sql.planner.VariablesExtractor;
 import com.facebook.presto.sql.planner.iterative.Lookup;
 import com.facebook.presto.sql.planner.iterative.Rule;
+<<<<<<< HEAD
 import com.facebook.presto.sql.planner.optimizations.JoinNodeUtils;
+=======
+import com.facebook.presto.sql.planner.optimizations.JoinNodeUtil;
+import com.facebook.presto.sql.planner.plan.FilterNode;
+>>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
 import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.JoinNode.DistributionType;
 import com.facebook.presto.sql.planner.plan.JoinNode.EquiJoinClause;
@@ -535,7 +540,11 @@ public class ReorderJoins
                 flattenNode(joinNode.getLeft(), limit - 1);
                 flattenNode(joinNode.getRight(), limit);
                 joinNode.getCriteria().stream()
+<<<<<<< HEAD
                         .map(JoinNodeUtils::toExpression)
+=======
+                        .map(JoinNodeUtil::toExpression)
+>>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
                         .forEach(filters::add);
                 joinNode.getFilter().ifPresent(filter -> filters.add(castToExpression(filter)));
             }

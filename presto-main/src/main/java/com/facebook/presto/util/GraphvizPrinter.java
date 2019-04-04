@@ -27,7 +27,12 @@ import com.facebook.presto.sql.planner.Partitioning.ArgumentBinding;
 >>>>>>> Replace FilterNode::Expression with RowExpression
 import com.facebook.presto.sql.planner.PlanFragment;
 import com.facebook.presto.sql.planner.SubPlan;
+<<<<<<< HEAD
 import com.facebook.presto.sql.planner.optimizations.JoinNodeUtils;
+=======
+import com.facebook.presto.sql.planner.Symbol;
+import com.facebook.presto.sql.planner.optimizations.JoinNodeUtil;
+>>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
 import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.AggregationNode.Aggregation;
 import com.facebook.presto.sql.planner.plan.ApplyNode;
@@ -519,7 +524,11 @@ public final class GraphvizPrinter
         {
             List<Expression> joinExpressions = new ArrayList<>();
             for (JoinNode.EquiJoinClause clause : node.getCriteria()) {
+<<<<<<< HEAD
                 joinExpressions.add(JoinNodeUtils.toExpression(clause));
+=======
+                joinExpressions.add(JoinNodeUtil.toExpression(clause));
+>>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
             }
 
             String criteria = Joiner.on(" AND ").join(joinExpressions);

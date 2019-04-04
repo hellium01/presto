@@ -903,7 +903,11 @@ public class PredicatePushDown
         {
             ImmutableList.Builder<Expression> builder = ImmutableList.builder();
             for (JoinNode.EquiJoinClause equiJoinClause : joinNode.getCriteria()) {
+<<<<<<< HEAD
                 builder.add(JoinNodeUtils.toExpression(equiJoinClause));
+=======
+                builder.add(JoinNodeUtil.toExpression(equiJoinClause));
+>>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
             }
             joinNode.getFilter().map(OriginalExpressionUtils::castToExpression).ifPresent(builder::add);
             return combineConjuncts(builder.build());

@@ -19,6 +19,12 @@ import com.facebook.presto.spi.plan.PlanNodeId;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.planner.SortExpressionContext;
+<<<<<<< HEAD
+=======
+import com.facebook.presto.sql.planner.Symbol;
+import com.facebook.presto.sql.tree.Expression;
+import com.facebook.presto.sql.tree.Join;
+>>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;

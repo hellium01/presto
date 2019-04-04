@@ -14,11 +14,15 @@
 package com.facebook.presto.sql.planner;
 
 import com.facebook.presto.spi.ColumnHandle;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.TableScanNode;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.planner.optimizations.JoinNodeUtils;
+=======
+import com.facebook.presto.sql.planner.optimizations.JoinNodeUtil;
+>>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
 import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.AssignUniqueId;
 import com.facebook.presto.sql.planner.plan.DistinctLimitNode;
@@ -234,7 +238,11 @@ public class EffectivePredicateExtractor
             Expression rightPredicate = node.getRight().accept(this, context);
 
             List<Expression> joinConjuncts = node.getCriteria().stream()
+<<<<<<< HEAD
                     .map(JoinNodeUtils::toExpression)
+=======
+                    .map(JoinNodeUtil::toExpression)
+>>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
                     .collect(toImmutableList());
 
             switch (node.getType()) {
