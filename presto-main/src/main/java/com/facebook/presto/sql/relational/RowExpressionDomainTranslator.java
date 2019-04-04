@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.sql.relational;
 
+<<<<<<< HEAD
 import com.facebook.presto.metadata.FunctionManager;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.OperatorNotFoundException;
@@ -22,6 +23,15 @@ import com.facebook.presto.spi.function.FunctionHandle;
 import com.facebook.presto.spi.function.FunctionMetadata;
 import com.facebook.presto.spi.function.OperatorType;
 import com.facebook.presto.spi.function.StandardFunctionResolution;
+=======
+import com.facebook.presto.Session;
+import com.facebook.presto.metadata.FunctionManager;
+import com.facebook.presto.metadata.Metadata;
+import com.facebook.presto.metadata.OperatorNotFoundException;
+import com.facebook.presto.spi.block.Block;
+import com.facebook.presto.spi.function.FunctionHandle;
+import com.facebook.presto.spi.function.OperatorType;
+>>>>>>> Introduce RowExpressionDomainTranslator
 import com.facebook.presto.spi.predicate.DiscreteValues;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Marker;
@@ -34,11 +44,16 @@ import com.facebook.presto.spi.predicate.Utils;
 import com.facebook.presto.spi.predicate.ValueSet;
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.ConstantExpression;
+<<<<<<< HEAD
 import com.facebook.presto.spi.relation.DeterminismEvaluator;
 import com.facebook.presto.spi.relation.DomainTranslator;
 import com.facebook.presto.spi.relation.InputReferenceExpression;
 import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
 import com.facebook.presto.spi.relation.LogicalRowExpressions;
+=======
+import com.facebook.presto.spi.relation.InputReferenceExpression;
+import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
+>>>>>>> Introduce RowExpressionDomainTranslator
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.RowExpressionVisitor;
 import com.facebook.presto.spi.relation.SpecialFormExpression;
@@ -52,7 +67,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.PeekingIterator;
 
 import javax.annotation.Nullable;
+<<<<<<< HEAD
 import javax.inject.Inject;
+=======
+>>>>>>> Introduce RowExpressionDomainTranslator
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,10 +87,13 @@ import static com.facebook.presto.spi.function.OperatorType.IS_DISTINCT_FROM;
 import static com.facebook.presto.spi.function.OperatorType.LESS_THAN;
 import static com.facebook.presto.spi.function.OperatorType.LESS_THAN_OR_EQUAL;
 import static com.facebook.presto.spi.function.OperatorType.NOT_EQUAL;
+<<<<<<< HEAD
 import static com.facebook.presto.spi.relation.LogicalRowExpressions.FALSE_CONSTANT;
 import static com.facebook.presto.spi.relation.LogicalRowExpressions.TRUE_CONSTANT;
 import static com.facebook.presto.spi.relation.LogicalRowExpressions.and;
 import static com.facebook.presto.spi.relation.LogicalRowExpressions.or;
+=======
+>>>>>>> Introduce RowExpressionDomainTranslator
 import static com.facebook.presto.spi.relation.SpecialFormExpression.Form.AND;
 import static com.facebook.presto.spi.relation.SpecialFormExpression.Form.IN;
 import static com.facebook.presto.spi.relation.SpecialFormExpression.Form.IS_NULL;
@@ -81,6 +102,15 @@ import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.sql.analyzer.TypeSignatureProvider.fromTypes;
 import static com.facebook.presto.sql.planner.LiteralEncoder.toRowExpression;
 import static com.facebook.presto.sql.relational.Expressions.call;
+<<<<<<< HEAD
+=======
+import static com.facebook.presto.sql.relational.LogicalRowExpressions.FALSE;
+import static com.facebook.presto.sql.relational.LogicalRowExpressions.TRUE;
+import static com.facebook.presto.sql.relational.LogicalRowExpressions.and;
+import static com.facebook.presto.sql.relational.LogicalRowExpressions.or;
+import static com.facebook.presto.sql.relational.StandardFunctionResolution.getComparisonOperator;
+import static com.facebook.presto.sql.relational.StandardFunctionResolution.isComparisonFunction;
+>>>>>>> Introduce RowExpressionDomainTranslator
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -92,11 +122,15 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
 public final class RowExpressionDomainTranslator
+<<<<<<< HEAD
         implements DomainTranslator
+=======
+>>>>>>> Introduce RowExpressionDomainTranslator
 {
     private final FunctionManager functionManager;
     private final LogicalRowExpressions logicalRowExpressions;
     private final StandardFunctionResolution functionResolution;
+<<<<<<< HEAD
     private final Metadata metadata;
 
     @Inject
@@ -113,6 +147,20 @@ public final class RowExpressionDomainTranslator
     {
         if (tupleDomain.isNone()) {
             return FALSE_CONSTANT;
+=======
+
+    public RowExpressionDomainTranslator(FunctionManager functionManager)
+    {
+        this.functionManager = requireNonNull(functionManager, "functionManager is null");
+        this.logicalRowExpressions = new LogicalRowExpressions(functionManager);
+        this.functionResolution = new StandardFunctionResolution(functionManager);
+    }
+
+    public RowExpression toPredicate(TupleDomain<VariableReferenceExpression> tupleDomain)
+    {
+        if (tupleDomain.isNone()) {
+            return FALSE;
+>>>>>>> Introduce RowExpressionDomainTranslator
         }
 
         Map<VariableReferenceExpression, Domain> domains = tupleDomain.getDomains().get();
@@ -122,6 +170,7 @@ public final class RowExpressionDomainTranslator
                 .collect(collectingAndThen(toImmutableList(), logicalRowExpressions::combineConjuncts));
     }
 
+<<<<<<< HEAD
     @Override
     public <T> ExtractionResult<T> fromPredicate(ConnectorSession session, RowExpression predicate, ColumnExtractor<T> columnExtractor)
     {
@@ -136,6 +185,16 @@ public final class RowExpressionDomainTranslator
 
         if (domain.getValues().isAll()) {
             return domain.isNullAllowed() ? TRUE_CONSTANT : not(functionResolution, isNull(reference));
+=======
+    private RowExpression toPredicate(Domain domain, VariableReferenceExpression reference)
+    {
+        if (domain.getValues().isNone()) {
+            return domain.isNullAllowed() ? isNull(reference) : FALSE;
+        }
+
+        if (domain.getValues().isAll()) {
+            return domain.isNullAllowed() ? TRUE : not(functionResolution, isNull(reference));
+>>>>>>> Introduce RowExpressionDomainTranslator
         }
 
         List<RowExpression> disjuncts = new ArrayList<>();
@@ -152,19 +211,30 @@ public final class RowExpressionDomainTranslator
             disjuncts.add(isNull(reference));
         }
 
+<<<<<<< HEAD
         return logicalRowExpressions.combineDisjunctsWithDefault(disjuncts, TRUE_CONSTANT);
+=======
+        return logicalRowExpressions.combineDisjunctsWithDefault(disjuncts, TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
     }
 
     private RowExpression processRange(Type type, Range range, VariableReferenceExpression reference)
     {
         if (range.isAll()) {
+<<<<<<< HEAD
             return TRUE_CONSTANT;
+=======
+            return TRUE;
+>>>>>>> Introduce RowExpressionDomainTranslator
         }
 
         if (isBetween(range)) {
             // specialize the range with BETWEEN expression if possible b/c it is currently more efficient
             return call(
+<<<<<<< HEAD
                     BETWEEN.name(),
+=======
+>>>>>>> Introduce RowExpressionDomainTranslator
                     functionManager.resolveOperator(BETWEEN, fromTypes(reference.getType(), type, type)),
                     BOOLEAN,
                     reference,
@@ -292,24 +362,50 @@ public final class RowExpressionDomainTranslator
                 && !range.getHigh().isUpperUnbounded() && range.getHigh().getBound() == Marker.Bound.EXACTLY;
     }
 
+<<<<<<< HEAD
     private static class Visitor<T>
             implements RowExpressionVisitor<ExtractionResult<T>, Boolean>
     {
         private final InterpretedFunctionInvoker functionInvoker;
         private final Metadata metadata;
         private final ConnectorSession session;
+=======
+    /**
+     * Convert an Expression predicate into an ExtractionResult consisting of:
+     * 1) A successfully extracted TupleDomain
+     * 2) An Expression fragment which represents the part of the original Expression that will need to be re-evaluated
+     * after filtering with the TupleDomain.
+     */
+    public static ExtractionResult fromPredicate(Metadata metadata, Session session, RowExpression predicate)
+    {
+        return predicate.accept(new Visitor(metadata, session), false);
+    }
+
+    private static class Visitor
+            implements RowExpressionVisitor<ExtractionResult, Boolean>
+    {
+        private final InterpretedFunctionInvoker functionInvoker;
+        private final Metadata metadata;
+        private final Session session;
+>>>>>>> Introduce RowExpressionDomainTranslator
         private final FunctionManager functionManager;
         private final LogicalRowExpressions logicalRowExpressions;
         private final DeterminismEvaluator determinismEvaluator;
         private final StandardFunctionResolution resolution;
+<<<<<<< HEAD
         private final ColumnExtractor<T> columnExtractor;
 
         private Visitor(Metadata metadata, ConnectorSession session, ColumnExtractor<T> columnExtractor)
+=======
+
+        private Visitor(Metadata metadata, Session session)
+>>>>>>> Introduce RowExpressionDomainTranslator
         {
             this.functionInvoker = new InterpretedFunctionInvoker(metadata.getFunctionManager());
             this.metadata = metadata;
             this.session = session;
             this.functionManager = metadata.getFunctionManager();
+<<<<<<< HEAD
             this.logicalRowExpressions = new LogicalRowExpressions(new RowExpressionDeterminismEvaluator(functionManager), new FunctionResolution(functionManager));
             this.determinismEvaluator = new RowExpressionDeterminismEvaluator(functionManager);
             this.resolution = new FunctionResolution(functionManager);
@@ -318,6 +414,15 @@ public final class RowExpressionDomainTranslator
 
         @Override
         public ExtractionResult<T> visitSpecialForm(SpecialFormExpression node, Boolean complement)
+=======
+            this.logicalRowExpressions = new LogicalRowExpressions(functionManager);
+            this.determinismEvaluator = new DeterminismEvaluator(functionManager);
+            this.resolution = new StandardFunctionResolution(functionManager);
+        }
+
+        @Override
+        public ExtractionResult visitSpecialForm(SpecialFormExpression node, Boolean complement)
+>>>>>>> Introduce RowExpressionDomainTranslator
         {
             switch (node.getForm()) {
                 case AND:
@@ -331,29 +436,49 @@ public final class RowExpressionDomainTranslator
 
                     ImmutableList.Builder<RowExpression> disjuncts = ImmutableList.builder();
                     for (RowExpression expression : values) {
+<<<<<<< HEAD
                         disjuncts.add(call(EQUAL.name(), functionManager.resolveOperator(EQUAL, fromTypes(target.getType(), expression.getType())), BOOLEAN, target, expression));
+=======
+                        disjuncts.add(call(functionManager.resolveOperator(EQUAL, fromTypes(target.getType(), expression.getType())), BOOLEAN, target, expression));
+>>>>>>> Introduce RowExpressionDomainTranslator
                     }
                     ExtractionResult extractionResult = or(disjuncts.build()).accept(this, complement);
 
                     // preserve original IN predicate as remaining predicate
+<<<<<<< HEAD
                     if (extractionResult.getTupleDomain().isAll()) {
+=======
+                    if (extractionResult.tupleDomain.isAll()) {
+>>>>>>> Introduce RowExpressionDomainTranslator
                         RowExpression originalPredicate = node;
                         if (complement) {
                             originalPredicate = not(resolution, originalPredicate);
                         }
+<<<<<<< HEAD
                         return new ExtractionResult<>(extractionResult.getTupleDomain(), originalPredicate);
+=======
+                        return new ExtractionResult(extractionResult.tupleDomain, originalPredicate);
+>>>>>>> Introduce RowExpressionDomainTranslator
                     }
                     return extractionResult;
                 }
                 case IS_NULL: {
                     RowExpression value = node.getArguments().get(0);
+<<<<<<< HEAD
                     Optional<T> column = columnExtractor.extract(value);
                     if (!column.isPresent()) {
+=======
+                    if (!(value instanceof VariableReferenceExpression)) {
+>>>>>>> Introduce RowExpressionDomainTranslator
                         return visitRowExpression(node, complement);
                     }
 
                     Domain domain = complementIfNecessary(Domain.onlyNull(value.getType()), complement);
+<<<<<<< HEAD
                     return new ExtractionResult<>(TupleDomain.withColumnDomains(ImmutableMap.of(column.get(), domain)), TRUE_CONSTANT);
+=======
+                    return new ExtractionResult(TupleDomain.withColumnDomains(ImmutableMap.of((VariableReferenceExpression) value, domain)), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
                 }
                 default:
                     return visitRowExpression(node, complement);
@@ -361,6 +486,7 @@ public final class RowExpressionDomainTranslator
         }
 
         @Override
+<<<<<<< HEAD
         public ExtractionResult<T> visitConstant(ConstantExpression node, Boolean complement)
         {
             if (node.getValue() == null) {
@@ -369,24 +495,46 @@ public final class RowExpressionDomainTranslator
             if (node.getType() == BOOLEAN) {
                 boolean value = complement != (boolean) node.getValue();
                 return new ExtractionResult<>(value ? TupleDomain.all() : TupleDomain.none(), TRUE_CONSTANT);
+=======
+        public ExtractionResult visitConstant(ConstantExpression node, Boolean complement)
+        {
+            if (node.getValue() == null) {
+                return new ExtractionResult(TupleDomain.none(), TRUE);
+            }
+            if (node.getType() == BOOLEAN) {
+                boolean value = complement != (boolean) node.getValue();
+                return new ExtractionResult(value ? TupleDomain.all() : TupleDomain.none(), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
             }
             throw new IllegalStateException("Can not extract predicate from constant type: " + node.getType());
         }
 
         @Override
+<<<<<<< HEAD
         public ExtractionResult<T> visitLambda(LambdaDefinitionExpression node, Boolean complement)
+=======
+        public ExtractionResult visitLambda(LambdaDefinitionExpression node, Boolean complement)
+>>>>>>> Introduce RowExpressionDomainTranslator
         {
             return visitRowExpression(node, complement);
         }
 
         @Override
+<<<<<<< HEAD
         public ExtractionResult<T> visitVariableReference(VariableReferenceExpression node, Boolean complement)
+=======
+        public ExtractionResult visitVariableReference(VariableReferenceExpression node, Boolean complement)
+>>>>>>> Introduce RowExpressionDomainTranslator
         {
             return visitRowExpression(node, complement);
         }
 
         @Override
+<<<<<<< HEAD
         public ExtractionResult<T> visitCall(CallExpression node, Boolean complement)
+=======
+        public ExtractionResult visitCall(CallExpression node, Boolean complement)
+>>>>>>> Introduce RowExpressionDomainTranslator
         {
             if (node.getFunctionHandle().equals(resolution.notFunction())) {
                 return node.getArguments().get(0).accept(this, !complement);
@@ -399,20 +547,32 @@ public final class RowExpressionDomainTranslator
                         binaryOperator(LESS_THAN_OR_EQUAL, node.getArguments().get(0), node.getArguments().get(2))).accept(this, complement);
             }
 
+<<<<<<< HEAD
             FunctionMetadata functionMetadata = metadata.getFunctionManager().getFunctionMetadata(node.getFunctionHandle());
             if (functionMetadata.getOperatorType().map(OperatorType::isComparisonOperator).orElse(false)) {
                 Optional<NormalizedSimpleComparison> optionalNormalized = toNormalizedSimpleComparison(functionMetadata.getOperatorType().get(), node.getArguments().get(0), node.getArguments().get(1));
+=======
+            if (isComparisonFunction(node.getFunctionHandle())) {
+                Optional<NormalizedSimpleComparison> optionalNormalized = toNormalizedSimpleComparison(getComparisonOperator(node), node.getArguments().get(0), node.getArguments().get(1));
+>>>>>>> Introduce RowExpressionDomainTranslator
                 if (!optionalNormalized.isPresent()) {
                     return visitRowExpression(node, complement);
                 }
                 NormalizedSimpleComparison normalized = optionalNormalized.get();
 
                 RowExpression expression = normalized.getExpression();
+<<<<<<< HEAD
                 Optional<T> column = columnExtractor.extract(expression);
                 if (column.isPresent()) {
                     NullableValue value = normalized.getValue();
                     Type type = value.getType(); // common type for symbol and value
                     return createComparisonExtractionResult(normalized.getComparisonOperator(), column.get(), type, value.getValue(), complement);
+=======
+                if (expression instanceof VariableReferenceExpression) {
+                    NullableValue value = normalized.getValue();
+                    Type type = value.getType(); // common type for symbol and value
+                    return createComparisonExtractionResult(normalized.getComparisonOperator(), (VariableReferenceExpression) expression, type, value.getValue(), complement);
+>>>>>>> Introduce RowExpressionDomainTranslator
                 }
                 else if (expression instanceof CallExpression && resolution.isCastFunction(((CallExpression) expression).getFunctionHandle())) {
                     CallExpression castExpression = (CallExpression) expression;
@@ -460,7 +620,11 @@ public final class RowExpressionDomainTranslator
         }
 
         @Override
+<<<<<<< HEAD
         public ExtractionResult<T> visitInputReference(InputReferenceExpression node, Boolean complement)
+=======
+        public ExtractionResult visitInputReference(InputReferenceExpression node, Boolean complement)
+>>>>>>> Introduce RowExpressionDomainTranslator
         {
             return visitRowExpression(node, complement);
         }
@@ -536,7 +700,11 @@ public final class RowExpressionDomainTranslator
                     if (coercedValueIsEqualToOriginal) {
                         return binaryOperator(comparisonOperator, expression, coercedLiteral);
                     }
+<<<<<<< HEAD
                     return TRUE_CONSTANT;
+=======
+                    return TRUE;
+>>>>>>> Introduce RowExpressionDomainTranslator
                 }
             }
 
@@ -546,7 +714,10 @@ public final class RowExpressionDomainTranslator
         private RowExpression binaryOperator(OperatorType operatorType, RowExpression left, RowExpression right)
         {
             return call(
+<<<<<<< HEAD
                     operatorType.name(),
+=======
+>>>>>>> Introduce RowExpressionDomainTranslator
                     metadata.getFunctionManager().resolveOperator(operatorType, fromTypes(left.getType(), right.getType())),
                     BOOLEAN,
                     left,
@@ -556,7 +727,11 @@ public final class RowExpressionDomainTranslator
         private Optional<Object> floorValue(Type fromType, Type toType, Object value)
         {
             return getSaturatedFloorCastOperator(fromType, toType)
+<<<<<<< HEAD
                     .map((operator) -> functionInvoker.invoke(operator, session, value));
+=======
+                    .map((operator) -> functionInvoker.invoke(operator, session.toConnectorSession(), value));
+>>>>>>> Introduce RowExpressionDomainTranslator
         }
 
         private Optional<FunctionHandle> getSaturatedFloorCastOperator(Type fromType, Type toType)
@@ -572,7 +747,11 @@ public final class RowExpressionDomainTranslator
         private int compareOriginalValueToCoerced(Type originalValueType, Object originalValue, Type coercedValueType, Object coercedValue)
         {
             FunctionHandle castToOriginalTypeOperator = metadata.getFunctionManager().lookupCast(CAST, coercedValueType.getTypeSignature(), originalValueType.getTypeSignature());
+<<<<<<< HEAD
             Object coercedValueInOriginalType = functionInvoker.invoke(castToOriginalTypeOperator, session, coercedValue);
+=======
+            Object coercedValueInOriginalType = functionInvoker.invoke(castToOriginalTypeOperator, session.toConnectorSession(), coercedValue);
+>>>>>>> Introduce RowExpressionDomainTranslator
             Block originalValueBlock = Utils.nativeValueToBlock(originalValueType, originalValue);
             Block coercedValueBlock = Utils.nativeValueToBlock(originalValueType, coercedValueInOriginalType);
             return originalValueType.compareTo(originalValueBlock, 0, coercedValueBlock, 0);
@@ -668,7 +847,11 @@ public final class RowExpressionDomainTranslator
             return Optional.of(new NormalizedSimpleComparison(expression, comparisonOperator, value));
         }
 
+<<<<<<< HEAD
         private static <T> ExtractionResult<T> createComparisonExtractionResult(OperatorType comparisonOperator, T column, Type type, @Nullable Object value, boolean complement)
+=======
+        private static ExtractionResult createComparisonExtractionResult(OperatorType comparisonOperator, VariableReferenceExpression column, Type type, @Nullable Object value, boolean complement)
+>>>>>>> Introduce RowExpressionDomainTranslator
         {
             if (value == null) {
                 switch (comparisonOperator) {
@@ -678,6 +861,7 @@ public final class RowExpressionDomainTranslator
                     case LESS_THAN:
                     case LESS_THAN_OR_EQUAL:
                     case NOT_EQUAL:
+<<<<<<< HEAD
                         return new ExtractionResult<>(TupleDomain.none(), TRUE_CONSTANT);
 
                     case IS_DISTINCT_FROM:
@@ -685,6 +869,15 @@ public final class RowExpressionDomainTranslator
                         return new ExtractionResult<>(
                                 TupleDomain.withColumnDomains(ImmutableMap.of(column, domain)),
                                 TRUE_CONSTANT);
+=======
+                        return new ExtractionResult(TupleDomain.none(), TRUE);
+
+                    case IS_DISTINCT_FROM:
+                        Domain domain = complementIfNecessary(Domain.notNull(type), complement);
+                        return new ExtractionResult(
+                                TupleDomain.withColumnDomains(ImmutableMap.of(column, domain)),
+                                TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
 
                     default:
                         throw new AssertionError("Unhandled operator: " + comparisonOperator);
@@ -702,7 +895,11 @@ public final class RowExpressionDomainTranslator
                 throw new AssertionError("Type cannot be used in a comparison expression (should have been caught in analysis): " + type);
             }
 
+<<<<<<< HEAD
             return new ExtractionResult<>(TupleDomain.withColumnDomains(ImmutableMap.of(column, domain)), TRUE_CONSTANT);
+=======
+            return new ExtractionResult(TupleDomain.withColumnDomains(ImmutableMap.of(column, domain)), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
         }
 
         private static OperatorType flip(OperatorType operatorType)
@@ -742,6 +939,7 @@ public final class RowExpressionDomainTranslator
             return complement ? not(resolution, expression) : expression;
         }
 
+<<<<<<< HEAD
         private ExtractionResult<T> visitRowExpression(RowExpression node, Boolean complement)
         {
             // If we don't know how to process this node, the default response is to say that the TupleDomain is "all"
@@ -755,6 +953,21 @@ public final class RowExpressionDomainTranslator
 
             TupleDomain<T> leftTupleDomain = leftResult.getTupleDomain();
             TupleDomain<T> rightTupleDomain = rightResult.getTupleDomain();
+=======
+        private ExtractionResult visitRowExpression(RowExpression node, Boolean complement)
+        {
+            // If we don't know how to process this node, the default response is to say that the TupleDomain is "all"
+            return new ExtractionResult(TupleDomain.all(), complementIfNecessary(node, complement));
+        }
+
+        private ExtractionResult visitBinaryLogic(SpecialFormExpression node, Boolean complement)
+        {
+            ExtractionResult leftResult = node.getArguments().get(0).accept(this, complement);
+            ExtractionResult rightResult = node.getArguments().get(1).accept(this, complement);
+
+            TupleDomain<VariableReferenceExpression> leftTupleDomain = leftResult.getTupleDomain();
+            TupleDomain<VariableReferenceExpression> rightTupleDomain = rightResult.getTupleDomain();
+>>>>>>> Introduce RowExpressionDomainTranslator
 
             Form operator = node.getForm();
             if (complement) {
@@ -771,12 +984,20 @@ public final class RowExpressionDomainTranslator
 
             switch (operator) {
                 case AND: {
+<<<<<<< HEAD
                     return new ExtractionResult<>(
+=======
+                    return new ExtractionResult(
+>>>>>>> Introduce RowExpressionDomainTranslator
                             leftTupleDomain.intersect(rightTupleDomain),
                             logicalRowExpressions.combineConjuncts(leftResult.getRemainingExpression(), rightResult.getRemainingExpression()));
                 }
                 case OR: {
+<<<<<<< HEAD
                     TupleDomain<T> columnUnionedTupleDomain = TupleDomain.columnWiseUnion(leftTupleDomain, rightTupleDomain);
+=======
+                    TupleDomain<VariableReferenceExpression> columnUnionedTupleDomain = TupleDomain.columnWiseUnion(leftTupleDomain, rightTupleDomain);
+>>>>>>> Introduce RowExpressionDomainTranslator
 
                     // In most cases, the columnUnionedTupleDomain is only a superset of the actual strict union
                     // and so we can return the current node as the remainingExpression so that all bounds will be double checked again at execution time.
@@ -803,7 +1024,11 @@ public final class RowExpressionDomainTranslator
                         }
                     }
 
+<<<<<<< HEAD
                     return new ExtractionResult<>(columnUnionedTupleDomain, remainingExpression);
+=======
+                    return new ExtractionResult(columnUnionedTupleDomain, remainingExpression);
+>>>>>>> Introduce RowExpressionDomainTranslator
                 }
                 default:
                     throw new IllegalStateException("Can not extract predicate from special form: " + node.getForm());
@@ -818,7 +1043,11 @@ public final class RowExpressionDomainTranslator
 
     private static RowExpression not(StandardFunctionResolution resolution, RowExpression expression)
     {
+<<<<<<< HEAD
         return call("not", resolution.notFunction(), expression.getType(), expression);
+=======
+        return call(resolution.notFunction(), expression.getType(), expression);
+>>>>>>> Introduce RowExpressionDomainTranslator
     }
 
     private RowExpression in(RowExpression value, List<RowExpression> inList)
@@ -828,7 +1057,11 @@ public final class RowExpressionDomainTranslator
 
     private RowExpression binaryOperator(OperatorType operatorType, RowExpression left, RowExpression right)
     {
+<<<<<<< HEAD
         return call(operatorType.name(), functionManager.resolveOperator(operatorType, fromTypes(left.getType(), right.getType())), BOOLEAN, left, right);
+=======
+        return call(functionManager.resolveOperator(operatorType, fromTypes(left.getType(), right.getType())), BOOLEAN, left, right);
+>>>>>>> Introduce RowExpressionDomainTranslator
     }
 
     private RowExpression greaterThan(RowExpression left, RowExpression right)
@@ -889,4 +1122,29 @@ public final class RowExpressionDomainTranslator
             return value;
         }
     }
+<<<<<<< HEAD
+=======
+
+    public static class ExtractionResult
+    {
+        private final TupleDomain<VariableReferenceExpression> tupleDomain;
+        private final RowExpression remainingExpression;
+
+        public ExtractionResult(TupleDomain<VariableReferenceExpression> tupleDomain, RowExpression remainingExpression)
+        {
+            this.tupleDomain = requireNonNull(tupleDomain, "tupleDomain is null");
+            this.remainingExpression = requireNonNull(remainingExpression, "remainingExpression is null");
+        }
+
+        public TupleDomain<VariableReferenceExpression> getTupleDomain()
+        {
+            return tupleDomain;
+        }
+
+        public RowExpression getRemainingExpression()
+        {
+            return remainingExpression;
+        }
+    }
+>>>>>>> Introduce RowExpressionDomainTranslator
 }

@@ -21,15 +21,25 @@ import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Range;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.facebook.presto.spi.predicate.ValueSet;
+<<<<<<< HEAD
 import com.facebook.presto.spi.relation.DomainTranslator.ExtractionResult;
+=======
+>>>>>>> Introduce RowExpressionDomainTranslator
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.SpecialFormExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.spi.type.DecimalType;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.analyzer.FeaturesConfig;
+<<<<<<< HEAD
 import com.facebook.presto.sql.relational.FunctionResolution;
 import com.facebook.presto.sql.relational.RowExpressionDomainTranslator;
+=======
+import com.facebook.presto.sql.relational.RowExpressionDomainTranslator;
+import com.facebook.presto.sql.relational.RowExpressionDomainTranslator.ExtractionResult;
+import com.facebook.presto.sql.relational.StandardFunctionResolution;
+import com.facebook.presto.sql.tree.QualifiedName;
+>>>>>>> Introduce RowExpressionDomainTranslator
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
@@ -51,11 +61,14 @@ import static com.facebook.presto.spi.function.OperatorType.GREATER_THAN_OR_EQUA
 import static com.facebook.presto.spi.function.OperatorType.LESS_THAN_OR_EQUAL;
 import static com.facebook.presto.spi.function.OperatorType.NOT_EQUAL;
 import static com.facebook.presto.spi.predicate.TupleDomain.withColumnDomains;
+<<<<<<< HEAD
 import static com.facebook.presto.spi.relation.DomainTranslator.BASIC_COLUMN_EXTRACTOR;
 import static com.facebook.presto.spi.relation.LogicalRowExpressions.FALSE_CONSTANT;
 import static com.facebook.presto.spi.relation.LogicalRowExpressions.TRUE_CONSTANT;
 import static com.facebook.presto.spi.relation.LogicalRowExpressions.and;
 import static com.facebook.presto.spi.relation.LogicalRowExpressions.or;
+=======
+>>>>>>> Introduce RowExpressionDomainTranslator
 import static com.facebook.presto.spi.relation.SpecialFormExpression.Form.IN;
 import static com.facebook.presto.spi.relation.SpecialFormExpression.Form.IS_NULL;
 import static com.facebook.presto.spi.type.BigintType.BIGINT;
@@ -78,6 +91,13 @@ import static com.facebook.presto.sql.planner.LiteralEncoder.toRowExpression;
 import static com.facebook.presto.sql.relational.Expressions.call;
 import static com.facebook.presto.sql.relational.Expressions.constant;
 import static com.facebook.presto.sql.relational.Expressions.constantNull;
+<<<<<<< HEAD
+=======
+import static com.facebook.presto.sql.relational.LogicalRowExpressions.FALSE;
+import static com.facebook.presto.sql.relational.LogicalRowExpressions.TRUE;
+import static com.facebook.presto.sql.relational.LogicalRowExpressions.and;
+import static com.facebook.presto.sql.relational.LogicalRowExpressions.or;
+>>>>>>> Introduce RowExpressionDomainTranslator
 import static com.facebook.presto.testing.TestingConnectorSession.SESSION;
 import static com.facebook.presto.type.ColorType.COLOR;
 import static com.facebook.presto.type.UnknownType.UNKNOWN;
@@ -129,7 +149,11 @@ public class TestRowExpressionDomainTranslator
     public void setup()
     {
         metadata = createTestMetadataManager();
+<<<<<<< HEAD
         domainTranslator = new RowExpressionDomainTranslator(metadata);
+=======
+        domainTranslator = new RowExpressionDomainTranslator(metadata.getFunctionManager());
+>>>>>>> Introduce RowExpressionDomainTranslator
     }
 
     @AfterClass(alwaysRun = true)
@@ -144,7 +168,11 @@ public class TestRowExpressionDomainTranslator
     {
         TupleDomain<VariableReferenceExpression> tupleDomain = TupleDomain.none();
         ExtractionResult result = fromPredicate(toPredicate(tupleDomain));
+<<<<<<< HEAD
         assertEquals(result.getRemainingExpression(), TRUE_CONSTANT);
+=======
+        assertEquals(result.getRemainingExpression(), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
         assertEquals(result.getTupleDomain(), tupleDomain);
     }
 
@@ -153,7 +181,11 @@ public class TestRowExpressionDomainTranslator
     {
         TupleDomain<VariableReferenceExpression> tupleDomain = TupleDomain.all();
         ExtractionResult result = fromPredicate(toPredicate(tupleDomain));
+<<<<<<< HEAD
         assertEquals(result.getRemainingExpression(), TRUE_CONSTANT);
+=======
+        assertEquals(result.getRemainingExpression(), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
         assertEquals(result.getTupleDomain(), tupleDomain);
     }
 
@@ -240,7 +272,11 @@ public class TestRowExpressionDomainTranslator
                 .put(C_BOOLEAN, Domain.none(BOOLEAN))
                 .build());
 
+<<<<<<< HEAD
         assertEquals(toPredicate(tupleDomain), FALSE_CONSTANT);
+=======
+        assertEquals(toPredicate(tupleDomain), FALSE);
+>>>>>>> Introduce RowExpressionDomainTranslator
     }
 
     @Test
@@ -254,7 +290,11 @@ public class TestRowExpressionDomainTranslator
                 .build());
 
         ExtractionResult result = fromPredicate(toPredicate(tupleDomain));
+<<<<<<< HEAD
         assertEquals(result.getRemainingExpression(), TRUE_CONSTANT);
+=======
+        assertEquals(result.getRemainingExpression(), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
         assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.<VariableReferenceExpression, Domain>builder()
                 .put(C_BIGINT, Domain.singleValue(BIGINT, 1L))
                 .put(C_DOUBLE, Domain.onlyNull(DOUBLE))
@@ -274,10 +314,17 @@ public class TestRowExpressionDomainTranslator
         assertEquals(toPredicate(tupleDomain), isNull(C_BIGINT));
 
         tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.none(BIGINT)));
+<<<<<<< HEAD
         assertEquals(toPredicate(tupleDomain), FALSE_CONSTANT);
 
         tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.all(BIGINT)));
         assertEquals(toPredicate(tupleDomain), TRUE_CONSTANT);
+=======
+        assertEquals(toPredicate(tupleDomain), FALSE);
+
+        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.all(BIGINT)));
+        assertEquals(toPredicate(tupleDomain), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
 
         tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 1L)), false)));
         assertEquals(toPredicate(tupleDomain), greaterThan(C_BIGINT, bigintLiteral(1L)));
@@ -419,7 +466,11 @@ public class TestRowExpressionDomainTranslator
         assertUnsupportedPredicate(not(and(equal(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT))));
         assertUnsupportedPredicate(not(unprocessableExpression1(C_BIGINT)));
 
+<<<<<<< HEAD
         assertPredicateIsAlwaysFalse(not(TRUE_CONSTANT));
+=======
+        assertPredicateIsAlwaysFalse(not(TRUE));
+>>>>>>> Introduce RowExpressionDomainTranslator
 
         assertPredicateTranslates(
                 not(equal(C_BIGINT, bigintLiteral(1L))),
@@ -781,10 +832,17 @@ public class TestRowExpressionDomainTranslator
     @Test
     public void testFromUnprocessableInPredicate()
     {
+<<<<<<< HEAD
         assertUnsupportedPredicate(in(unprocessableExpression1(C_BIGINT), ImmutableList.of(TRUE_CONSTANT)));
         assertUnsupportedPredicate(in(C_BOOLEAN, ImmutableList.of(unprocessableExpression1(C_BOOLEAN))));
         assertUnsupportedPredicate(
                 in(C_BOOLEAN, ImmutableList.of(TRUE_CONSTANT, unprocessableExpression1(C_BOOLEAN))));
+=======
+        assertUnsupportedPredicate(in(unprocessableExpression1(C_BIGINT), ImmutableList.of(TRUE)));
+        assertUnsupportedPredicate(in(C_BOOLEAN, ImmutableList.of(unprocessableExpression1(C_BOOLEAN))));
+        assertUnsupportedPredicate(
+                in(C_BOOLEAN, ImmutableList.of(TRUE, unprocessableExpression1(C_BOOLEAN))));
+>>>>>>> Introduce RowExpressionDomainTranslator
         assertUnsupportedPredicate(not(in(C_BOOLEAN, ImmutableList.of(unprocessableExpression1(C_BOOLEAN)))));
     }
 
@@ -886,10 +944,17 @@ public class TestRowExpressionDomainTranslator
     @Test
     public void testFromBooleanLiteralPredicate()
     {
+<<<<<<< HEAD
         assertPredicateIsAlwaysTrue(TRUE_CONSTANT);
         assertPredicateIsAlwaysFalse(not(TRUE_CONSTANT));
         assertPredicateIsAlwaysFalse(FALSE_CONSTANT);
         assertPredicateIsAlwaysTrue(not(FALSE_CONSTANT));
+=======
+        assertPredicateIsAlwaysTrue(TRUE);
+        assertPredicateIsAlwaysFalse(not(TRUE));
+        assertPredicateIsAlwaysFalse(FALSE);
+        assertPredicateIsAlwaysTrue(not(FALSE));
+>>>>>>> Introduce RowExpressionDomainTranslator
     }
 
     @Test
@@ -902,10 +967,17 @@ public class TestRowExpressionDomainTranslator
     @Test
     public void testExpressionConstantFolding()
     {
+<<<<<<< HEAD
         FunctionHandle hex = metadata.getFunctionManager().lookupFunction("from_hex", fromTypes(VARCHAR));
         RowExpression originalExpression = greaterThan(C_VARBINARY, call("from_hex", hex, VARBINARY, stringLiteral("123456")));
         ExtractionResult result = fromPredicate(originalExpression);
         assertEquals(result.getRemainingExpression(), TRUE_CONSTANT);
+=======
+        FunctionHandle hex = metadata.getFunctionManager().lookupFunction(QualifiedName.of("from_hex"), fromTypes(VARCHAR));
+        RowExpression originalExpression = greaterThan(C_VARBINARY, call(hex, VARBINARY, stringLiteral("123456")));
+        ExtractionResult result = fromPredicate(originalExpression);
+        assertEquals(result.getRemainingExpression(), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
         Slice value = Slices.wrappedBuffer(BaseEncoding.base16().decode("123456"));
         assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(C_VARBINARY, Domain.create(ValueSet.ofRanges(Range.greaterThan(VARBINARY, value)), false))));
 
@@ -1076,7 +1148,10 @@ public class TestRowExpressionDomainTranslator
     public void testLegacyCharComparedToVarcharExpression()
     {
         metadata = createTestMetadataManager(new FeaturesConfig().setLegacyCharToVarcharCoercion(true));
+<<<<<<< HEAD
         domainTranslator = new RowExpressionDomainTranslator(metadata);
+=======
+>>>>>>> Introduce RowExpressionDomainTranslator
 
         String maxCodePoint = new String(Character.toChars(Character.MAX_CODE_POINT));
 
@@ -1133,7 +1208,11 @@ public class TestRowExpressionDomainTranslator
     private void assertPredicateTranslates(RowExpression expression, TupleDomain<VariableReferenceExpression> tupleDomain)
     {
         ExtractionResult result = fromPredicate(expression);
+<<<<<<< HEAD
         assertEquals(result.getRemainingExpression(), TRUE_CONSTANT);
+=======
+        assertEquals(result.getRemainingExpression(), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
         assertEquals(result.getTupleDomain(), tupleDomain);
     }
 
@@ -1145,7 +1224,11 @@ public class TestRowExpressionDomainTranslator
     private void assertPredicateIsAlwaysFalse(RowExpression expression)
     {
         ExtractionResult result = fromPredicate(expression);
+<<<<<<< HEAD
         assertEquals(result.getRemainingExpression(), TRUE_CONSTANT);
+=======
+        assertEquals(result.getRemainingExpression(), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
         assertTrue(result.getTupleDomain().isNone());
     }
 
@@ -1156,7 +1239,11 @@ public class TestRowExpressionDomainTranslator
 
     private ExtractionResult fromPredicate(RowExpression originalPredicate)
     {
+<<<<<<< HEAD
         return domainTranslator.fromPredicate(TEST_SESSION.toConnectorSession(), originalPredicate, BASIC_COLUMN_EXTRACTOR);
+=======
+        return RowExpressionDomainTranslator.fromPredicate(metadata, TEST_SESSION, originalPredicate);
+>>>>>>> Introduce RowExpressionDomainTranslator
     }
 
     private RowExpression nullLiteral(Type type)
@@ -1217,12 +1304,20 @@ public class TestRowExpressionDomainTranslator
     private RowExpression cast(RowExpression expression, Type toType)
     {
         FunctionHandle cast = metadata.getFunctionManager().lookupCast(CastType.CAST, expression.getType().getTypeSignature(), toType.getTypeSignature());
+<<<<<<< HEAD
         return call(CastType.CAST.getCastName(), cast, toType, expression);
+=======
+        return call(cast, toType, expression);
+>>>>>>> Introduce RowExpressionDomainTranslator
     }
 
     private RowExpression not(RowExpression expression)
     {
+<<<<<<< HEAD
         return call("not", new FunctionResolution(metadata.getFunctionManager()).notFunction(), expression.getType(), expression);
+=======
+        return call(new StandardFunctionResolution(metadata.getFunctionManager()).notFunction(), expression.getType(), expression);
+>>>>>>> Introduce RowExpressionDomainTranslator
     }
 
     private RowExpression in(RowExpression value, List<RowExpression> inList)
@@ -1244,7 +1339,10 @@ public class TestRowExpressionDomainTranslator
     private RowExpression binaryOperator(OperatorType operatorType, RowExpression left, RowExpression right)
     {
         return call(
+<<<<<<< HEAD
                 operatorType.name(),
+=======
+>>>>>>> Introduce RowExpressionDomainTranslator
                 metadata.getFunctionManager().resolveOperator(operatorType, fromTypes(left.getType(), right.getType())),
                 BOOLEAN,
                 left,
@@ -1254,7 +1352,10 @@ public class TestRowExpressionDomainTranslator
     private RowExpression between(RowExpression value, RowExpression min, RowExpression max)
     {
         return call(
+<<<<<<< HEAD
                 OperatorType.BETWEEN.name(),
+=======
+>>>>>>> Introduce RowExpressionDomainTranslator
                 metadata.getFunctionManager().resolveOperator(OperatorType.BETWEEN, fromTypes(value.getType(), min.getType(), max.getType())),
                 BOOLEAN,
                 value,
@@ -1309,10 +1410,17 @@ public class TestRowExpressionDomainTranslator
 
     private RowExpression randPredicate(VariableReferenceExpression expression)
     {
+<<<<<<< HEAD
         RowExpression random = call("random", metadata.getFunctionManager().lookupFunction("random", fromTypes()), DOUBLE);
         return greaterThan(
                 expression,
                 call(CastType.CAST.name(), metadata.getFunctionManager().lookupCast(CastType.CAST, DOUBLE.getTypeSignature(), expression.getType().getTypeSignature()), expression.getType(), random));
+=======
+        RowExpression random = call(metadata.getFunctionManager().lookupFunction(QualifiedName.of("random"), fromTypes()), DOUBLE);
+        return greaterThan(
+                expression,
+                call(metadata.getFunctionManager().lookupCast(CastType.CAST, DOUBLE.getTypeSignature(), expression.getType().getTypeSignature()), expression.getType(), random));
+>>>>>>> Introduce RowExpressionDomainTranslator
     }
 
     private void assertUnsupportedPredicate(RowExpression expression)
@@ -1330,7 +1438,11 @@ public class TestRowExpressionDomainTranslator
     private void testSimpleComparison(RowExpression expression, VariableReferenceExpression input, Domain domain)
     {
         ExtractionResult result = fromPredicate(expression);
+<<<<<<< HEAD
         assertEquals(result.getRemainingExpression(), TRUE_CONSTANT);
+=======
+        assertEquals(result.getRemainingExpression(), TRUE);
+>>>>>>> Introduce RowExpressionDomainTranslator
         TupleDomain<VariableReferenceExpression> actual = result.getTupleDomain();
         TupleDomain<VariableReferenceExpression> expected = withColumnDomains(ImmutableMap.of(input, domain));
         if (!actual.equals(expected)) {
