@@ -23,8 +23,11 @@ import com.facebook.presto.sql.planner.SortExpressionContext;
 =======
 import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.tree.Expression;
+<<<<<<< HEAD
 import com.facebook.presto.sql.tree.Join;
 >>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
+=======
+>>>>>>> Move typeConvert to JoinNodeUtil
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
@@ -200,6 +203,7 @@ public class JoinNode
         {
             return joinLabel;
         }
+<<<<<<< HEAD
 
         public boolean mustPartition()
         {
@@ -212,6 +216,8 @@ public class JoinNode
             // There is nothing to partition on
             return criteria.isEmpty() && (this == INNER || this == LEFT);
         }
+=======
+>>>>>>> Move typeConvert to JoinNodeUtil
     }
 
     @JsonProperty

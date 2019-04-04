@@ -36,8 +36,12 @@ import com.facebook.presto.sql.analyzer.Field;
 import com.facebook.presto.sql.analyzer.RelationId;
 import com.facebook.presto.sql.analyzer.RelationType;
 import com.facebook.presto.sql.analyzer.Scope;
+<<<<<<< HEAD
 import com.facebook.presto.sql.planner.optimizations.JoinNodeUtils;
 import com.facebook.presto.sql.planner.optimizations.SampleNodeUtil;
+=======
+import com.facebook.presto.sql.planner.optimizations.JoinNodeUtil;
+>>>>>>> Move typeConvert to JoinNodeUtil
 import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.Assignments;
 import com.facebook.presto.sql.planner.plan.ExceptNode;
@@ -328,7 +332,11 @@ class RelationPlanner
         }
 
         PlanNode root = new JoinNode(idAllocator.getNextId(),
+<<<<<<< HEAD
                 JoinNodeUtils.typeConvert(node.getType()),
+=======
+                JoinNodeUtil.typeConvert(node.getType()),
+>>>>>>> Move typeConvert to JoinNodeUtil
                 leftPlanBuilder.getRoot(),
                 rightPlanBuilder.getRoot(),
                 equiClauses.build(),
@@ -364,7 +372,11 @@ class RelationPlanner
             Expression joinedFilterCondition = ExpressionUtils.and(complexJoinExpressions);
             Expression rewrittenFilterCondition = translationMap.rewrite(joinedFilterCondition);
             root = new JoinNode(idAllocator.getNextId(),
+<<<<<<< HEAD
                     JoinNodeUtils.typeConvert(node.getType()),
+=======
+                    JoinNodeUtil.typeConvert(node.getType()),
+>>>>>>> Move typeConvert to JoinNodeUtil
                     leftPlanBuilder.getRoot(),
                     rightPlanBuilder.getRoot(),
                     equiClauses.build(),
@@ -471,7 +483,11 @@ class RelationPlanner
 
         JoinNode join = new JoinNode(
                 idAllocator.getNextId(),
+<<<<<<< HEAD
                 JoinNodeUtils.typeConvert(node.getType()),
+=======
+                JoinNodeUtil.typeConvert(node.getType()),
+>>>>>>> Move typeConvert to JoinNodeUtil
                 leftCoercion,
                 rightCoercion,
                 clauses.build(),
