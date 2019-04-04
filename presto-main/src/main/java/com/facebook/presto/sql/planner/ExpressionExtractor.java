@@ -124,7 +124,7 @@ public class ExpressionExtractor
         @Override
         public Void visitFilter(FilterNode node, ImmutableList.Builder<RowExpression> context)
         {
-            context.add(node.getPredicate());
+            context.add(castToRowExpression(node.getPredicate()));
             return super.visitFilter(node, context);
         }
 
