@@ -20,6 +20,10 @@ import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.sql.parser.SqlParser;
 import com.facebook.presto.sql.planner.ExpressionExtractor;
 import com.facebook.presto.sql.planner.TypeProvider;
+<<<<<<< HEAD
+=======
+import com.facebook.presto.sql.planner.plan.PlanNode;
+>>>>>>> Alter ExpressionExtractor to only return RowExpression
 import com.facebook.presto.sql.relational.OriginalExpressionUtils;
 import com.facebook.presto.sql.tree.DefaultTraversalVisitor;
 import com.facebook.presto.sql.tree.Expression;

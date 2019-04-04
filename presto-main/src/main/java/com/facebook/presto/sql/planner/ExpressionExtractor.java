@@ -13,9 +13,12 @@
  */
 package com.facebook.presto.sql.planner;
 
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.ValuesNode;
+=======
+>>>>>>> Alter ExpressionExtractor to only return RowExpression
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.sql.planner.iterative.GroupReference;
 import com.facebook.presto.sql.planner.iterative.Lookup;
@@ -23,11 +26,20 @@ import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.ApplyNode;
 import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.ProjectNode;
+<<<<<<< HEAD
+=======
+import com.facebook.presto.sql.planner.plan.ValuesNode;
+import com.facebook.presto.sql.relational.OriginalExpressionUtils;
+>>>>>>> Alter ExpressionExtractor to only return RowExpression
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
 import static com.facebook.presto.sql.planner.iterative.Lookup.noLookup;
+<<<<<<< HEAD
+=======
+import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToRowExpression;
+>>>>>>> Alter ExpressionExtractor to only return RowExpression
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
@@ -72,7 +84,11 @@ public class ExpressionExtractor
         }
 
         @Override
+<<<<<<< HEAD
         public Void visitPlan(PlanNode node, ImmutableList.Builder<RowExpression> context)
+=======
+        protected Void visitPlan(PlanNode node, ImmutableList.Builder<RowExpression> context)
+>>>>>>> Alter ExpressionExtractor to only return RowExpression
         {
             if (recursive) {
                 return super.visitPlan(node, context);
@@ -90,6 +106,7 @@ public class ExpressionExtractor
         public Void visitAggregation(AggregationNode node, ImmutableList.Builder<RowExpression> context)
         {
             node.getAggregations().values()
+<<<<<<< HEAD
                     .forEach(aggregation -> {
                         aggregation.getArguments().forEach(context::add);
                         aggregation.getFilter().ifPresent(context::add);
@@ -98,27 +115,34 @@ public class ExpressionExtractor
                                 .orElse(ImmutableList.of())
                                 .forEach(context::add);
                     });
+=======
+                    .forEach(aggregation -> context.add(castToRowExpression(aggregation.getCall())));
+>>>>>>> Alter ExpressionExtractor to only return RowExpression
             return super.visitAggregation(node, context);
         }
 
         @Override
         public Void visitFilter(FilterNode node, ImmutableList.Builder<RowExpression> context)
         {
-            context.add(node.getPredicate());
+            context.add(castToRowExpression(node.getPredicate()));
             return super.visitFilter(node, context);
         }
 
         @Override
         public Void visitProject(ProjectNode node, ImmutableList.Builder<RowExpression> context)
         {
+<<<<<<< HEAD
             context.addAll(node.getAssignments().getExpressions().stream().collect(toImmutableList()));
+=======
+            context.addAll(node.getAssignments().getExpressions().stream().map(OriginalExpressionUtils::castToRowExpression).collect(toImmutableList()));
+>>>>>>> Alter ExpressionExtractor to only return RowExpression
             return super.visitProject(node, context);
         }
 
         @Override
         public Void visitJoin(JoinNode node, ImmutableList.Builder<RowExpression> context)
         {
-            node.getFilter().ifPresent(context::add);
+            node.getFilter().map(OriginalExpressionUtils::castToRowExpression).ifPresent(context::add);
             return super.visitJoin(node, context);
         }
 
@@ -135,6 +159,10 @@ public class ExpressionExtractor
             context.addAll(node.getSubqueryAssignments()
                     .getExpressions()
                     .stream()
+<<<<<<< HEAD
+=======
+                    .map(OriginalExpressionUtils::castToRowExpression)
+>>>>>>> Alter ExpressionExtractor to only return RowExpression
                     .collect(toImmutableList()));
             return super.visitApply(node, context);
         }
