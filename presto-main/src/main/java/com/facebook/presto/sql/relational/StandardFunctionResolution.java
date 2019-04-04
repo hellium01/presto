@@ -88,6 +88,11 @@ public final class StandardFunctionResolution
         return functionHandle.getSignature().getName().equals(mangleOperatorName(OperatorType.CAST.name()));
     }
 
+    public boolean isBetweenFunction(FunctionHandle functionHandle)
+    {
+        return functionHandle.getSignature().getName().equals(mangleOperatorName(OperatorType.BETWEEN.name()));
+    }
+
     public FunctionHandle arithmeticFunction(ArithmeticBinaryExpression.Operator operator, Type leftType, Type rightType)
     {
         OperatorType operatorType;
@@ -186,6 +191,47 @@ public final class StandardFunctionResolution
         }
 
         return functionManager.resolveOperator(operatorType, fromTypes(leftType, rightType));
+    }
+
+    // TODO: fix this after we have isOperator and getOperatorType in FunctionMetadata (#12570)
+    public static boolean isComparisonFunction(FunctionHandle functionHandle)
+    {
+        return ImmutableSet.of(
+                mangleOperatorName(EQUAL.name()),
+                mangleOperatorName(NOT_EQUAL.name()),
+                mangleOperatorName(LESS_THAN.name()),
+                mangleOperatorName(LESS_THAN_OR_EQUAL.name()),
+                mangleOperatorName(GREATER_THAN.name()),
+                mangleOperatorName(GREATER_THAN_OR_EQUAL.name()),
+                mangleOperatorName(IS_DISTINCT_FROM.name()))
+                .contains(functionHandle.getSignature().getName());
+    }
+
+    public static OperatorType getComparisonOperator(CallExpression call)
+    {
+        String name = call.getFunctionHandle().getSignature().getName();
+        if (name.equals(mangleOperatorName(OperatorType.EQUAL))) {
+            return OperatorType.EQUAL;
+        }
+        if (name.equals(mangleOperatorName(NOT_EQUAL))) {
+            return NOT_EQUAL;
+        }
+        if (name.equals(mangleOperatorName(LESS_THAN))) {
+            return LESS_THAN;
+        }
+        if (name.equals(mangleOperatorName(OperatorType.LESS_THAN_OR_EQUAL))) {
+            return OperatorType.LESS_THAN_OR_EQUAL;
+        }
+        if (name.equals(mangleOperatorName(GREATER_THAN))) {
+            return GREATER_THAN;
+        }
+        if (name.equals(mangleOperatorName(OperatorType.GREATER_THAN_OR_EQUAL))) {
+            return OperatorType.GREATER_THAN_OR_EQUAL;
+        }
+        if (name.equals(mangleOperatorName(IS_DISTINCT_FROM))) {
+            return IS_DISTINCT_FROM;
+        }
+        throw new IllegalStateException("Can not parse comparison operator: " + name);
     }
 
     public FunctionHandle tryFunction(Type returnType)
