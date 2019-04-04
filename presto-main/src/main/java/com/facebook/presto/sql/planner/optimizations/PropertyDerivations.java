@@ -24,6 +24,7 @@ import com.facebook.presto.spi.ConstantProperty;
 import com.facebook.presto.spi.GroupingProperty;
 import com.facebook.presto.spi.LocalProperty;
 import com.facebook.presto.spi.SortingProperty;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.TableScanNode;
@@ -32,6 +33,10 @@ import com.facebook.presto.spi.predicate.TupleDomain;
 import com.facebook.presto.spi.relation.ConstantExpression;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+=======
+import com.facebook.presto.spi.predicate.NullableValue;
+import com.facebook.presto.spi.predicate.TupleDomain;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.parser.SqlParser;
 import com.facebook.presto.sql.planner.ExpressionDomainTranslator;
@@ -597,6 +602,7 @@ public class PropertyDerivations
         {
             ActualProperties properties = Iterables.getOnlyElement(inputProperties);
 
+<<<<<<< HEAD
             Map<VariableReferenceExpression, ConstantExpression> constants = new HashMap<>(properties.getConstants());
             if (isExpression(node.getPredicate())) {
                 TupleDomain<String> tupleDomain = ExpressionDomainTranslator.fromPredicate(metadata, session, castToExpression(node.getPredicate()), types).getTupleDomain();
@@ -610,6 +616,20 @@ public class PropertyDerivations
                 constants.putAll(extractFixedValuesToConstantExpressions(tupleDomain)
                         .orElse(ImmutableMap.of()));
             }
+=======
+            TupleDomain<Symbol> tupleDomain;
+            if (isExpression(node.getPredicate())) {
+                tupleDomain = ExpressionDomainTranslator.fromPredicate(metadata, session, castToExpression(node.getPredicate()), types).getTupleDomain();
+            }
+            else {
+                tupleDomain = RowExpressionDomainTranslator.fromPredicate(metadata, session, node.getPredicate())
+                        .getTupleDomain()
+                        .transform(column -> new Symbol(column.getName()));
+            }
+
+            Map<Symbol, NullableValue> constants = new HashMap<>(properties.getConstants());
+            constants.putAll(extractFixedValues(tupleDomain).orElse(ImmutableMap.of()));
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
             return ActualProperties.builderFrom(properties)
                     .constants(constants)

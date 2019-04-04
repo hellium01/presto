@@ -14,6 +14,7 @@
 package com.facebook.presto.util;
 
 import com.facebook.presto.Session;
+<<<<<<< HEAD
 import com.facebook.presto.metadata.FunctionManager;
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.PlanNode;
@@ -21,6 +22,9 @@ import com.facebook.presto.spi.plan.TableScanNode;
 import com.facebook.presto.spi.plan.ValuesNode;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+=======
+import com.facebook.presto.sql.planner.Partitioning.ArgumentBinding;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import com.facebook.presto.sql.planner.PlanFragment;
 import com.facebook.presto.sql.planner.SubPlan;
 import com.facebook.presto.sql.planner.optimizations.JoinNodeUtils;
@@ -135,7 +139,11 @@ public final class GraphvizPrinter
 
     private GraphvizPrinter() {}
 
+<<<<<<< HEAD
     public static String printLogical(List<PlanFragment> fragments, Session session, FunctionManager functionManager)
+=======
+    public static String printLogical(List<PlanFragment> fragments, Session session)
+>>>>>>> Replace FilterNode::Expression with RowExpression
     {
         Map<PlanFragmentId, PlanFragment> fragmentsById = Maps.uniqueIndex(fragments, PlanFragment::getId);
         PlanNodeIdGenerator idGenerator = new PlanNodeIdGenerator();
@@ -144,7 +152,11 @@ public final class GraphvizPrinter
         output.append("digraph logical_plan {\n");
 
         for (PlanFragment fragment : fragments) {
+<<<<<<< HEAD
             printFragmentNodes(output, fragment, idGenerator, session, functionManager);
+=======
+            printFragmentNodes(output, fragment, idGenerator, session);
+>>>>>>> Replace FilterNode::Expression with RowExpression
         }
 
         for (PlanFragment fragment : fragments) {
@@ -156,7 +168,11 @@ public final class GraphvizPrinter
         return output.toString();
     }
 
+<<<<<<< HEAD
     public static String printDistributed(SubPlan plan, Session session, FunctionManager functionManager)
+=======
+    public static String printDistributed(SubPlan plan, Session session)
+>>>>>>> Replace FilterNode::Expression with RowExpression
     {
         List<PlanFragment> fragments = plan.getAllFragments();
         Map<PlanFragmentId, PlanFragment> fragmentsById = Maps.uniqueIndex(fragments, PlanFragment::getId);
@@ -165,13 +181,18 @@ public final class GraphvizPrinter
         StringBuilder output = new StringBuilder();
         output.append("digraph distributed_plan {\n");
 
+<<<<<<< HEAD
         printSubPlan(plan, fragmentsById, idGenerator, output, session, functionManager);
+=======
+        printSubPlan(plan, fragmentsById, idGenerator, output, session);
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
         output.append("}\n");
 
         return output.toString();
     }
 
+<<<<<<< HEAD
     private static void printSubPlan(
             SubPlan plan,
             Map<PlanFragmentId, PlanFragment> fragmentsById,
@@ -190,6 +211,20 @@ public final class GraphvizPrinter
     }
 
     private static void printFragmentNodes(StringBuilder output, PlanFragment fragment, PlanNodeIdGenerator idGenerator, Session session, FunctionManager functionManager)
+=======
+    private static void printSubPlan(SubPlan plan, Map<PlanFragmentId, PlanFragment> fragmentsById, PlanNodeIdGenerator idGenerator, StringBuilder output, Session session)
+    {
+        PlanFragment fragment = plan.getFragment();
+        printFragmentNodes(output, fragment, idGenerator, session);
+        fragment.getRoot().accept(new EdgePrinter(output, fragmentsById, idGenerator), null);
+
+        for (SubPlan child : plan.getChildren()) {
+            printSubPlan(child, fragmentsById, idGenerator, output, session);
+        }
+    }
+
+    private static void printFragmentNodes(StringBuilder output, PlanFragment fragment, PlanNodeIdGenerator idGenerator, Session session)
+>>>>>>> Replace FilterNode::Expression with RowExpression
     {
         String clusterId = "cluster_" + fragment.getId();
         output.append("subgraph ")
@@ -201,7 +236,11 @@ public final class GraphvizPrinter
                 .append('\n');
 
         PlanNode plan = fragment.getRoot();
+<<<<<<< HEAD
         plan.accept(new NodePrinter(output, idGenerator, session, functionManager), null);
+=======
+        plan.accept(new NodePrinter(output, idGenerator, session), null);
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
         output.append("}")
                 .append('\n');
@@ -215,11 +254,19 @@ public final class GraphvizPrinter
         private final PlanNodeIdGenerator idGenerator;
         private final RowExpressionFormatter formatter;
 
+<<<<<<< HEAD
         public NodePrinter(StringBuilder output, PlanNodeIdGenerator idGenerator, Session session, FunctionManager functionManager)
         {
             this.output = output;
             this.idGenerator = idGenerator;
             this.formatter = new RowExpressionFormatter(session.toConnectorSession(), functionManager);
+=======
+        public NodePrinter(StringBuilder output, PlanNodeIdGenerator idGenerator, Session session)
+        {
+            this.output = output;
+            this.idGenerator = idGenerator;
+            this.formatter = new RowExpressionFormatter(session.toConnectorSession());
+>>>>>>> Replace FilterNode::Expression with RowExpression
         }
 
         @Override

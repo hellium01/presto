@@ -27,6 +27,7 @@ import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.spi.type.FunctionType;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.parser.SqlParser;
+<<<<<<< HEAD
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.iterative.Rule;
 import com.facebook.presto.sql.planner.plan.AggregationNode;
@@ -41,6 +42,11 @@ import com.facebook.presto.sql.planner.plan.TableWriterNode;
 import com.facebook.presto.sql.planner.plan.WindowNode;
 import com.facebook.presto.sql.planner.plan.WindowNode.Function;
 import com.facebook.presto.sql.relational.OriginalExpressionUtils;
+=======
+import com.facebook.presto.sql.planner.iterative.Rule;
+import com.facebook.presto.sql.planner.plan.FilterNode;
+import com.facebook.presto.sql.planner.plan.ValuesNode;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import com.facebook.presto.sql.relational.SqlToRowExpressionTranslator;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.LambdaArgumentDeclaration;
@@ -60,6 +66,7 @@ import java.util.Set;
 
 import static com.facebook.presto.execution.warnings.WarningCollector.NOOP;
 import static com.facebook.presto.sql.analyzer.ExpressionAnalyzer.getExpressionTypes;
+<<<<<<< HEAD
 import static com.facebook.presto.sql.planner.plan.Patterns.aggregation;
 import static com.facebook.presto.sql.planner.plan.Patterns.applyNode;
 import static com.facebook.presto.sql.planner.plan.Patterns.filter;
@@ -68,16 +75,22 @@ import static com.facebook.presto.sql.planner.plan.Patterns.project;
 import static com.facebook.presto.sql.planner.plan.Patterns.spatialJoin;
 import static com.facebook.presto.sql.planner.plan.Patterns.tableFinish;
 import static com.facebook.presto.sql.planner.plan.Patterns.tableWriterNode;
+=======
+import static com.facebook.presto.sql.planner.plan.Patterns.filter;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import static com.facebook.presto.sql.planner.plan.Patterns.values;
 import static com.facebook.presto.sql.planner.plan.Patterns.window;
 import static com.facebook.presto.sql.relational.Expressions.call;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToExpression;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.isExpression;
 import static com.google.common.base.Preconditions.checkState;
+<<<<<<< HEAD
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.builder;
 import static java.util.Collections.emptyList;
+=======
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import static java.util.Objects.requireNonNull;
 
 public class TranslateExpressions
@@ -95,6 +108,7 @@ public class TranslateExpressions
     {
         return ImmutableSet.of(
                 new ValuesExpressionTranslation(),
+<<<<<<< HEAD
                 new FilterExpressionTranslation(),
                 new ProjectExpressionTranslation(),
                 new ApplyExpressionTranslation(),
@@ -270,6 +284,9 @@ public class TranslateExpressions
                     applyNode.getCorrelation(),
                     applyNode.getOriginSubqueryError()));
         }
+=======
+                new FilterExpressionTranslation());
+>>>>>>> Replace FilterNode::Expression with RowExpression
     }
 
     private final class FilterExpressionTranslation
@@ -285,7 +302,17 @@ public class TranslateExpressions
         public Result apply(FilterNode filterNode, Captures captures, Context context)
         {
             checkState(filterNode.getSource() != null);
+<<<<<<< HEAD
             RowExpression rewritten = removeOriginalExpression(filterNode.getPredicate(), context);
+=======
+            RowExpression rewritten;
+            if (isExpression(filterNode.getPredicate())) {
+                rewritten = toRowExpression(castToExpression(filterNode.getPredicate()), context);
+            }
+            else {
+                rewritten = filterNode.getPredicate();
+            }
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
             if (filterNode.getPredicate().equals(rewritten)) {
                 return Result.empty();
@@ -311,8 +338,13 @@ public class TranslateExpressions
             for (List<RowExpression> row : valuesNode.getRows()) {
                 ImmutableList.Builder<RowExpression> newRow = ImmutableList.builder();
                 for (RowExpression rowExpression : row) {
+<<<<<<< HEAD
                     RowExpression rewritten = removeOriginalExpression(rowExpression, context);
                     if (rowExpression != rewritten) {
+=======
+                    if (isExpression(rowExpression)) {
+                        RowExpression rewritten = toRowExpression(castToExpression(rowExpression), context);
+>>>>>>> Replace FilterNode::Expression with RowExpression
                         anyRewritten = true;
                     }
                     newRow.add(rewritten);
@@ -326,8 +358,12 @@ public class TranslateExpressions
         }
     }
 
+<<<<<<< HEAD
     private final class AggregationExpressionTranslation
             implements Rule<AggregationNode>
+=======
+    private RowExpression toRowExpression(Expression expression, Rule.Context context)
+>>>>>>> Replace FilterNode::Expression with RowExpression
     {
         @Override
         public Pattern<AggregationNode> getPattern()
@@ -579,6 +615,7 @@ public class TranslateExpressions
         return rowExpression;
     }
 
+<<<<<<< HEAD
     /**
      * Return Optional.empty() to denote unchanged assignments
      */
@@ -605,5 +642,8 @@ public class TranslateExpressions
             return Optional.empty();
         }
         return Optional.of(builder.build());
+=======
+        return SqlToRowExpressionTranslator.translate(expression, types, ImmutableMap.of(), metadata.getFunctionManager(), metadata.getTypeManager(), context.getSession(), false);
+>>>>>>> Replace FilterNode::Expression with RowExpression
     }
 }

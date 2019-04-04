@@ -173,7 +173,21 @@ import com.facebook.presto.sql.planner.plan.UnionNode;
 import com.facebook.presto.sql.planner.plan.UnnestNode;
 import com.facebook.presto.sql.planner.plan.WindowNode;
 import com.facebook.presto.sql.planner.plan.WindowNode.Frame;
+<<<<<<< HEAD
 import com.facebook.presto.sql.relational.VariableToChannelTranslator;
+=======
+import com.facebook.presto.sql.relational.SqlToRowExpressionTranslator;
+import com.facebook.presto.sql.relational.SymbolToChannelTranslator;
+import com.facebook.presto.sql.tree.ComparisonExpression;
+import com.facebook.presto.sql.tree.Expression;
+import com.facebook.presto.sql.tree.FieldReference;
+import com.facebook.presto.sql.tree.FunctionCall;
+import com.facebook.presto.sql.tree.LambdaArgumentDeclaration;
+import com.facebook.presto.sql.tree.LambdaExpression;
+import com.facebook.presto.sql.tree.NodeRef;
+import com.facebook.presto.sql.tree.OrderBy;
+import com.facebook.presto.sql.tree.SortItem;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import com.facebook.presto.sql.tree.SymbolReference;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ContiguousSet;
@@ -254,6 +268,12 @@ import static com.facebook.presto.sql.planner.plan.TableWriterNode.CreateHandle;
 import static com.facebook.presto.sql.planner.plan.TableWriterNode.InsertHandle;
 import static com.facebook.presto.sql.planner.plan.TableWriterNode.WriterTarget;
 import static com.facebook.presto.sql.relational.Expressions.constant;
+<<<<<<< HEAD
+=======
+import static com.facebook.presto.sql.tree.BooleanLiteral.TRUE_LITERAL;
+import static com.facebook.presto.sql.tree.ComparisonExpression.Operator.LESS_THAN;
+import static com.facebook.presto.sql.tree.ComparisonExpression.Operator.LESS_THAN_OR_EQUAL;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import static com.facebook.presto.util.Reflection.constructorMethodHandle;
 import static com.facebook.presto.util.SpatialJoinUtils.ST_CONTAINS;
 import static com.facebook.presto.util.SpatialJoinUtils.ST_DISTANCE;
@@ -1132,7 +1152,11 @@ public class LocalExecutionPlanner
             PlanNode sourceNode = node.getSource();
 
             RowExpression filterExpression = node.getPredicate();
+<<<<<<< HEAD
             List<VariableReferenceExpression> outputVariables = node.getOutputVariables();
+=======
+            List<Symbol> outputSymbols = node.getOutputSymbols();
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
             return visitScanFilterAndProject(context, node.getId(), sourceNode, Optional.of(filterExpression), identityAssignments(outputVariables), outputVariables);
         }
@@ -1192,8 +1216,29 @@ public class LocalExecutionPlanner
 
             // filterExpression may contain large function calls; evaluate them before compiling.
             if (filterExpression.isPresent()) {
+<<<<<<< HEAD
                 // TODO: theoretically, filterExpression could be a constant value (true or false) after optimization; we could possibly optimize the execution.
                 filterExpression = Optional.of(bindChannels(filterExpression.get(), sourceLayout));
+=======
+                Type type = filterExpression.get().getType();
+                Object value = new RowExpressionInterpreter(filterExpression.get(), metadata, session, true).optimize();
+                if (value instanceof RowExpression) {
+                    RowExpression optimizedFilter = (RowExpression) value;
+                    // building channel info
+                    optimizedFilter = SymbolToChannelTranslator.translate(optimizedFilter, sourceLayout);
+                    filterExpression = Optional.of(optimizedFilter);
+                }
+                else {
+                    filterExpression = Optional.of(constant(value, type));
+                }
+            }
+
+            // build output mapping
+            ImmutableMap.Builder<Symbol, Integer> outputMappingsBuilder = ImmutableMap.builder();
+            for (int i = 0; i < outputSymbols.size(); i++) {
+                Symbol symbol = outputSymbols.get(i);
+                outputMappingsBuilder.put(symbol, i);
+>>>>>>> Replace FilterNode::Expression with RowExpression
             }
 
             // build output mapping
@@ -1204,16 +1249,36 @@ public class LocalExecutionPlanner
             }
             Map<VariableReferenceExpression, Integer> outputMappings = outputMappingsBuilder.build();
 
+<<<<<<< HEAD
             // compiler uses inputs instead of variables, so rewrite the expressions first
             List<RowExpression> projections = outputVariables.stream()
                     .map(assignments::get)
                     .map(expression -> bindChannels(expression, sourceLayout))
+=======
+            Map<NodeRef<Expression>, Type> expressionTypes = getExpressionTypes(
+                    context.getSession(),
+                    metadata,
+                    sqlParser,
+                    context.getTypes(),
+                    concat(assignments.getExpressions()),
+                    emptyList(),
+                    NOOP,
+                    false);
+
+            List<RowExpression> translatedProjections = projections.stream()
+                    .map(expression -> toRowExpression(expression, expressionTypes, sourceLayout))
+>>>>>>> Replace FilterNode::Expression with RowExpression
                     .collect(toImmutableList());
 
             try {
                 if (columns != null) {
+<<<<<<< HEAD
                     Supplier<CursorProcessor> cursorProcessor = expressionCompiler.compileCursorProcessor(filterExpression, projections, sourceNode.getId());
                     Supplier<PageProcessor> pageProcessor = expressionCompiler.compilePageProcessor(filterExpression, projections, Optional.of(context.getStageId() + "_" + planNodeId));
+=======
+                    Supplier<CursorProcessor> cursorProcessor = expressionCompiler.compileCursorProcessor(filterExpression, translatedProjections, sourceNode.getId());
+                    Supplier<PageProcessor> pageProcessor = expressionCompiler.compilePageProcessor(filterExpression, translatedProjections, Optional.of(context.getStageId() + "_" + planNodeId));
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
                     SourceOperatorFactory operatorFactory = new ScanFilterAndProjectOperatorFactory(
                             context.getNextOperatorId(),
@@ -1230,7 +1295,11 @@ public class LocalExecutionPlanner
                     return new PhysicalOperation(operatorFactory, outputMappings, context, stageExecutionDescriptor.isScanGroupedExecution(sourceNode.getId()) ? GROUPED_EXECUTION : UNGROUPED_EXECUTION);
                 }
                 else {
+<<<<<<< HEAD
                     Supplier<PageProcessor> pageProcessor = expressionCompiler.compilePageProcessor(filterExpression, projections, Optional.of(context.getStageId() + "_" + planNodeId));
+=======
+                    Supplier<PageProcessor> pageProcessor = expressionCompiler.compilePageProcessor(filterExpression, translatedProjections, Optional.of(context.getStageId() + "_" + planNodeId));
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
                     OperatorFactory operatorFactory = new FilterAndProjectOperator.FilterAndProjectOperatorFactory(
                             context.getNextOperatorId(),

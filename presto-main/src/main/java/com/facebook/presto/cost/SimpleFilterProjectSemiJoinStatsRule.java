@@ -16,18 +16,30 @@ package com.facebook.presto.cost;
 import com.facebook.presto.Session;
 import com.facebook.presto.matching.Pattern;
 import com.facebook.presto.metadata.FunctionManager;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.LogicalRowExpressions;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+=======
+import com.facebook.presto.spi.relation.CallExpression;
+import com.facebook.presto.spi.relation.RowExpression;
+import com.facebook.presto.spi.relation.VariableReferenceExpression;
+import com.facebook.presto.sql.planner.Symbol;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.iterative.Lookup;
 import com.facebook.presto.sql.planner.plan.ProjectNode;
 import com.facebook.presto.sql.planner.plan.SemiJoinNode;
+<<<<<<< HEAD
 import com.facebook.presto.sql.relational.FunctionResolution;
 import com.facebook.presto.sql.relational.RowExpressionDeterminismEvaluator;
+=======
+import com.facebook.presto.sql.relational.LogicalRowExpressions;
+import com.facebook.presto.sql.relational.StandardFunctionResolution;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.NotExpression;
 import com.facebook.presto.sql.tree.SymbolReference;
@@ -61,15 +73,24 @@ public class SimpleFilterProjectSemiJoinStatsRule
 
     private final FilterStatsCalculator filterStatsCalculator;
     private final LogicalRowExpressions logicalRowExpressions;
+<<<<<<< HEAD
     private final FunctionResolution functionResolution;
+=======
+    private final StandardFunctionResolution functionResolution;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
     public SimpleFilterProjectSemiJoinStatsRule(StatsNormalizer normalizer, FilterStatsCalculator filterStatsCalculator, FunctionManager functionManager)
     {
         super(normalizer);
         this.filterStatsCalculator = requireNonNull(filterStatsCalculator, "filterStatsCalculator can not be null");
         requireNonNull(functionManager, "functionManager can not be null");
+<<<<<<< HEAD
         this.logicalRowExpressions = new LogicalRowExpressions(new RowExpressionDeterminismEvaluator(functionManager), new FunctionResolution(functionManager));
         this.functionResolution = new FunctionResolution(functionManager);
+=======
+        this.logicalRowExpressions = new LogicalRowExpressions(functionManager);
+        this.functionResolution = new StandardFunctionResolution(functionManager);
+>>>>>>> Replace FilterNode::Expression with RowExpression
     }
 
     @Override
@@ -112,12 +133,20 @@ public class SimpleFilterProjectSemiJoinStatsRule
         VariableReferenceExpression sourceJoinVariable = semiJoinNode.getSourceJoinVariable();
 
         Optional<SemiJoinOutputFilter> semiJoinOutputFilter;
+<<<<<<< HEAD
         VariableReferenceExpression semiJoinOutput = semiJoinNode.getSemiJoinOutput();
+=======
+        Symbol semiJoinOutput = semiJoinNode.getSemiJoinOutput();
+>>>>>>> Replace FilterNode::Expression with RowExpression
         if (isExpression(filterNode.getPredicate())) {
             semiJoinOutputFilter = extractSemiJoinOutputFilter(castToExpression(filterNode.getPredicate()), semiJoinOutput);
         }
         else {
+<<<<<<< HEAD
             semiJoinOutputFilter = extractSemiJoinOutputFilter(filterNode.getPredicate(), semiJoinOutput);
+=======
+            semiJoinOutputFilter = extractSemiJoinOutputFilter(filterNode.getPredicate(), new VariableReferenceExpression(semiJoinOutput.getName(), types.get(semiJoinOutput)));
+>>>>>>> Replace FilterNode::Expression with RowExpression
         }
 
         if (!semiJoinOutputFilter.isPresent()) {
@@ -151,7 +180,11 @@ public class SimpleFilterProjectSemiJoinStatsRule
         return Optional.of(filteredStats);
     }
 
+<<<<<<< HEAD
     private Optional<SemiJoinOutputFilter> extractSemiJoinOutputFilter(Expression predicate, VariableReferenceExpression semiJoinOutput)
+=======
+    private Optional<SemiJoinOutputFilter> extractSemiJoinOutputFilter(Expression predicate, Symbol semiJoinOutput)
+>>>>>>> Replace FilterNode::Expression with RowExpression
     {
         List<Expression> conjuncts = extractConjuncts(predicate);
         List<Expression> semiJoinOutputReferences = conjuncts.stream()
@@ -186,11 +219,23 @@ public class SimpleFilterProjectSemiJoinStatsRule
         RowExpression remainingPredicate = logicalRowExpressions.combineConjuncts(conjuncts.stream()
                 .filter(conjunct -> conjunct != semiJoinOutputReference)
                 .collect(toImmutableList()));
+<<<<<<< HEAD
         boolean negated = isNotFunction(semiJoinOutputReference);
+=======
+        boolean negated = isNegated(semiJoinOutputReference);
+>>>>>>> Replace FilterNode::Expression with RowExpression
         return Optional.of(new SemiJoinOutputFilter(negated, remainingPredicate));
     }
 
     private boolean isSemiJoinOutputReference(RowExpression conjunct, RowExpression input)
+<<<<<<< HEAD
+=======
+    {
+        return conjunct.equals(input) || (isNegated(conjunct) && ((CallExpression) conjunct).getArguments().get(0).equals(input));
+    }
+
+    private static boolean isSemiJoinOutputReference(Expression conjunct, Symbol semiJoinOutput)
+>>>>>>> Replace FilterNode::Expression with RowExpression
     {
         return conjunct.equals(input) || (isNotFunction(conjunct) && ((CallExpression) conjunct).getArguments().get(0).equals(input));
     }
@@ -202,9 +247,15 @@ public class SimpleFilterProjectSemiJoinStatsRule
                 (conjunct instanceof NotExpression && ((NotExpression) conjunct).getValue().equals(semiJoinOuputSymbolReference));
     }
 
+<<<<<<< HEAD
     private boolean isNotFunction(RowExpression expression)
     {
         return expression instanceof CallExpression && functionResolution.isNotFunction(((CallExpression) expression).getFunctionHandle());
+=======
+    private boolean isNegated(RowExpression expression)
+    {
+        return expression instanceof CallExpression && ((CallExpression) expression).getFunctionHandle().equals(functionResolution.notFunction());
+>>>>>>> Replace FilterNode::Expression with RowExpression
     }
 
     private static class SemiJoinOutputFilter

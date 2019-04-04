@@ -88,9 +88,12 @@ import static com.facebook.presto.sql.planner.optimizations.WindowNodeUtil.toBou
 import static com.facebook.presto.sql.planner.optimizations.WindowNodeUtil.toWindowType;
 import static com.facebook.presto.sql.planner.plan.AggregationNode.groupingSets;
 import static com.facebook.presto.sql.planner.plan.AggregationNode.singleGroupingSet;
+<<<<<<< HEAD
 import static com.facebook.presto.sql.planner.plan.AssignmentUtils.identitiesAsSymbolReferences;
 import static com.facebook.presto.sql.relational.Expressions.call;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.asSymbolReference;
+=======
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToRowExpression;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;

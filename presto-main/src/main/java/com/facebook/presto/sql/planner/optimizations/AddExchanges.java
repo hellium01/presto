@@ -542,7 +542,11 @@ public class AddExchanges
         public PlanWithProperties visitFilter(FilterNode node, PreferredProperties preferredProperties)
         {
             if (node.getSource() instanceof TableScanNode) {
+<<<<<<< HEAD
                 return planTableScan((TableScanNode) node.getSource(), castToExpression(node.getPredicate()));
+=======
+                return planTableScan((TableScanNode) node.getSource(), castToExpression(node.getPredicate()), preferredProperties);
+>>>>>>> Replace FilterNode::Expression with RowExpression
             }
 
             return rebaseAndDeriveProperties(node, planChild(node, preferredProperties));

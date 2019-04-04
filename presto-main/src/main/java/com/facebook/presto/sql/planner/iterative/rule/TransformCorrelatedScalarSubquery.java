@@ -141,7 +141,11 @@ public class TransformCorrelatedScalarSubquery
                 context.getIdAllocator().getNextId(),
                 markDistinctNode,
                 castToRowExpression(new SimpleCaseExpression(
+<<<<<<< HEAD
                         new SymbolReference(isDistinct.getName()),
+=======
+                        isDistinct.toSymbolReference(),
+>>>>>>> Replace FilterNode::Expression with RowExpression
                         ImmutableList.of(
                                 new WhenClause(TRUE_LITERAL, TRUE_LITERAL)),
                         Optional.of(new Cast(

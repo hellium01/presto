@@ -85,8 +85,11 @@ import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils
 import static com.facebook.presto.sql.planner.optimizations.ApplyNodeUtil.verifySubquerySupported;
 import static com.facebook.presto.sql.planner.optimizations.QueryCardinalityUtil.isScalar;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToExpression;
+<<<<<<< HEAD
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToRowExpression;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.isExpression;
+=======
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
@@ -451,8 +454,13 @@ public class PruneUnreferencedOutputs
         @Override
         public PlanNode visitFilter(FilterNode node, RewriteContext<Set<VariableReferenceExpression>> context)
         {
+<<<<<<< HEAD
             Set<VariableReferenceExpression> expectedInputs = ImmutableSet.<VariableReferenceExpression>builder()
                     .addAll(VariablesExtractor.extractUnique(castToExpression(node.getPredicate()), variableAllocator.getTypes()))
+=======
+            Set<Symbol> expectedInputs = ImmutableSet.<Symbol>builder()
+                    .addAll(SymbolsExtractor.extractUnique(castToExpression(node.getPredicate())))
+>>>>>>> Replace FilterNode::Expression with RowExpression
                     .addAll(context.get())
                     .build();
 

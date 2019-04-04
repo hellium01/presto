@@ -42,7 +42,11 @@ public class PruneFilterColumns
     {
         Set<VariableReferenceExpression> prunedFilterInputs = Streams.concat(
                 referencedOutputs.stream(),
+<<<<<<< HEAD
                 VariablesExtractor.extractUnique(castToExpression(filterNode.getPredicate()), variableAllocator.getTypes()).stream())
+=======
+                SymbolsExtractor.extractUnique(castToExpression(filterNode.getPredicate())).stream())
+>>>>>>> Replace FilterNode::Expression with RowExpression
                 .collect(toImmutableSet());
 
         return restrictChildOutputs(idAllocator, filterNode, prunedFilterInputs);

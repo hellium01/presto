@@ -159,7 +159,11 @@ public class WindowFilterPushDown
         {
             PlanNode source = context.rewrite(node.getSource());
 
+<<<<<<< HEAD
             TupleDomain<String> tupleDomain = fromPredicate(metadata, session, castToExpression(node.getPredicate()), types).getTupleDomain();
+=======
+            TupleDomain<Symbol> tupleDomain = fromPredicate(metadata, session, castToExpression(node.getPredicate()), types).getTupleDomain();
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
             if (source instanceof RowNumberNode) {
                 VariableReferenceExpression rowNumberVariable = ((RowNumberNode) source).getRowNumberVariable();
@@ -186,7 +190,11 @@ public class WindowFilterPushDown
         private PlanNode rewriteFilterSource(FilterNode filterNode, PlanNode source, VariableReferenceExpression rowNumberVariable, int upperBound)
         {
             ExtractionResult extractionResult = fromPredicate(metadata, session, castToExpression(filterNode.getPredicate()), types);
+<<<<<<< HEAD
             TupleDomain<String> tupleDomain = extractionResult.getTupleDomain();
+=======
+            TupleDomain<Symbol> tupleDomain = extractionResult.getTupleDomain();
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
             if (!isEqualRange(tupleDomain, rowNumberVariable, upperBound)) {
                 return new FilterNode(filterNode.getId(), source, filterNode.getPredicate());

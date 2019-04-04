@@ -243,6 +243,7 @@ public final class ValidateDependenciesChecker
             Set<VariableReferenceExpression> inputs = createInputs(source, boundVariables);
             checkDependencies(inputs, node.getOutputVariables(), "Invalid node. Output symbols (%s) not in source plan output (%s)", node.getOutputVariables(), node.getSource().getOutputVariables());
 
+<<<<<<< HEAD
             // Only verify names here as filter expression would contain type cast, which will be translated to an non-existent variable in
             // SqlToRowExpressionTranslator
             // TODO https://github.com/prestodb/presto/issues/12892
@@ -258,6 +259,16 @@ public final class ValidateDependenciesChecker
                     "Symbol from filter (%s) not in sources (%s)",
                     dependencies,
                     inputs);
+=======
+            Set<Symbol> dependencies;
+            if (isExpression(node.getPredicate())) {
+                dependencies = SymbolsExtractor.extractUnique(castToExpression(node.getPredicate()));
+            }
+            else {
+                dependencies = SymbolsExtractor.extractUnique(node.getPredicate());
+            }
+            checkDependencies(inputs, dependencies, "Invalid node. Predicate dependencies (%s) not in source plan output (%s)", dependencies, node.getSource().getOutputSymbols());
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
             return null;
         }

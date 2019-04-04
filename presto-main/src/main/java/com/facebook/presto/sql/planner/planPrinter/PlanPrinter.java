@@ -309,7 +309,11 @@ public class PlanPrinter
         return builder.toString();
     }
 
+<<<<<<< HEAD
     public static String graphvizLogicalPlan(PlanNode plan, TypeProvider types, Session session, FunctionManager functionManager)
+=======
+    public static String graphvizLogicalPlan(PlanNode plan, TypeProvider types, Session session)
+>>>>>>> Replace FilterNode::Expression with RowExpression
     {
         // TODO: This should move to something like GraphvizRenderer
         PlanFragment fragment = new PlanFragment(
@@ -323,12 +327,21 @@ public class PlanPrinter
                 false,
                 StatsAndCosts.empty(),
                 Optional.empty());
+<<<<<<< HEAD
         return GraphvizPrinter.printLogical(ImmutableList.of(fragment), session, functionManager);
     }
 
     public static String graphvizDistributedPlan(SubPlan plan, Session session, FunctionManager functionManager)
     {
         return GraphvizPrinter.printDistributed(plan, session, functionManager);
+=======
+        return GraphvizPrinter.printLogical(ImmutableList.of(fragment), session);
+    }
+
+    public static String graphvizDistributedPlan(SubPlan plan, Session session)
+    {
+        return GraphvizPrinter.printDistributed(plan, session);
+>>>>>>> Replace FilterNode::Expression with RowExpression
     }
 
     private class Visitor

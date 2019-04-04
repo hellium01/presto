@@ -153,6 +153,7 @@ public class PickTableLayout
         {
             TableScanNode tableScan = captures.get(TABLE_SCAN);
 
+<<<<<<< HEAD
             PlanNode rewritten = pushPredicateIntoTableScan(
                     tableScan,
                     castToExpression(filterNode.getPredicate()),
@@ -163,6 +164,9 @@ public class PickTableLayout
                     metadata,
                     parser,
                     domainTranslator);
+=======
+            PlanNode rewritten = planTableScan(tableScan, castToExpression(filterNode.getPredicate()), context.getSession(), context.getSymbolAllocator().getTypes(), context.getIdAllocator(), metadata, parser, domainTranslator);
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
             if (arePlansSame(filterNode, tableScan, rewritten)) {
                 return Result.empty();
@@ -396,9 +400,43 @@ public class PickTableLayout
         return tableScan;
     }
 
+<<<<<<< HEAD
     private static String getColumnName(Session session, Metadata metadata, TableHandle tableHandle, ColumnHandle columnHandle)
     {
         return metadata.getColumnMetadata(session, tableHandle, columnHandle).getName();
+=======
+        return layouts.stream()
+                .map(layout -> {
+                    TableScanNode tableScan = new TableScanNode(
+                            node.getId(),
+                            node.getTable(),
+                            node.getOutputSymbols(),
+                            node.getAssignments(),
+                            Optional.of(layout.getLayout().getHandle()),
+                            layout.getLayout().getPredicate(),
+                            computeEnforced(newDomain, layout.getUnenforcedConstraint()));
+
+                    // The order of the arguments to combineConjuncts matters:
+                    // * Unenforced constraints go first because they can only be simple column references,
+                    //   which are not prone to logic errors such as out-of-bound access, div-by-zero, etc.
+                    // * Conjuncts in non-deterministic expressions and non-TupleDomain-expressible expressions should
+                    //   retain their original (maybe intermixed) order from the input predicate. However, this is not implemented yet.
+                    // * Short of implementing the previous bullet point, the current order of non-deterministic expressions
+                    //   and non-TupleDomain-expressible expressions should be retained. Changing the order can lead
+                    //   to failures of previously successful queries.
+                    Expression resultingPredicate = combineConjuncts(
+                            domainTranslator.toPredicate(layout.getUnenforcedConstraint().transform(assignments::get)),
+                            filterNonDeterministicConjuncts(predicate),
+                            decomposedPredicate.getRemainingExpression());
+
+                    if (!TRUE_LITERAL.equals(resultingPredicate)) {
+                        return new FilterNode(idAllocator.getNextId(), tableScan, castToRowExpression(resultingPredicate));
+                    }
+
+                    return tableScan;
+                })
+                .collect(toImmutableList());
+>>>>>>> Replace FilterNode::Expression with RowExpression
     }
 
     private static class LayoutConstraintEvaluator

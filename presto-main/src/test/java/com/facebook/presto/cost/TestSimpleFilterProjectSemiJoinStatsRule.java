@@ -14,12 +14,21 @@
 package com.facebook.presto.cost;
 
 import com.facebook.presto.metadata.MetadataManager;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.PlanNodeId;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.TestingRowExpressionTranslator;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.SymbolReference;
+=======
+import com.facebook.presto.sql.TestingRowExpressionTranslator;
+import com.facebook.presto.sql.planner.Symbol;
+import com.facebook.presto.sql.planner.plan.Assignments;
+import com.facebook.presto.sql.planner.plan.PlanNode;
+import com.facebook.presto.sql.planner.plan.PlanNodeId;
+import com.facebook.presto.sql.tree.Expression;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -88,7 +97,11 @@ public class TestSimpleFilterProjectSemiJoinStatsRule
     @Test(dataProvider = "toRowExpression")
     public void testFilterPositiveSemiJoin(boolean toRowExpression)
     {
+<<<<<<< HEAD
         getStatsCalculatorAssertion(new SymbolReference("sjo"), toRowExpression)
+=======
+        getStatsCalculatorAssertion(new Symbol("sjo").toSymbolReference(), toRowExpression)
+>>>>>>> Replace FilterNode::Expression with RowExpression
                 .withSourceStats(LEFT_SOURCE_ID, PlanNodeStatsEstimate.builder()
                         .setOutputRowCount(1000)
                         .addVariableStatistics(new VariableReferenceExpression("a", BIGINT), aStats)
@@ -99,20 +112,34 @@ public class TestSimpleFilterProjectSemiJoinStatsRule
                         .addVariableStatistics(new VariableReferenceExpression("c", BIGINT), cStats)
                         .build())
                 .check(check -> check.outputRowsCount(180)
+<<<<<<< HEAD
                         .variableStats(new VariableReferenceExpression("a", BIGINT), assertion -> assertion.isEqualTo(expectedAInC))
                         .variableStats(new VariableReferenceExpression("b", BIGINT), assertion -> assertion.isEqualTo(bStats))
                         .variableStatsUnknown("c")
                         .variableStatsUnknown("sjo"));
+=======
+                            .symbolStats("a", assertion -> assertion.isEqualTo(expectedAInC))
+                            .symbolStats("b", assertion -> assertion.isEqualTo(bStats))
+                            .symbolStatsUnknown("c")
+                            .symbolStatsUnknown("sjo"));
+>>>>>>> Replace FilterNode::Expression with RowExpression
     }
 
     @Test(dataProvider = "toRowExpression")
     public void testFilterPositiveNarrowingProjectSemiJoin(boolean toRowExpression)
     {
         tester().assertStatsFor(pb -> {
+<<<<<<< HEAD
             VariableReferenceExpression a = pb.variable("a", BIGINT);
             VariableReferenceExpression b = pb.variable("b", BIGINT);
             VariableReferenceExpression c = pb.variable("c", BIGINT);
             VariableReferenceExpression semiJoinOutput = pb.variable("sjo", BOOLEAN);
+=======
+            Symbol a = pb.symbol("a", BIGINT);
+            Symbol b = pb.symbol("b", BIGINT);
+            Symbol c = pb.symbol("c", BIGINT);
+            Symbol semiJoinOutput = pb.symbol("sjo", BOOLEAN);
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
             PlanNode semiJoinNode = pb.semiJoin(
                     pb.values(LEFT_SOURCE_ID, a, b),
@@ -127,9 +154,15 @@ public class TestSimpleFilterProjectSemiJoinStatsRule
             if (toRowExpression) {
                 return pb.filter(
                         TRANSLATOR.translateAndOptimize(expression("sjo"), pb.getTypes()),
+<<<<<<< HEAD
                         pb.project(identityAssignmentsAsSymbolReferences(semiJoinOutput, a), semiJoinNode));
             }
             return pb.filter(expression("sjo"), pb.project(identityAssignmentsAsSymbolReferences(semiJoinOutput, a), semiJoinNode));
+=======
+                        pb.project(Assignments.identity(semiJoinOutput, a), semiJoinNode));
+            }
+            return pb.filter(expression("sjo"), pb.project(Assignments.identity(semiJoinOutput, a), semiJoinNode));
+>>>>>>> Replace FilterNode::Expression with RowExpression
         })
                 .withSourceStats(LEFT_SOURCE_ID, PlanNodeStatsEstimate.builder()
                         .setOutputRowCount(1000)
@@ -141,10 +174,17 @@ public class TestSimpleFilterProjectSemiJoinStatsRule
                         .addVariableStatistics(new VariableReferenceExpression("c", BIGINT), cStats)
                         .build())
                 .check(check -> check.outputRowsCount(180)
+<<<<<<< HEAD
                         .variableStats(new VariableReferenceExpression("a", BIGINT), assertion -> assertion.isEqualTo(expectedAInC))
                         .variableStatsUnknown("b")
                         .variableStatsUnknown("c")
                         .variableStatsUnknown("sjo"));
+=======
+                            .symbolStats("a", assertion -> assertion.isEqualTo(expectedAInC))
+                            .symbolStatsUnknown("b")
+                            .symbolStatsUnknown("c")
+                            .symbolStatsUnknown("sjo"));
+>>>>>>> Replace FilterNode::Expression with RowExpression
     }
 
     @Test(dataProvider = "toRowExpression")
@@ -161,10 +201,17 @@ public class TestSimpleFilterProjectSemiJoinStatsRule
                         .addVariableStatistics(new VariableReferenceExpression("c", BIGINT), cStats)
                         .build())
                 .check(check -> check.outputRowsCount(144)
+<<<<<<< HEAD
                         .variableStats(new VariableReferenceExpression("a", BIGINT), assertion -> assertion.isEqualTo(expectedANotInC))
                         .variableStats(new VariableReferenceExpression("b", BIGINT), assertion -> assertion.isEqualTo(bStats))
                         .variableStatsUnknown("c")
                         .variableStatsUnknown("sjo"));
+=======
+                            .symbolStats("a", assertion -> assertion.isEqualTo(expectedANotInC))
+                            .symbolStats("b", assertion -> assertion.isEqualTo(bStats))
+                            .symbolStatsUnknown("c")
+                            .symbolStatsUnknown("sjo"));
+>>>>>>> Replace FilterNode::Expression with RowExpression
     }
 
     @Test(dataProvider = "toRowExpression")
@@ -181,19 +228,33 @@ public class TestSimpleFilterProjectSemiJoinStatsRule
                         .addVariableStatistics(new VariableReferenceExpression("c", BIGINT), cStats)
                         .build())
                 .check(check -> check.outputRowsCount(720)
+<<<<<<< HEAD
                         .variableStats(new VariableReferenceExpression("a", BIGINT), assertion -> assertion.isEqualTo(expectedANotInCWithExtraFilter))
                         .variableStats(new VariableReferenceExpression("b", BIGINT), assertion -> assertion.isEqualTo(bStats))
                         .variableStatsUnknown("c")
                         .variableStatsUnknown("sjo"));
+=======
+                            .symbolStats("a", assertion -> assertion.isEqualTo(expectedANotInCWithExtraFilter))
+                            .symbolStats("b", assertion -> assertion.isEqualTo(bStats))
+                            .symbolStatsUnknown("c")
+                            .symbolStatsUnknown("sjo"));
+>>>>>>> Replace FilterNode::Expression with RowExpression
     }
 
     private StatsCalculatorAssertion getStatsCalculatorAssertion(Expression expression, boolean toRowExpression)
     {
         return tester().assertStatsFor(pb -> {
+<<<<<<< HEAD
             VariableReferenceExpression a = pb.variable("a", BIGINT);
             VariableReferenceExpression b = pb.variable("b", BIGINT);
             VariableReferenceExpression c = pb.variable("c", BIGINT);
             VariableReferenceExpression semiJoinOutput = pb.variable("sjo", BOOLEAN);
+=======
+            Symbol a = pb.symbol("a", BIGINT);
+            Symbol b = pb.symbol("b", BIGINT);
+            Symbol c = pb.symbol("c", BIGINT);
+            Symbol semiJoinOutput = pb.symbol("sjo", BOOLEAN);
+>>>>>>> Replace FilterNode::Expression with RowExpression
 
             PlanNode semiJoinNode = pb.semiJoin(
                     pb.values(LEFT_SOURCE_ID, a, b),

@@ -13,9 +13,14 @@
  */
 package com.facebook.presto.sql.planner.plan;
 
+<<<<<<< HEAD:presto-main/src/main/java/com/facebook/presto/sql/planner/plan/EnforceSingleRowNode.java
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.PlanNodeId;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+=======
+import com.facebook.presto.spi.relation.RowExpression;
+import com.facebook.presto.sql.planner.Symbol;
+>>>>>>> Replace FilterNode::Expression with RowExpression:presto-main/src/main/java/com/facebook/presto/sql/planner/plan/FilterNode.java
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
@@ -32,6 +37,7 @@ public class EnforceSingleRowNode
         extends InternalPlanNode
 {
     private final PlanNode source;
+<<<<<<< HEAD:presto-main/src/main/java/com/facebook/presto/sql/planner/plan/EnforceSingleRowNode.java
 
     @JsonCreator
     public EnforceSingleRowNode(
@@ -41,6 +47,25 @@ public class EnforceSingleRowNode
         super(id);
 
         this.source = requireNonNull(source, "source is null");
+=======
+    private final RowExpression predicate;
+
+    @JsonCreator
+    public FilterNode(@JsonProperty("id") PlanNodeId id,
+            @JsonProperty("source") PlanNode source,
+            @JsonProperty("predicate") RowExpression predicate)
+    {
+        super(id);
+
+        this.source = source;
+        this.predicate = predicate;
+    }
+
+    @JsonProperty("predicate")
+    public RowExpression getPredicate()
+    {
+        return predicate;
+>>>>>>> Replace FilterNode::Expression with RowExpression:presto-main/src/main/java/com/facebook/presto/sql/planner/plan/FilterNode.java
     }
 
     @Override

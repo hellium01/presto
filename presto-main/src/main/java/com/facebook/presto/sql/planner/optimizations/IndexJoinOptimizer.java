@@ -58,10 +58,15 @@ import static com.facebook.presto.spi.function.FunctionKind.AGGREGATE;
 import static com.facebook.presto.sql.ExpressionUtils.combineConjuncts;
 import static com.facebook.presto.sql.planner.plan.AssignmentUtils.identityAssignmentsAsSymbolReferences;
 import static com.facebook.presto.sql.planner.plan.WindowNode.Frame.WindowType.RANGE;
+<<<<<<< HEAD
 import static com.facebook.presto.sql.relational.Expressions.variable;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToExpression;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToRowExpression;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.isExpression;
+=======
+import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToExpression;
+import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToRowExpression;
+>>>>>>> Replace FilterNode::Expression with RowExpression
 import static com.facebook.presto.sql.tree.BooleanLiteral.TRUE_LITERAL;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -157,7 +162,7 @@ public class IndexJoinOptimizer
 
                         if (indexJoinNode != null) {
                             if (node.getFilter().isPresent()) {
-                                indexJoinNode = new FilterNode(idAllocator.getNextId(), indexJoinNode, node.getFilter().get());
+                                indexJoinNode = new FilterNode(idAllocator.getNextId(), indexJoinNode, castToRowExpression(node.getFilter().get()));
                             }
 
                             if (!indexJoinNode.getOutputVariables().equals(node.getOutputVariables())) {
