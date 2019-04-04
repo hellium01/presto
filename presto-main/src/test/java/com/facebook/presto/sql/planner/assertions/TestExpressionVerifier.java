@@ -18,6 +18,10 @@ import com.facebook.presto.metadata.MetadataManager;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.sql.TestingRowExpressionTranslator;
 import com.facebook.presto.sql.parser.SqlParser;
+<<<<<<< HEAD
+=======
+import com.facebook.presto.sql.planner.Symbol;
+>>>>>>> Introduce RowExpressionVerifier
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.SymbolReference;
@@ -51,8 +55,18 @@ public class TestExpressionVerifier
         RowExpressionVerifier rowExpressionVerifier = new RowExpressionVerifier(symbolAliases, metadata, TEST_SESSION);
         assertTrue(process(actual, expression("NOT(X = 3 AND Y = 3 AND X < 10)"), symbolAliases, metadata));
         assertThrows(() -> verifier.process(actual, expression("NOT(X = 3 AND Y = 3 AND Z < 10)")));
+<<<<<<< HEAD
         assertThrows(() -> rowExpressionVerifier.process(expression("NOT(X = 3 AND Y = 3 AND Z < 10)"), translate(actual)));
         assertFalse(process(actual, expression("NOT(X = 3 AND X = 3 AND X < 10)"), symbolAliases, metadata));
+=======
+        assertFalse(verifier.process(actual, expression("NOT(X = 3 AND X = 3 AND X < 10)")));
+
+        RowExpressionVerifier rowExpressionVerifier = new RowExpressionVerifier(symbolAliases, metadata, TEST_SESSION);
+
+        assertTrue(rowExpressionVerifier.process(expression("NOT(X = 3 AND Y = 3 AND X < 10)"), translate(actual)));
+        assertThrows(() -> rowExpressionVerifier.process(expression("NOT(X = 3 AND Y = 3 AND Z < 10)"), translate(actual)));
+        assertFalse(rowExpressionVerifier.process(expression("NOT(X = 3 AND X = 3 AND X < 10)"), translate(actual)));
+>>>>>>> Introduce RowExpressionVerifier
     }
 
     @Test
@@ -62,9 +76,21 @@ public class TestExpressionVerifier
                 .put("X", new SymbolReference("orderkey"))
                 .build();
 
+<<<<<<< HEAD
         assertTrue(process(expression("CAST('2' AS varchar)"), expression("CAST('2' AS varchar)"), aliases, metadata));
         assertFalse(process(expression("CAST('2' AS varchar)"), expression("CAST('2' AS bigint)"), aliases, metadata));
         assertTrue(process(expression("CAST(orderkey AS varchar)"), expression("CAST(X AS varchar)"), aliases, metadata));
+=======
+        ExpressionVerifier verifier = new ExpressionVerifier(aliases);
+        assertTrue(verifier.process(expression("CAST('2' AS varchar)"), expression("CAST('2' AS varchar)")));
+        assertFalse(verifier.process(expression("CAST('2' AS varchar)"), expression("CAST('2' AS bigint)")));
+        assertTrue(verifier.process(expression("CAST(orderkey AS varchar)"), expression("CAST(X AS varchar)")));
+
+        RowExpressionVerifier rowExpressionVerifier = new RowExpressionVerifier(aliases, metadata, TEST_SESSION);
+        assertTrue(rowExpressionVerifier.process(expression("CAST('2' AS varchar)"), translate(expression("CAST('2' AS varchar)"))));
+        assertFalse(rowExpressionVerifier.process(expression("CAST('2' AS bigint)"), translate(expression("CAST('2' AS varchar)"))));
+        assertTrue(rowExpressionVerifier.process(expression("CAST(X AS varchar)"), translate(expression("CAST(orderkey AS varchar)"))));
+>>>>>>> Introduce RowExpressionVerifier
     }
 
     @Test
@@ -81,6 +107,7 @@ public class TestExpressionVerifier
         assertFalse(process(expression("orderkey BETWEEN 1 AND 2"), expression("Y BETWEEN 1 AND 2"), symbolAliases, metadata));
         assertFalse(process(expression("custkey BETWEEN 1 AND 2"), expression("X BETWEEN 1 AND 2"), symbolAliases, metadata));
         // Different min or max
+<<<<<<< HEAD
         assertFalse(process(expression("orderkey BETWEEN 2 AND 4"), expression("X BETWEEN 1 AND 2"), symbolAliases, metadata));
         assertFalse(process(expression("orderkey BETWEEN 1 AND 2"), expression("X BETWEEN '1' AND '2'"), symbolAliases, metadata));
         assertFalse(process(expression("orderkey BETWEEN 1 AND 2"), expression("X BETWEEN 4 AND 7"), symbolAliases, metadata));
@@ -94,6 +121,21 @@ public class TestExpressionVerifier
         boolean rowExpressionResult = rowExpressionVerifier.process(expected, translate(actual));
         assertEquals(expressionResult, rowExpressionResult);
         return expressionResult;
+=======
+        assertFalse(verifier.process(expression("orderkey BETWEEN 2 AND 4"), expression("X BETWEEN 1 AND 2")));
+        assertFalse(verifier.process(expression("orderkey BETWEEN 1 AND 2"), expression("X BETWEEN '1' AND '2'")));
+        assertFalse(verifier.process(expression("orderkey BETWEEN 1 AND 2"), expression("X BETWEEN 4 AND 7")));
+
+        RowExpressionVerifier rowExpressionVerifier = new RowExpressionVerifier(symbolAliases, metadata, TEST_SESSION);
+        assertTrue(rowExpressionVerifier.process(expression("X BETWEEN 1 AND 2"), translate(expression("orderkey BETWEEN 1 AND 2"))));
+        // Different value
+        assertFalse(rowExpressionVerifier.process(expression("Y BETWEEN 1 AND 2"), translate(expression("orderkey BETWEEN 1 AND 2"))));
+        assertFalse(rowExpressionVerifier.process(expression("X BETWEEN 1 AND 2"), translate(expression("custkey BETWEEN 1 AND 2"))));
+        // Different min or max
+        assertFalse(rowExpressionVerifier.process(expression("X BETWEEN 1 AND 2"), translate(expression("orderkey BETWEEN 2 AND 4"))));
+        assertFalse(rowExpressionVerifier.process(expression("X BETWEEN '1' AND '2'"), translate(expression("orderkey BETWEEN 1 AND 2"))));
+        assertFalse(rowExpressionVerifier.process(expression("X BETWEEN 4 AND 7"), translate(expression("orderkey BETWEEN 1 AND 2"))));
+>>>>>>> Introduce RowExpressionVerifier
     }
 
     private Expression expression(String sql)
@@ -113,6 +155,10 @@ public class TestExpressionVerifier
 
     private RowExpression translate(Expression expression)
     {
+<<<<<<< HEAD
         return translator.translate(expression, TypeProvider.viewOf(ImmutableMap.of("orderkey", BIGINT, "custkey", BIGINT)));
+=======
+        return translator.translate(expression, TypeProvider.copyOf(ImmutableMap.of(new Symbol("orderkey"), BIGINT, new Symbol("custkey"), BIGINT)));
+>>>>>>> Introduce RowExpressionVerifier
     }
 }
