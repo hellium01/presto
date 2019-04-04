@@ -16,11 +16,13 @@ package com.facebook.presto.sql.relational;
 import com.facebook.presto.metadata.FunctionManager;
 import com.facebook.presto.spi.function.FunctionHandle;
 import com.facebook.presto.spi.function.OperatorType;
+import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.type.CharType;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.tree.ArithmeticBinaryExpression;
 import com.facebook.presto.sql.tree.ComparisonExpression;
 import com.facebook.presto.sql.tree.QualifiedName;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.List;
 
@@ -35,6 +37,7 @@ import static com.facebook.presto.spi.function.OperatorType.LESS_THAN;
 import static com.facebook.presto.spi.function.OperatorType.LESS_THAN_OR_EQUAL;
 import static com.facebook.presto.spi.function.OperatorType.MODULUS;
 import static com.facebook.presto.spi.function.OperatorType.MULTIPLY;
+import static com.facebook.presto.spi.function.OperatorType.NEGATION;
 import static com.facebook.presto.spi.function.OperatorType.NOT_EQUAL;
 import static com.facebook.presto.spi.function.OperatorType.SUBTRACT;
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
@@ -108,6 +111,44 @@ public final class StandardFunctionResolution
                 throw new IllegalStateException("Unknown arithmetic operator: " + operator);
         }
         return functionManager.resolveOperator(operatorType, fromTypes(leftType, rightType));
+    }
+
+    // TODO: fix this after we have isOperator and getOperatorType in FunctionMetadata (#12570)
+    public static boolean isArithmeticFunction(FunctionHandle functionHandle)
+    {
+        return ImmutableSet.of(
+                mangleOperatorName(ADD.name()),
+                mangleOperatorName(SUBTRACT.name()),
+                mangleOperatorName(MULTIPLY.name()),
+                mangleOperatorName(DIVIDE.name()),
+                mangleOperatorName(MODULUS.name()))
+                .contains(functionHandle.getSignature().getName());
+    }
+
+    public static OperatorType getArithmeticOperator(CallExpression call)
+    {
+        String name = call.getFunctionHandle().getSignature().getName();
+        if (name.equals(mangleOperatorName(ADD))) {
+            return ADD;
+        }
+        if (name.equals(mangleOperatorName(SUBTRACT))) {
+            return SUBTRACT;
+        }
+        if (name.equals(mangleOperatorName(MULTIPLY))) {
+            return MULTIPLY;
+        }
+        if (name.equals(mangleOperatorName(DIVIDE))) {
+            return DIVIDE;
+        }
+        if (name.equals(mangleOperatorName(MODULUS))) {
+            return MODULUS;
+        }
+        throw new IllegalStateException("Can not parse arithmetic operator: " + name);
+    }
+
+    public boolean isNegateFunction(FunctionHandle functionHandle)
+    {
+        return functionHandle.getSignature().getName().equals(mangleOperatorName(NEGATION.name()));
     }
 
     public FunctionHandle arrayConstructor(List<? extends Type> argumentTypes)
