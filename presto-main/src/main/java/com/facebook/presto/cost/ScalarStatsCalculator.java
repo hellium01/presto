@@ -60,6 +60,8 @@ import static com.facebook.presto.spi.function.OperatorType.DIVIDE;
 import static com.facebook.presto.spi.function.OperatorType.MODULUS;
 import static com.facebook.presto.spi.relation.SpecialFormExpression.Form.COALESCE;
 import static com.facebook.presto.sql.planner.LiteralInterpreter.evaluate;
+import static com.facebook.presto.sql.relational.StandardFunctionResolution.getArithmeticOperator;
+import static com.facebook.presto.sql.relational.StandardFunctionResolution.isArithmeticFunction;
 import static com.facebook.presto.util.MoreMath.max;
 import static com.facebook.presto.util.MoreMath.min;
 import static com.google.common.base.Preconditions.checkState;
