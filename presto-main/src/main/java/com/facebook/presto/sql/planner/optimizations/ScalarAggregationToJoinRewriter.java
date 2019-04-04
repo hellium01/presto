@@ -31,7 +31,10 @@ import com.facebook.presto.sql.planner.plan.EnforceSingleRowNode;
 import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.LateralJoinNode;
 import com.facebook.presto.sql.planner.plan.ProjectNode;
+<<<<<<< HEAD
 import com.facebook.presto.sql.relational.FunctionResolution;
+=======
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.facebook.presto.sql.relational.OriginalExpressionUtils;
 import com.facebook.presto.sql.tree.Expression;
 import com.google.common.collect.ImmutableList;

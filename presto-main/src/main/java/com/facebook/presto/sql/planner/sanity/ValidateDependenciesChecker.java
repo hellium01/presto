@@ -396,6 +396,7 @@ public final class ValidateDependenciesChecker
             }
 
             node.getFilter().ifPresent(predicate -> {
+<<<<<<< HEAD
                 // Only verify names here as filter expression would contain type cast, which will be translated to an non-existent variable in
                 // SqlToRowExpressionTranslator
                 // TODO https://github.com/prestodb/presto/issues/12892
@@ -405,6 +406,14 @@ public final class ValidateDependenciesChecker
                 }
                 else {
                     predicateVariables = VariablesExtractor.extractUnique(predicate).stream().map(VariableReferenceExpression::getName).collect(toImmutableSet());
+=======
+                Set<Symbol> predicateSymbols;
+                if (isExpression(predicate)) {
+                    predicateSymbols = SymbolsExtractor.extractUnique(castToExpression(predicate));
+                }
+                else {
+                    predicateSymbols = SymbolsExtractor.extractUnique(predicate);
+>>>>>>> Replace JoinNode::Expression with RowExpression
                 }
                 checkArgument(
                         allInputs.stream().map(VariableReferenceExpression::getName).collect(toImmutableSet()).containsAll(predicateVariables),

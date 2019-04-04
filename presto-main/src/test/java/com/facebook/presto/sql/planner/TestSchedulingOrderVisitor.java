@@ -31,7 +31,10 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.Optional;
 
+<<<<<<< HEAD
 import static com.facebook.presto.SessionTestUtils.TEST_SESSION;
+=======
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import static com.facebook.presto.sql.planner.SchedulingOrderVisitor.scheduleOrder;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -44,7 +47,11 @@ public class TestSchedulingOrderVisitor
     @Test
     public void testJoinOrder()
     {
+<<<<<<< HEAD
         PlanBuilder planBuilder = new PlanBuilder(TEST_SESSION, new PlanNodeIdAllocator(), METADATA);
+=======
+        PlanBuilder planBuilder = new PlanBuilder(new PlanNodeIdAllocator(), METADATA);
+>>>>>>> Replace JoinNode::Expression with RowExpression
         TableScanNode a = planBuilder.tableScan(emptyList(), emptyMap());
         TableScanNode b = planBuilder.tableScan(emptyList(), emptyMap());
         List<PlanNodeId> order = scheduleOrder(planBuilder.join(JoinNode.Type.INNER, a, b));
@@ -54,7 +61,11 @@ public class TestSchedulingOrderVisitor
     @Test
     public void testIndexJoinOrder()
     {
+<<<<<<< HEAD
         PlanBuilder planBuilder = new PlanBuilder(TEST_SESSION, new PlanNodeIdAllocator(), METADATA);
+=======
+        PlanBuilder planBuilder = new PlanBuilder(new PlanNodeIdAllocator(), METADATA);
+>>>>>>> Replace JoinNode::Expression with RowExpression
         TableScanNode a = planBuilder.tableScan(emptyList(), emptyMap());
         TableScanNode b = planBuilder.tableScan(emptyList(), emptyMap());
         List<PlanNodeId> order = scheduleOrder(planBuilder.indexJoin(IndexJoinNode.Type.INNER, a, b));
@@ -64,8 +75,13 @@ public class TestSchedulingOrderVisitor
     @Test
     public void testSemiJoinOrder()
     {
+<<<<<<< HEAD
         PlanBuilder planBuilder = new PlanBuilder(TEST_SESSION, new PlanNodeIdAllocator(), METADATA);
         VariableReferenceExpression sourceJoin = planBuilder.variable("sourceJoin");
+=======
+        PlanBuilder planBuilder = new PlanBuilder(new PlanNodeIdAllocator(), METADATA);
+        Symbol sourceJoin = planBuilder.symbol("sourceJoin");
+>>>>>>> Replace JoinNode::Expression with RowExpression
         TableScanNode a = planBuilder.tableScan(ImmutableList.of(sourceJoin), ImmutableMap.of(sourceJoin, new TestingColumnHandle("sourceJoin")));
         VariableReferenceExpression filteringSource = planBuilder.variable("filteringSource");
         TableScanNode b = planBuilder.tableScan(ImmutableList.of(filteringSource), ImmutableMap.of(filteringSource, new TestingColumnHandle("filteringSource")));

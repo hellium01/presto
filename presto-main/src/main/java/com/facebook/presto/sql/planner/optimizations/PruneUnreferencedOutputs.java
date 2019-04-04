@@ -198,8 +198,13 @@ public class PruneUnreferencedOutputs
         {
             Set<VariableReferenceExpression> expectedFilterInputs = new HashSet<>();
             if (node.getFilter().isPresent()) {
+<<<<<<< HEAD
                 expectedFilterInputs = ImmutableSet.<VariableReferenceExpression>builder()
                         .addAll(VariablesExtractor.extractUnique(castToExpression(node.getFilter().get()), variableAllocator.getTypes()))
+=======
+                expectedFilterInputs = ImmutableSet.<Symbol>builder()
+                        .addAll(SymbolsExtractor.extractUnique(castToExpression(node.getFilter().get())))
+>>>>>>> Replace JoinNode::Expression with RowExpression
                         .addAll(context.get())
                         .build();
             }

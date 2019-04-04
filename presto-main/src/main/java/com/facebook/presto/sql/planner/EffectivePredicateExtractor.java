@@ -252,7 +252,11 @@ public class EffectivePredicateExtractor
                             .add(rightPredicate)
                             .add(combineConjuncts(joinConjuncts))
                             .add(node.getFilter().map(OriginalExpressionUtils::castToExpression).orElse(TRUE_LITERAL))
+<<<<<<< HEAD
                             .build()), node.getOutputVariables());
+=======
+                            .build()), node.getOutputSymbols());
+>>>>>>> Replace JoinNode::Expression with RowExpression
                 case LEFT:
                     return combineConjuncts(ImmutableList.<Expression>builder()
                             .add(pullExpressionThroughVariables(leftPredicate, node.getOutputVariables()))

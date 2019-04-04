@@ -14,6 +14,7 @@
 package com.facebook.presto.sql.planner;
 
 import com.facebook.presto.metadata.FunctionManager;
+<<<<<<< HEAD
 import com.facebook.presto.spi.function.FunctionMetadata;
 import com.facebook.presto.spi.function.OperatorType;
 import com.facebook.presto.spi.relation.CallExpression;
@@ -22,11 +23,21 @@ import com.facebook.presto.spi.relation.DeterminismEvaluator;
 import com.facebook.presto.spi.relation.InputReferenceExpression;
 import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
 import com.facebook.presto.spi.relation.LogicalRowExpressions;
+=======
+import com.facebook.presto.spi.relation.CallExpression;
+import com.facebook.presto.spi.relation.ConstantExpression;
+import com.facebook.presto.spi.relation.InputReferenceExpression;
+import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.RowExpressionVisitor;
 import com.facebook.presto.spi.relation.SpecialFormExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+<<<<<<< HEAD
 import com.facebook.presto.sql.relational.RowExpressionDeterminismEvaluator;
+=======
+import com.facebook.presto.sql.relational.LogicalRowExpressions;
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -34,6 +45,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.facebook.presto.sql.relational.StandardFunctionResolution.getComparisonOperator;
+import static com.facebook.presto.sql.relational.StandardFunctionResolution.isComparisonFunction;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Collections.singletonList;
@@ -65,12 +78,21 @@ public final class SortExpressionExtractor
      */
     private SortExpressionExtractor() {}
 
+<<<<<<< HEAD
     public static Optional<SortExpressionContext> extractSortExpression(Set<VariableReferenceExpression> buildVariables, RowExpression filter, FunctionManager functionManager)
     {
         List<RowExpression> filterConjuncts = LogicalRowExpressions.extractConjuncts(filter);
         SortExpressionVisitor visitor = new SortExpressionVisitor(buildVariables, functionManager);
 
         DeterminismEvaluator determinismEvaluator = new RowExpressionDeterminismEvaluator(functionManager);
+=======
+    public static Optional<SortExpressionContext> extractSortExpression(Set<Symbol> buildSymbols, RowExpression filter, FunctionManager functionManager)
+    {
+        List<RowExpression> filterConjuncts = LogicalRowExpressions.extractConjuncts(filter);
+        SortExpressionVisitor visitor = new SortExpressionVisitor(buildSymbols);
+
+        com.facebook.presto.sql.relational.DeterminismEvaluator determinismEvaluator = new com.facebook.presto.sql.relational.DeterminismEvaluator(functionManager);
+>>>>>>> Replace JoinNode::Expression with RowExpression
         List<SortExpressionContext> sortExpressionCandidates = filterConjuncts.stream()
                 .filter(determinismEvaluator::isDeterministic)
                 .map(conjunct -> conjunct.accept(visitor, null))
@@ -112,23 +134,39 @@ public final class SortExpressionExtractor
         @Override
         public Optional<SortExpressionContext> visitCall(CallExpression call, Void context)
         {
+<<<<<<< HEAD
             FunctionMetadata functionMetadata = functionManager.getFunctionMetadata(call.getFunctionHandle());
             if (!functionMetadata.getOperatorType().map(OperatorType::isComparisonOperator).orElse(false)) {
                 return Optional.empty();
             }
 
             switch (functionMetadata.getOperatorType().get()) {
+=======
+            if (!isComparisonFunction(call.getFunctionHandle())) {
+                return Optional.empty();
+            }
+
+            switch (getComparisonOperator(call)) {
+>>>>>>> Replace JoinNode::Expression with RowExpression
                 case GREATER_THAN:
                 case GREATER_THAN_OR_EQUAL:
                 case LESS_THAN:
                 case LESS_THAN_OR_EQUAL:
                     RowExpression left = call.getArguments().get(0);
                     RowExpression right = call.getArguments().get(1);
+<<<<<<< HEAD
                     Optional<VariableReferenceExpression> sortChannel = asBuildVariableReference(buildVariables, right);
                     boolean hasBuildReferencesOnOtherSide = hasBuildVariableReference(buildVariables, left);
                     if (!sortChannel.isPresent()) {
                         sortChannel = asBuildVariableReference(buildVariables, left);
                         hasBuildReferencesOnOtherSide = hasBuildVariableReference(buildVariables, right);
+=======
+                    Optional<VariableReferenceExpression> sortChannel = asBuildVariableReference(buildSymbols, right);
+                    boolean hasBuildReferencesOnOtherSide = hasBuildSymbolReference(buildSymbols, left);
+                    if (!sortChannel.isPresent()) {
+                        sortChannel = asBuildVariableReference(buildSymbols, left);
+                        hasBuildReferencesOnOtherSide = hasBuildSymbolReference(buildSymbols, right);
+>>>>>>> Replace JoinNode::Expression with RowExpression
                     }
                     if (sortChannel.isPresent() && !hasBuildReferencesOnOtherSide) {
                         return sortChannel.map(variableReference -> new SortExpressionContext(variableReference, singletonList(call)));
@@ -170,24 +208,41 @@ public final class SortExpressionExtractor
         }
     }
 
+<<<<<<< HEAD
     private static Optional<VariableReferenceExpression> asBuildVariableReference(Set<VariableReferenceExpression> buildLayout, RowExpression expression)
+=======
+    private static Optional<VariableReferenceExpression> asBuildVariableReference(Set<Symbol> buildLayout, RowExpression expression)
+>>>>>>> Replace JoinNode::Expression with RowExpression
     {
         // Currently only we support only symbol as sort expression on build side
         if (expression instanceof VariableReferenceExpression) {
             VariableReferenceExpression reference = (VariableReferenceExpression) expression;
+<<<<<<< HEAD
             if (buildLayout.contains(reference)) {
+=======
+            if (buildLayout.contains(new Symbol(reference.getName()))) {
+>>>>>>> Replace JoinNode::Expression with RowExpression
                 return Optional.of(reference);
             }
         }
         return Optional.empty();
     }
 
+<<<<<<< HEAD
     private static boolean hasBuildVariableReference(Set<VariableReferenceExpression> buildVariables, RowExpression expression)
     {
         return expression.accept(new BuildVariableReferenceFinder(buildVariables), null);
     }
 
     private static class BuildVariableReferenceFinder
+=======
+    private static boolean hasBuildSymbolReference(Set<Symbol> buildSymbols, RowExpression expression)
+    {
+        return expression.accept(new BuildSymbolReferenceFinder(buildSymbols), null);
+    }
+
+    private static class BuildSymbolReferenceFinder
+>>>>>>> Replace JoinNode::Expression with RowExpression
             implements RowExpressionVisitor<Boolean, Void>
     {
         private final Set<VariableReferenceExpression> buildVariables;
@@ -229,7 +284,11 @@ public final class SortExpressionExtractor
         @Override
         public Boolean visitVariableReference(VariableReferenceExpression reference, Void context)
         {
+<<<<<<< HEAD
             return buildVariables.contains(reference);
+=======
+            return buildSymbols.contains(reference.getName());
+>>>>>>> Replace JoinNode::Expression with RowExpression
         }
 
         @Override

@@ -72,7 +72,10 @@ import com.facebook.presto.sql.planner.plan.UnionNode;
 import com.facebook.presto.sql.planner.plan.UnnestNode;
 import com.facebook.presto.sql.planner.plan.WindowNode;
 import com.facebook.presto.sql.relational.OriginalExpressionUtils;
+<<<<<<< HEAD
 import com.facebook.presto.sql.relational.SqlToRowExpressionTranslator;
+=======
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.FunctionCall;
 import com.facebook.presto.sql.tree.NodeRef;
@@ -713,7 +716,11 @@ public class PlanBuilder
             Optional<VariableReferenceExpression> rightHashVariable,
             Optional<JoinNode.DistributionType> distributionType)
     {
+<<<<<<< HEAD
         return new JoinNode(idAllocator.getNextId(), type, left, right, criteria, outputVariables, filter, leftHashVariable, rightHashVariable, distributionType);
+=======
+        return new JoinNode(idAllocator.getNextId(), type, left, right, criteria, outputSymbols, filter.map(OriginalExpressionUtils::castToRowExpression), leftHashSymbol, rightHashSymbol, distributionType);
+>>>>>>> Replace JoinNode::Expression with RowExpression
     }
 
     public PlanNode indexJoin(IndexJoinNode.Type type, TableScanNode probe, TableScanNode index)

@@ -39,6 +39,10 @@ import com.facebook.presto.sql.planner.plan.FilterNode;
 import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.JoinNode.DistributionType;
 import com.facebook.presto.sql.planner.plan.JoinNode.EquiJoinClause;
+<<<<<<< HEAD
+=======
+import com.facebook.presto.sql.planner.plan.PlanNode;
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.facebook.presto.sql.relational.OriginalExpressionUtils;
 import com.facebook.presto.sql.tree.ComparisonExpression;
 import com.facebook.presto.sql.tree.Expression;
@@ -81,9 +85,13 @@ import static com.facebook.presto.sql.planner.plan.JoinNode.DistributionType.REP
 import static com.facebook.presto.sql.planner.plan.JoinNode.Type.INNER;
 import static com.facebook.presto.sql.planner.plan.Patterns.join;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToExpression;
 =======
 >>>>>>> Replace FilterNode::Expression with RowExpression
+=======
+import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToExpression;
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToRowExpression;
 import static com.facebook.presto.sql.tree.BooleanLiteral.TRUE_LITERAL;
 import static com.facebook.presto.sql.tree.ComparisonExpression.Operator.EQUAL;
@@ -308,7 +316,11 @@ public class ReorderJoins
                     left,
                     right,
                     joinConditions,
+<<<<<<< HEAD
                     sortedOutputVariables,
+=======
+                    sortedOutputSymbols,
+>>>>>>> Replace JoinNode::Expression with RowExpression
                     joinFilters.isEmpty() ? Optional.empty() : Optional.of(castToRowExpression(and(joinFilters))),
                     Optional.empty(),
                     Optional.empty(),

@@ -382,10 +382,14 @@ public class PlanPrinter
             List<String> joinExpressions = new ArrayList<>();
             for (JoinNode.EquiJoinClause clause : node.getCriteria()) {
 <<<<<<< HEAD
+<<<<<<< HEAD
                 joinExpressions.add(JoinNodeUtils.toExpression(clause).toString());
 =======
                 joinExpressions.add(JoinNodeUtil.toExpression(clause));
 >>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
+=======
+                joinExpressions.add(JoinNodeUtil.toExpression(clause).toString());
+>>>>>>> Replace JoinNode::Expression with RowExpression
             }
             node.getFilter().map(formatter::formatRowExpression).ifPresent(joinExpressions::add);
 

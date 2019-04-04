@@ -538,9 +538,15 @@ public class PredicatePushDown
                                 .addAll(rightSource.getOutputVariables())
                                 .build(),
                         newJoinFilter.map(OriginalExpressionUtils::castToRowExpression),
+<<<<<<< HEAD
                         node.getLeftHashVariable(),
                         node.getRightHashVariable(),
                         distributionType);
+=======
+                        node.getLeftHashSymbol(),
+                        node.getRightHashSymbol(),
+                        node.getDistributionType());
+>>>>>>> Replace JoinNode::Expression with RowExpression
             }
 
             if (!postJoinPredicate.equals(TRUE_LITERAL)) {

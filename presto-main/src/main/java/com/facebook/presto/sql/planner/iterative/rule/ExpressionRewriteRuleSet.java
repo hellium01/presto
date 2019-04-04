@@ -28,6 +28,10 @@ import com.facebook.presto.sql.planner.plan.AssignmentUtils;
 import com.facebook.presto.sql.planner.plan.Assignments;
 import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.ProjectNode;
+<<<<<<< HEAD
+=======
+import com.facebook.presto.sql.planner.plan.ValuesNode;
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.facebook.presto.sql.relational.OriginalExpressionUtils;
 import com.facebook.presto.sql.tree.Expression;
 import com.google.common.collect.ImmutableList;
@@ -251,10 +255,17 @@ public class ExpressionRewriteRuleSet
                         joinNode.getLeft(),
                         joinNode.getRight(),
                         joinNode.getCriteria(),
+<<<<<<< HEAD
                         joinNode.getOutputVariables(),
                         filter.map(OriginalExpressionUtils::castToRowExpression),
                         joinNode.getLeftHashVariable(),
                         joinNode.getRightHashVariable(),
+=======
+                        joinNode.getOutputSymbols(),
+                        filter.map(OriginalExpressionUtils::castToRowExpression),
+                        joinNode.getLeftHashSymbol(),
+                        joinNode.getRightHashSymbol(),
+>>>>>>> Replace JoinNode::Expression with RowExpression
                         joinNode.getDistributionType()));
             }
             return Result.empty();

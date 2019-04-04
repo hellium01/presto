@@ -55,6 +55,7 @@ import com.facebook.presto.sql.planner.plan.ValuesNode;
 import com.facebook.presto.sql.planner.Symbol;
 import com.facebook.presto.sql.planner.iterative.Rule;
 import com.facebook.presto.sql.planner.plan.FilterNode;
+import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.ValuesNode;
 import com.facebook.presto.sql.planner.plan.WindowNode;
 import com.facebook.presto.sql.planner.plan.WindowNode.Function;
@@ -74,9 +75,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import java.util.Optional;
 =======
 >>>>>>> Replace WindowNode::FunctionCall with CallExpression
+=======
+import java.util.Optional;
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import java.util.Set;
 
 import static com.facebook.presto.execution.warnings.WarningCollector.NOOP;
@@ -86,6 +91,7 @@ import static com.facebook.presto.sql.planner.plan.Patterns.aggregation;
 import static com.facebook.presto.sql.planner.plan.Patterns.applyNode;
 import static com.facebook.presto.sql.planner.plan.Patterns.filter;
 import static com.facebook.presto.sql.planner.plan.Patterns.join;
+<<<<<<< HEAD
 import static com.facebook.presto.sql.planner.plan.Patterns.project;
 import static com.facebook.presto.sql.planner.plan.Patterns.spatialJoin;
 import static com.facebook.presto.sql.planner.plan.Patterns.tableFinish;
@@ -93,6 +99,8 @@ import static com.facebook.presto.sql.planner.plan.Patterns.tableWriterNode;
 =======
 import static com.facebook.presto.sql.planner.plan.Patterns.filter;
 >>>>>>> Replace FilterNode::Expression with RowExpression
+=======
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import static com.facebook.presto.sql.planner.plan.Patterns.values;
 import static com.facebook.presto.sql.planner.plan.Patterns.window;
 import static com.facebook.presto.sql.relational.Expressions.call;
@@ -203,8 +211,55 @@ public class TranslateExpressions
         }
 =======
                 new FilterExpressionTranslation(),
+<<<<<<< HEAD
                 new WindowExpressionTranslation());
 >>>>>>> Replace WindowNode::FunctionCall with CallExpression
+=======
+                new WindowExpressionTranslation(),
+                new JoinExpressionTranslation());
+    }
+
+    private final class JoinExpressionTranslation
+            implements Rule<JoinNode>
+    {
+        @Override
+        public Pattern<JoinNode> getPattern()
+        {
+            return join();
+        }
+
+        @Override
+        public Result apply(JoinNode joinNode, Captures captures, Context context)
+        {
+            RowExpression rewritten;
+            if (!joinNode.getFilter().isPresent()) {
+                return Result.empty();
+            }
+
+            RowExpression filter = joinNode.getFilter().get();
+            if (isExpression(filter)) {
+                rewritten = toRowExpression(castToExpression(filter), context);
+            }
+            else {
+                rewritten = filter;
+            }
+
+            if (filter.equals(rewritten)) {
+                return Result.empty();
+            }
+            return Result.ofPlanNode(new JoinNode(
+                    joinNode.getId(),
+                    joinNode.getType(),
+                    joinNode.getLeft(),
+                    joinNode.getRight(),
+                    joinNode.getCriteria(),
+                    joinNode.getOutputSymbols(),
+                    Optional.of(rewritten),
+                    joinNode.getLeftHashSymbol(),
+                    joinNode.getRightHashSymbol(),
+                    joinNode.getDistributionType()));
+        }
+>>>>>>> Replace JoinNode::Expression with RowExpression
     }
 
     private final class WindowExpressionTranslation

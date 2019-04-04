@@ -24,6 +24,11 @@ import com.facebook.presto.sql.planner.VariablesExtractor;
 import com.facebook.presto.sql.planner.iterative.Rule;
 import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.JoinNode;
+<<<<<<< HEAD
+=======
+import com.facebook.presto.sql.planner.plan.PlanNode;
+import com.facebook.presto.sql.relational.OriginalExpressionUtils;
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
@@ -131,9 +136,15 @@ public class PushPartialAggregationThroughJoin
         return Streams.concat(
                 node.getCriteria().stream().map(JoinNode.EquiJoinClause::getLeft),
                 node.getCriteria().stream().map(JoinNode.EquiJoinClause::getRight),
+<<<<<<< HEAD
                 node.getFilter().map(expression -> VariablesExtractor.extractUnique(expression)).orElse(ImmutableSet.of()).stream(),
                 node.getLeftHashVariable().map(ImmutableSet::of).orElse(ImmutableSet.of()).stream(),
                 node.getRightHashVariable().map(ImmutableSet::of).orElse(ImmutableSet.of()).stream())
+=======
+                node.getFilter().map(OriginalExpressionUtils::castToExpression).map(SymbolsExtractor::extractUnique).orElse(ImmutableSet.of()).stream(),
+                node.getLeftHashSymbol().map(ImmutableSet::of).orElse(ImmutableSet.of()).stream(),
+                node.getRightHashSymbol().map(ImmutableSet::of).orElse(ImmutableSet.of()).stream())
+>>>>>>> Replace JoinNode::Expression with RowExpression
                 .collect(toImmutableSet());
     }
 

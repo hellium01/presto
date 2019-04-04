@@ -15,15 +15,24 @@ package com.facebook.presto.cost;
 
 import com.facebook.presto.Session;
 import com.facebook.presto.matching.Pattern;
+<<<<<<< HEAD
 import com.facebook.presto.spi.relation.LogicalRowExpressions;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+=======
+import com.facebook.presto.spi.relation.RowExpression;
+import com.facebook.presto.sql.planner.Symbol;
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.iterative.Lookup;
 import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.JoinNode.EquiJoinClause;
+import com.facebook.presto.sql.relational.LogicalRowExpressions;
 import com.facebook.presto.sql.tree.ComparisonExpression;
+<<<<<<< HEAD
 import com.facebook.presto.sql.tree.SymbolReference;
+=======
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.facebook.presto.util.MoreMath;
 import com.google.common.annotations.VisibleForTesting;
 
@@ -282,7 +291,11 @@ public class JoinStatsRule
     @VisibleForTesting
     PlanNodeStatsEstimate calculateJoinComplementStats(
             Optional<RowExpression> filter,
+<<<<<<< HEAD
             List<EquiJoinClause> criteria,
+=======
+            List<JoinNode.EquiJoinClause> criteria,
+>>>>>>> Replace JoinNode::Expression with RowExpression
             PlanNodeStatsEstimate leftStats,
             PlanNodeStatsEstimate rightStats)
     {

@@ -14,20 +14,27 @@
 package com.facebook.presto.sql.planner.plan;
 
 import com.facebook.presto.metadata.FunctionManager;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.PlanNodeId;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+=======
+import com.facebook.presto.spi.relation.RowExpression;
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.facebook.presto.sql.planner.SortExpressionContext;
 <<<<<<< HEAD
 =======
 import com.facebook.presto.sql.planner.Symbol;
+<<<<<<< HEAD
 import com.facebook.presto.sql.tree.Expression;
 <<<<<<< HEAD
 import com.facebook.presto.sql.tree.Join;
 >>>>>>> Extract EquiJoinClause::toExpression to JoinNodeUtil
 =======
 >>>>>>> Move typeConvert to JoinNodeUtil
+=======
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
@@ -62,10 +69,17 @@ public class JoinNode
     private final PlanNode left;
     private final PlanNode right;
     private final List<EquiJoinClause> criteria;
+<<<<<<< HEAD
     private final List<VariableReferenceExpression> outputVariables;
     private final Optional<RowExpression> filter;
     private final Optional<VariableReferenceExpression> leftHashVariable;
     private final Optional<VariableReferenceExpression> rightHashVariable;
+=======
+    private final List<Symbol> outputSymbols;
+    private final Optional<RowExpression> filter;
+    private final Optional<Symbol> leftHashSymbol;
+    private final Optional<Symbol> rightHashSymbol;
+>>>>>>> Replace JoinNode::Expression with RowExpression
     private final Optional<DistributionType> distributionType;
 
     @JsonCreator
@@ -74,10 +88,17 @@ public class JoinNode
             @JsonProperty("left") PlanNode left,
             @JsonProperty("right") PlanNode right,
             @JsonProperty("criteria") List<EquiJoinClause> criteria,
+<<<<<<< HEAD
             @JsonProperty("outputVariables") List<VariableReferenceExpression> outputVariables,
             @JsonProperty("filter") Optional<RowExpression> filter,
             @JsonProperty("leftHashVariable") Optional<VariableReferenceExpression> leftHashVariable,
             @JsonProperty("rightHashVariable") Optional<VariableReferenceExpression> rightHashVariable,
+=======
+            @JsonProperty("outputSymbols") List<Symbol> outputSymbols,
+            @JsonProperty("filter") Optional<RowExpression> filter,
+            @JsonProperty("leftHashSymbol") Optional<Symbol> leftHashSymbol,
+            @JsonProperty("rightHashSymbol") Optional<Symbol> rightHashSymbol,
+>>>>>>> Replace JoinNode::Expression with RowExpression
             @JsonProperty("distributionType") Optional<DistributionType> distributionType)
     {
         super(id);
@@ -244,7 +265,11 @@ public class JoinNode
         return criteria;
     }
 
+<<<<<<< HEAD
     @JsonProperty
+=======
+    @JsonProperty("filter")
+>>>>>>> Replace JoinNode::Expression with RowExpression
     public Optional<RowExpression> getFilter()
     {
         return filter;
@@ -253,7 +278,11 @@ public class JoinNode
     public Optional<SortExpressionContext> getSortExpressionContext(FunctionManager functionManager)
     {
         return filter
+<<<<<<< HEAD
                 .flatMap(filter -> extractSortExpression(ImmutableSet.copyOf(right.getOutputVariables()), filter, functionManager));
+=======
+                .flatMap(filter -> extractSortExpression(ImmutableSet.copyOf(right.getOutputSymbols()), filter, functionManager));
+>>>>>>> Replace JoinNode::Expression with RowExpression
     }
 
     @JsonProperty

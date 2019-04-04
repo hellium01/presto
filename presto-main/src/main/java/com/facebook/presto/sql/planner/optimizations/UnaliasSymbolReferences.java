@@ -530,8 +530,13 @@ public class UnaliasSymbolReferences
 
             List<JoinNode.EquiJoinClause> canonicalCriteria = canonicalizeJoinCriteria(node.getCriteria());
             Optional<Expression> canonicalFilter = node.getFilter().map(OriginalExpressionUtils::castToExpression).map(this::canonicalize);
+<<<<<<< HEAD
             Optional<VariableReferenceExpression> canonicalLeftHashVariable = canonicalize(node.getLeftHashVariable());
             Optional<VariableReferenceExpression> canonicalRightHashVariable = canonicalize(node.getRightHashVariable());
+=======
+            Optional<Symbol> canonicalLeftHashSymbol = canonicalize(node.getLeftHashSymbol());
+            Optional<Symbol> canonicalRightHashSymbol = canonicalize(node.getRightHashSymbol());
+>>>>>>> Replace JoinNode::Expression with RowExpression
 
             if (node.getType().equals(INNER)) {
                 canonicalCriteria.stream()
@@ -546,10 +551,17 @@ public class UnaliasSymbolReferences
                     left,
                     right,
                     canonicalCriteria,
+<<<<<<< HEAD
                     canonicalizeAndDistinct(node.getOutputVariables()),
                     canonicalFilter.map(OriginalExpressionUtils::castToRowExpression),
                     canonicalLeftHashVariable,
                     canonicalRightHashVariable,
+=======
+                    canonicalizeAndDistinct(node.getOutputSymbols()),
+                    canonicalFilter.map(OriginalExpressionUtils::castToRowExpression),
+                    canonicalLeftHashSymbol,
+                    canonicalRightHashSymbol,
+>>>>>>> Replace JoinNode::Expression with RowExpression
                     node.getDistributionType());
         }
 

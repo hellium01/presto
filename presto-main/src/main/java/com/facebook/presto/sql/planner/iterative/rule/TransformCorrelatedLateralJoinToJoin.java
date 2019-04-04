@@ -21,6 +21,10 @@ import com.facebook.presto.sql.planner.optimizations.PlanNodeDecorrelator;
 import com.facebook.presto.sql.planner.optimizations.PlanNodeDecorrelator.DecorrelatedNode;
 import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.LateralJoinNode;
+<<<<<<< HEAD
+=======
+import com.facebook.presto.sql.planner.plan.PlanNode;
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.facebook.presto.sql.relational.OriginalExpressionUtils;
 import com.google.common.collect.ImmutableList;
 
@@ -61,7 +65,11 @@ public class TransformCorrelatedLateralJoinToJoin
                         lateralJoinNode.getInput(),
                         decorrelatedNode.getNode(),
                         ImmutableList.of(),
+<<<<<<< HEAD
                         lateralJoinNode.getOutputVariables(),
+=======
+                        lateralJoinNode.getOutputSymbols(),
+>>>>>>> Replace JoinNode::Expression with RowExpression
                         decorrelatedNode.getCorrelatedPredicates().map(OriginalExpressionUtils::castToRowExpression),
                         Optional.empty(),
                         Optional.empty(),

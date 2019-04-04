@@ -16,7 +16,10 @@ package com.facebook.presto.sql.planner.assertions;
 import com.facebook.presto.Session;
 import com.facebook.presto.cost.StatsProvider;
 import com.facebook.presto.metadata.Metadata;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.PlanNode;
+=======
+>>>>>>> Replace JoinNode::Expression with RowExpression
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.JoinNode.DistributionType;

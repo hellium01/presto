@@ -348,10 +348,17 @@ public class ExtractSpatialJoins
                 leftNode,
                 newRightNode,
                 joinNode.getCriteria(),
+<<<<<<< HEAD
                 joinNode.getOutputVariables(),
                 Optional.of(castToRowExpression(newFilter)),
                 joinNode.getLeftHashVariable(),
                 joinNode.getRightHashVariable(),
+=======
+                joinNode.getOutputSymbols(),
+                Optional.of(castToRowExpression(newFilter)),
+                joinNode.getLeftHashSymbol(),
+                joinNode.getRightHashSymbol(),
+>>>>>>> Replace JoinNode::Expression with RowExpression
                 joinNode.getDistributionType());
 
         return tryCreateSpatialJoin(context, newJoinNode, newFilter, nodeId, outputVariables, (FunctionCall) newComparison.getLeft(), Optional.of(newComparison.getRight()), metadata, splitManager, pageSourceManager, sqlParser);
