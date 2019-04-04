@@ -16,15 +16,25 @@ package com.facebook.presto.sql.planner.assertions;
 import com.facebook.presto.Session;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.spi.function.FunctionHandle;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.planner.VariablesExtractor;
+=======
+import com.facebook.presto.spi.relation.RowExpression;
+import com.facebook.presto.sql.planner.Symbol;
+import com.facebook.presto.sql.planner.SymbolsExtractor;
+import com.facebook.presto.sql.planner.plan.PlanNode;
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.sql.planner.plan.WindowNode;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.FunctionCall;
 import com.facebook.presto.sql.tree.QualifiedName;
+<<<<<<< HEAD
 import com.google.common.collect.ImmutableSet;
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 
 import java.util.List;
 import java.util.Map;
@@ -72,9 +82,15 @@ public class WindowFunctionMatcher
         FunctionCall expectedCall = callMaker.getExpectedValue(symbolAliases);
         Optional<WindowNode.Frame> expectedFrame = frameMaker.map(maker -> maker.getExpectedValue(symbolAliases));
 
+<<<<<<< HEAD
         List<VariableReferenceExpression> matchedOutputs = windowNode.getWindowFunctions().entrySet().stream()
                 .filter(assignment -> {
                     if (!expectedCall.getName().equals(QualifiedName.of(metadata.getFunctionManager().getFunctionMetadata(assignment.getValue().getFunctionCall().getFunctionHandle()).getName()))) {
+=======
+        List<Symbol> matchedOutputs = windowNode.getWindowFunctions().entrySet().stream()
+                .filter(assignment -> {
+                    if (!expectedCall.getName().equals(QualifiedName.of(assignment.getValue().getFunctionCall().getFunctionHandle().getSignature().getName()))) {
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                         return false;
                     }
                     if (!functionHandle.map(assignment.getValue().getFunctionHandle()::equals).orElse(true)) {
@@ -93,7 +109,11 @@ public class WindowFunctionMatcher
                         RowExpression actualExpression = actualExpressions.get(i);
                         if (!isExpression(actualExpression)) {
                             SymbolAliases.Builder builder = SymbolAliases.builder();
+<<<<<<< HEAD
                             ImmutableSet.copyOf(VariablesExtractor.extractAllSymbols(expectedExpression)).forEach(symbol -> builder.put(symbol.getName(), symbol.toSymbolReference()));
+=======
+                            SymbolsExtractor.extractUnique(expectedExpression).forEach(symbol -> builder.put(symbol.getName(), symbol.toSymbolReference()));
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                             if (!new RowExpressionVerifier(builder.build(), metadata, session).process(expectedExpression, actualExpression)) {
                                 return false;
                             }

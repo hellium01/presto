@@ -408,9 +408,16 @@ public class PruneUnreferencedOutputs
             for (Map.Entry<VariableReferenceExpression, WindowNode.Function> entry : node.getWindowFunctions().entrySet()) {
                 VariableReferenceExpression variable = entry.getKey();
                 WindowNode.Function function = entry.getValue();
+<<<<<<< HEAD
                 if (context.get().contains(variable)) {
                     expectedInputs.addAll(WindowNodeUtil.extractWindowFunctionUniqueVariables(function, variableAllocator.getTypes()));
                     functionsBuilder.put(variable, entry.getValue());
+=======
+
+                if (context.get().contains(symbol)) {
+                    expectedInputs.addAll(WindowNodeUtil.extractWindowFunctionUnique(function));
+                    functionsBuilder.put(symbol, entry.getValue());
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                 }
             }
 

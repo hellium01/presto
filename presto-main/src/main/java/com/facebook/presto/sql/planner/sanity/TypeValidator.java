@@ -16,12 +16,17 @@ package com.facebook.presto.sql.planner.sanity;
 import com.facebook.presto.Session;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.metadata.Metadata;
+<<<<<<< HEAD
 import com.facebook.presto.spi.function.FunctionHandle;
 import com.facebook.presto.spi.function.FunctionMetadata;
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+=======
+import com.facebook.presto.spi.function.Signature;
+import com.facebook.presto.spi.relation.CallExpression;
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.TypeManager;
 import com.facebook.presto.spi.type.TypeSignature;
@@ -156,8 +161,13 @@ public final class TypeValidator
 
         private void checkWindowFunctions(Map<VariableReferenceExpression, WindowNode.Function> functions)
         {
+<<<<<<< HEAD
             for (Map.Entry<VariableReferenceExpression, WindowNode.Function> entry : functions.entrySet()) {
                 FunctionHandle functionHandle = entry.getValue().getFunctionHandle();
+=======
+            for (Map.Entry<Symbol, WindowNode.Function> entry : functions.entrySet()) {
+                Signature signature = entry.getValue().getFunctionHandle().getSignature();
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                 CallExpression call = entry.getValue().getFunctionCall();
 
                 verifyTypeSignature(entry.getKey(), metadata.getFunctionManager().getFunctionMetadata(functionHandle).getReturnType());
@@ -173,8 +183,28 @@ public final class TypeValidator
 
         private void checkFunctionSignature(Map<VariableReferenceExpression, Aggregation> aggregations)
         {
+<<<<<<< HEAD
             for (Map.Entry<VariableReferenceExpression, Aggregation> entry : aggregations.entrySet()) {
                 verifyTypeSignature(entry.getKey(), metadata.getFunctionManager().getFunctionMetadata(entry.getValue().getFunctionHandle()).getReturnType());
+=======
+            Type expectedType = types.get(symbol);
+            Map<NodeRef<Expression>, Type> expressionTypes = getExpressionTypes(session, metadata, sqlParser, types, call, emptyList(), warningCollector);
+            Type actualType = expressionTypes.get(NodeRef.<Expression>of(call));
+            verifyTypeSignature(symbol, expectedType.getTypeSignature(), actualType.getTypeSignature());
+        }
+
+        private void checkCall(Symbol symbol, CallExpression call)
+        {
+            Type expectedType = types.get(symbol);
+            Type actualType = call.getType();
+            verifyTypeSignature(symbol, expectedType.getTypeSignature(), actualType.getTypeSignature());
+        }
+
+        private void checkFunctionSignature(Map<Symbol, Aggregation> aggregations)
+        {
+            for (Map.Entry<Symbol, Aggregation> entry : aggregations.entrySet()) {
+                checkSignature(entry.getKey(), entry.getValue().getFunctionHandle().getSignature());
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
             }
         }
 

@@ -16,11 +16,14 @@ package com.facebook.presto.sql.planner.optimizations;
 import com.facebook.presto.Session;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.spi.block.SortOrder;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.PlanNodeIdAllocator;
 import com.facebook.presto.spi.plan.TableScanNode;
 import com.facebook.presto.spi.plan.ValuesNode;
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
@@ -201,6 +204,7 @@ public class UnaliasSymbolReferences
                 VariableReferenceExpression variable = entry.getKey();
 
                 // Be aware of the CallExpression handling.
+<<<<<<< HEAD
                 CallExpression callExpression = entry.getValue().getFunctionCall();
                 List<RowExpression> rewrittenArguments = canonicalizeCallExpression(callExpression);
                 WindowNode.Frame canonicalFrame = canonicalize(entry.getValue().getFrame());
@@ -214,6 +218,17 @@ public class UnaliasSymbolReferences
                                         callExpression.getType(),
                                         rewrittenArguments),
                                 canonicalFrame));
+=======
+                // TODO: arguments will be pure RowExpression once we introduce subquery expression for RowExpression.
+                CallExpression callExpression = entry.getValue().getFunctionCall();
+                List<RowExpression> rewrittenArguments = callExpression.getArguments()
+                        .stream()
+                        .map(argument -> castToRowExpression(canonicalize(castToExpression(argument))))
+                        .collect(toImmutableList());
+                WindowNode.Frame canonicalFrame = canonicalize(entry.getValue().getFrame());
+
+                functions.put(canonicalize(symbol), new WindowNode.Function(call(callExpression.getFunctionHandle(), callExpression.getType(), rewrittenArguments), canonicalFrame));
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
             }
 
             return new WindowNode(

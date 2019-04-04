@@ -108,6 +108,7 @@ import com.facebook.presto.spi.RecordSet;
 import com.facebook.presto.spi.block.BlockEncodingSerde;
 import com.facebook.presto.spi.block.SortOrder;
 import com.facebook.presto.spi.function.FunctionHandle;
+<<<<<<< HEAD
 import com.facebook.presto.spi.function.FunctionMetadata;
 import com.facebook.presto.spi.function.OperatorType;
 import com.facebook.presto.spi.plan.FilterNode;
@@ -121,6 +122,14 @@ import com.facebook.presto.spi.relation.InputReferenceExpression;
 import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
+=======
+import com.facebook.presto.spi.predicate.NullableValue;
+import com.facebook.presto.spi.relation.CallExpression;
+import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
+import com.facebook.presto.spi.relation.RowExpression;
+import com.facebook.presto.spi.relation.VariableReferenceExpression;
+import com.facebook.presto.spi.type.FunctionType;
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spiller.PartitioningSpillerFactory;
 import com.facebook.presto.spiller.SingleStreamSpillerFactory;
@@ -932,7 +941,12 @@ public class LocalExecutionPlanner
                 ImmutableList.Builder<Integer> arguments = ImmutableList.builder();
                 for (RowExpression argument : call.getArguments()) {
                     checkState(argument instanceof VariableReferenceExpression);
+<<<<<<< HEAD
                     arguments.add(source.getLayout().get(argument));
+=======
+                    Symbol argumentSymbol = new Symbol(((VariableReferenceExpression) argument).getName());
+                    arguments.add(source.getLayout().get(argumentSymbol));
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                 }
                 VariableReferenceExpression variable = entry.getKey();
                 FunctionManager functionManager = metadata.getFunctionManager();

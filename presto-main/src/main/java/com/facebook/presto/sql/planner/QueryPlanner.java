@@ -89,11 +89,15 @@ import static com.facebook.presto.sql.planner.optimizations.WindowNodeUtil.toWin
 import static com.facebook.presto.sql.planner.plan.AggregationNode.groupingSets;
 import static com.facebook.presto.sql.planner.plan.AggregationNode.singleGroupingSet;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import static com.facebook.presto.sql.planner.plan.AssignmentUtils.identitiesAsSymbolReferences;
 import static com.facebook.presto.sql.relational.Expressions.call;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.asSymbolReference;
 =======
 >>>>>>> Replace FilterNode::Expression with RowExpression
+=======
+import static com.facebook.presto.sql.relational.Expressions.call;
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToRowExpression;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -813,24 +817,40 @@ class QueryPlanner
             }
 
             Type returnType = analysis.getType(windowFunction);
+<<<<<<< HEAD
             VariableReferenceExpression newVariable = variableAllocator.newVariable(rewritten, returnType);
             outputTranslations.put(windowFunction, newVariable);
 
             // TODO: replace arguments with RowExpression once we introduce subquery expression for RowExpression (#12745).
+=======
+            Symbol newSymbol = symbolAllocator.newSymbol(rewritten, returnType);
+            outputTranslations.put(windowFunction, newSymbol);
+
+            // TODO: replace arguments with RowExpression once we introduce subquery expression for RowExpression.
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
             // Wrap all arguments in CallExpression to be RawExpression.
             // The utility that work on the CallExpression should be aware of the RawExpression handling.
             // The interface will be dirty until we introduce subquery expression for RowExpression.
             // With subqueries, the translation from Expression to RowExpression can happen here.
             WindowNode.Function function = new WindowNode.Function(
                     call(
+<<<<<<< HEAD
                             windowFunction.getName().toString(),
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                             analysis.getFunctionHandle(windowFunction),
                             returnType,
                             ((FunctionCall) rewritten).getArguments().stream().map(OriginalExpressionUtils::castToRowExpression).collect(toImmutableList())),
                     frame);
 
+<<<<<<< HEAD
             ImmutableList.Builder<VariableReferenceExpression> orderByVariables = ImmutableList.builder();
             orderByVariables.addAll(orderings.keySet());
+=======
+            List<Symbol> sourceSymbols = subPlan.getRoot().getOutputSymbols();
+            ImmutableList.Builder<Symbol> orderBySymbols = ImmutableList.builder();
+            orderBySymbols.addAll(orderings.keySet());
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
             Optional<OrderingScheme> orderingScheme = Optional.empty();
             if (!orderings.isEmpty()) {
                 orderingScheme = Optional.of(new OrderingScheme(orderByVariables.build(), orderings));

@@ -18,15 +18,19 @@ import com.facebook.presto.Session;
 import com.facebook.presto.matching.Captures;
 import com.facebook.presto.matching.Pattern;
 import com.facebook.presto.metadata.Metadata;
+<<<<<<< HEAD
 import com.facebook.presto.operator.aggregation.InternalAggregationFunction;
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.ValuesNode;
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.spi.type.FunctionType;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.parser.SqlParser;
+<<<<<<< HEAD
 <<<<<<< HEAD
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.iterative.Rule;
@@ -47,6 +51,14 @@ import com.facebook.presto.sql.planner.iterative.Rule;
 import com.facebook.presto.sql.planner.plan.FilterNode;
 import com.facebook.presto.sql.planner.plan.ValuesNode;
 >>>>>>> Replace FilterNode::Expression with RowExpression
+=======
+import com.facebook.presto.sql.planner.Symbol;
+import com.facebook.presto.sql.planner.iterative.Rule;
+import com.facebook.presto.sql.planner.plan.FilterNode;
+import com.facebook.presto.sql.planner.plan.ValuesNode;
+import com.facebook.presto.sql.planner.plan.WindowNode;
+import com.facebook.presto.sql.planner.plan.WindowNode.Function;
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.sql.relational.SqlToRowExpressionTranslator;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.LambdaArgumentDeclaration;
@@ -61,7 +73,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+<<<<<<< HEAD
 import java.util.Optional;
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import java.util.Set;
 
 import static com.facebook.presto.execution.warnings.WarningCollector.NOOP;
@@ -108,6 +123,7 @@ public class TranslateExpressions
     {
         return ImmutableSet.of(
                 new ValuesExpressionTranslation(),
+<<<<<<< HEAD
 <<<<<<< HEAD
                 new FilterExpressionTranslation(),
                 new ProjectExpressionTranslation(),
@@ -185,6 +201,10 @@ public class TranslateExpressions
                     joinNode.getRightHashVariable(),
                     joinNode.getDistributionType()));
         }
+=======
+                new FilterExpressionTranslation(),
+                new WindowExpressionTranslation());
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
     }
 
     private final class WindowExpressionTranslation
@@ -201,6 +221,7 @@ public class TranslateExpressions
         {
             checkState(windowNode.getSource() != null);
             boolean anyRewritten = false;
+<<<<<<< HEAD
             ImmutableMap.Builder<VariableReferenceExpression, Function> functions = ImmutableMap.builder();
             for (Entry<VariableReferenceExpression, Function> entry : windowNode.getWindowFunctions().entrySet()) {
                 ImmutableList.Builder<RowExpression> newArguments = ImmutableList.builder();
@@ -221,6 +242,23 @@ public class TranslateExpressions
                                         callExpression.getType(),
                                         newArguments.build()),
                                 entry.getValue().getFrame()));
+=======
+            ImmutableMap.Builder<Symbol, Function> functions = ImmutableMap.builder();
+            for (Entry<Symbol, Function> entry : windowNode.getWindowFunctions().entrySet()) {
+                ImmutableList.Builder<RowExpression> newArguments = ImmutableList.builder();
+                CallExpression callExpression = entry.getValue().getFunctionCall();
+                for (RowExpression argument : callExpression.getArguments()) {
+                    if (isExpression(argument)) {
+                        RowExpression rewritten = toRowExpression(castToExpression(argument), context);
+                        anyRewritten = true;
+                        newArguments.add(rewritten);
+                    }
+                    else {
+                        newArguments.add(argument);
+                    }
+                }
+                functions.put(entry.getKey(), new Function(call(callExpression.getFunctionHandle(), callExpression.getType(), newArguments.build()), entry.getValue().getFrame()));
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
             }
             if (anyRewritten) {
                 return Result.ofPlanNode(new WindowNode(
@@ -228,12 +266,17 @@ public class TranslateExpressions
                         windowNode.getSource(),
                         windowNode.getSpecification(),
                         functions.build(),
+<<<<<<< HEAD
                         windowNode.getHashVariable(),
+=======
+                        windowNode.getHashSymbol(),
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                         windowNode.getPrePartitionedInputs(),
                         windowNode.getPreSortedOrderPrefix()));
             }
             return Result.empty();
         }
+<<<<<<< HEAD
     }
 
     private final class ProjectExpressionTranslation
@@ -287,6 +330,8 @@ public class TranslateExpressions
 =======
                 new FilterExpressionTranslation());
 >>>>>>> Replace FilterNode::Expression with RowExpression
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
     }
 
     private final class FilterExpressionTranslation

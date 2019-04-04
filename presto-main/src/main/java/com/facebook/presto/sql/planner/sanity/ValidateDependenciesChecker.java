@@ -25,7 +25,10 @@ import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.spi.type.TypeManager;
 import com.facebook.presto.sql.parser.SqlParser;
 import com.facebook.presto.sql.planner.TypeProvider;
+<<<<<<< HEAD
 import com.facebook.presto.sql.planner.VariablesExtractor;
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.sql.planner.optimizations.WindowNodeUtil;
 import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.AggregationNode.Aggregation;
@@ -199,8 +202,13 @@ public final class ValidateDependenciesChecker
             checkDependencies(inputs, bounds.build(), "Invalid node. Frame bounds (%s) not in source plan output (%s)", bounds.build(), node.getSource().getOutputVariables());
 
             for (WindowNode.Function function : node.getWindowFunctions().values()) {
+<<<<<<< HEAD
                 Set<VariableReferenceExpression> dependencies = WindowNodeUtil.extractWindowFunctionUniqueVariables(function, types);
                 checkDependencies(inputs, dependencies, "Invalid node. Window function dependencies (%s) not in source plan output (%s)", dependencies, node.getSource().getOutputVariables());
+=======
+                Set<Symbol> dependencies = WindowNodeUtil.extractWindowFunctionUnique(function);
+                checkDependencies(inputs, dependencies, "Invalid node. Window function dependencies (%s) not in source plan output (%s)", dependencies, node.getSource().getOutputSymbols());
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
             }
 
             return null;

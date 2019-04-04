@@ -13,11 +13,18 @@
  */
 package com.facebook.presto.sql.planner.iterative.rule;
 
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.PlanNodeIdAllocator;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.planner.PlanVariableAllocator;
 import com.facebook.presto.sql.planner.optimizations.WindowNodeUtil;
+=======
+import com.facebook.presto.sql.planner.PlanNodeIdAllocator;
+import com.facebook.presto.sql.planner.Symbol;
+import com.facebook.presto.sql.planner.optimizations.WindowNodeUtil;
+import com.facebook.presto.sql.planner.plan.PlanNode;
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.sql.planner.plan.WindowNode;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -59,7 +66,11 @@ public class PruneWindowColumns
         windowNode.getHashVariable().ifPresent(referencedInputs::add);
 
         for (WindowNode.Function windowFunction : referencedFunctions.values()) {
+<<<<<<< HEAD
             referencedInputs.addAll(WindowNodeUtil.extractWindowFunctionUniqueVariables(windowFunction, variableAllocator.getTypes()));
+=======
+            referencedInputs.addAll(WindowNodeUtil.extractWindowFunctionUnique(windowFunction));
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
             windowFunction.getFrame().getStartValue().ifPresent(referencedInputs::add);
             windowFunction.getFrame().getEndValue().ifPresent(referencedInputs::add);
         }

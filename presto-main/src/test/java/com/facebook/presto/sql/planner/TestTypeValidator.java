@@ -23,7 +23,10 @@ import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.PlanNodeId;
 import com.facebook.presto.spi.plan.TableScanNode;
 import com.facebook.presto.spi.predicate.TupleDomain;
+<<<<<<< HEAD
 import com.facebook.presto.spi.relation.CallExpression;
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.spi.type.StandardTypes;
 import com.facebook.presto.spi.type.VarcharType;
@@ -67,7 +70,10 @@ import static com.facebook.presto.sql.planner.plan.WindowNode.Frame.BoundType.UN
 import static com.facebook.presto.sql.planner.plan.WindowNode.Frame.BoundType.UNBOUNDED_PRECEDING;
 import static com.facebook.presto.sql.planner.plan.WindowNode.Frame.WindowType.RANGE;
 import static com.facebook.presto.sql.relational.Expressions.call;
+<<<<<<< HEAD
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToRowExpression;
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 
 @Test(singleThreaded = true)
 public class TestTypeValidator
@@ -154,8 +160,13 @@ public class TestTypeValidator
     @Test
     public void testValidWindow()
     {
+<<<<<<< HEAD
         VariableReferenceExpression windowVariable = variableAllocator.newVariable("sum", DOUBLE);
         FunctionHandle functionHandle = FUNCTION_MANAGER.lookupFunction("sum", fromTypes(DOUBLE));
+=======
+        Symbol windowSymbol = symbolAllocator.newSymbol("sum", DOUBLE);
+        FunctionHandle functionHandle = FUNCTION_MANAGER.lookupFunction(QualifiedName.of("sum"), fromTypes(DOUBLE));
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 
         WindowNode.Frame frame = new WindowNode.Frame(
                 RANGE,
@@ -166,7 +177,11 @@ public class TestTypeValidator
                 Optional.empty(),
                 Optional.empty());
 
+<<<<<<< HEAD
         WindowNode.Function function = new WindowNode.Function(call("sum", functionHandle, DOUBLE, variableC), frame);
+=======
+        WindowNode.Function function = new WindowNode.Function(call(functionHandle, DOUBLE, new VariableReferenceExpression(columnC.getName(), DOUBLE)), frame);
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 
         WindowNode.Specification specification = new WindowNode.Specification(ImmutableList.of(), Optional.empty());
 
@@ -295,8 +310,13 @@ public class TestTypeValidator
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "type of variable 'sum(_[0-9]+)?' is expected to be double, but the actual type is bigint")
     public void testInvalidWindowFunctionCall()
     {
+<<<<<<< HEAD
         VariableReferenceExpression windowVariable = variableAllocator.newVariable("sum", DOUBLE);
         FunctionHandle functionHandle = FUNCTION_MANAGER.lookupFunction("sum", fromTypes(DOUBLE));
+=======
+        Symbol windowSymbol = symbolAllocator.newSymbol("sum", DOUBLE);
+        FunctionHandle functionHandle = FUNCTION_MANAGER.lookupFunction(QualifiedName.of("sum"), fromTypes(DOUBLE));
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 
         WindowNode.Frame frame = new WindowNode.Frame(
                 RANGE,
@@ -307,7 +327,11 @@ public class TestTypeValidator
                 Optional.empty(),
                 Optional.empty());
 
+<<<<<<< HEAD
         WindowNode.Function function = new WindowNode.Function(call("sum", functionHandle, BIGINT, variableA), frame);
+=======
+        WindowNode.Function function = new WindowNode.Function(call(functionHandle, BIGINT, new VariableReferenceExpression(columnA.getName(), BIGINT)), frame);
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 
         WindowNode.Specification specification = new WindowNode.Specification(ImmutableList.of(), Optional.empty());
 
@@ -326,8 +350,13 @@ public class TestTypeValidator
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "type of variable 'sum(_[0-9]+)?' is expected to be double, but the actual type is bigint")
     public void testInvalidWindowFunctionSignature()
     {
+<<<<<<< HEAD
         VariableReferenceExpression windowVariable = variableAllocator.newVariable("sum", DOUBLE);
         FunctionHandle functionHandle = FUNCTION_MANAGER.lookupFunction("sum", fromTypes(BIGINT)); // should be DOUBLE
+=======
+        Symbol windowSymbol = symbolAllocator.newSymbol("sum", DOUBLE);
+        FunctionHandle functionHandle = FUNCTION_MANAGER.lookupFunction(QualifiedName.of("sum"), fromTypes(BIGINT)); // should be DOUBLE
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 
         WindowNode.Frame frame = new WindowNode.Frame(
                 RANGE,
@@ -338,7 +367,11 @@ public class TestTypeValidator
                 Optional.empty(),
                 Optional.empty());
 
+<<<<<<< HEAD
         WindowNode.Function function = new WindowNode.Function(call("sum", functionHandle, BIGINT, variableC), frame);
+=======
+        WindowNode.Function function = new WindowNode.Function(call(functionHandle, BIGINT, new VariableReferenceExpression(columnC.getName(), DOUBLE)), frame);
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 
         WindowNode.Specification specification = new WindowNode.Specification(ImmutableList.of(), Optional.empty());
 

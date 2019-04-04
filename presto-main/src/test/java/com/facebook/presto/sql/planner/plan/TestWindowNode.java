@@ -18,12 +18,18 @@ import com.facebook.presto.server.SliceDeserializer;
 import com.facebook.presto.server.SliceSerializer;
 import com.facebook.presto.spi.block.SortOrder;
 import com.facebook.presto.spi.function.FunctionHandle;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.PlanNodeId;
 import com.facebook.presto.spi.plan.ValuesNode;
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.TypeManager;
+=======
+import com.facebook.presto.spi.relation.CallExpression;
+import com.facebook.presto.spi.relation.VariableReferenceExpression;
+import com.facebook.presto.spi.type.Type;
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.sql.Serialization;
 import com.facebook.presto.sql.analyzer.FeaturesConfig;
 import com.facebook.presto.sql.parser.SqlParser;
@@ -31,8 +37,15 @@ import com.facebook.presto.sql.planner.OrderingScheme;
 import com.facebook.presto.sql.planner.PlanVariableAllocator;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.FunctionCall;
+<<<<<<< HEAD
 import com.facebook.presto.type.TypeDeserializer;
 import com.facebook.presto.type.TypeRegistry;
+=======
+import com.facebook.presto.sql.tree.QualifiedName;
+import com.facebook.presto.type.TypeDeserializer;
+import com.facebook.presto.type.TypeRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -58,10 +71,13 @@ import static com.facebook.presto.sql.planner.plan.WindowNode.Frame.BoundType.UN
 import static com.facebook.presto.sql.planner.plan.WindowNode.Frame.BoundType.UNBOUNDED_PRECEDING;
 import static com.facebook.presto.sql.planner.plan.WindowNode.Frame.WindowType.RANGE;
 import static com.facebook.presto.sql.relational.Expressions.call;
+<<<<<<< HEAD
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.airlift.json.JsonBinder.jsonBinder;
 import static io.airlift.json.JsonCodecBinder.jsonCodecBinder;
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import static org.testng.Assert.assertEquals;
 
 public class TestWindowNode
@@ -77,7 +93,22 @@ public class TestWindowNode
     public TestWindowNode()
             throws Exception
     {
+<<<<<<< HEAD
         codec = getJsonCodec();
+=======
+        // dependencies copied from ServerMainModule.java to avoid depending on whole ServerMainModule here
+        SqlParser sqlParser = new SqlParser();
+        ObjectMapperProvider provider = new ObjectMapperProvider();
+        provider.setJsonSerializers(ImmutableMap.of(
+                Slice.class, new SliceSerializer(),
+                Expression.class, new Serialization.ExpressionSerializer()));
+        provider.setJsonDeserializers(ImmutableMap.of(
+                Slice.class, new SliceDeserializer(),
+                Type.class, new TypeDeserializer(new TypeRegistry()),
+                Expression.class, new Serialization.ExpressionDeserializer(sqlParser),
+                FunctionCall.class, new Serialization.FunctionCallDeserializer(sqlParser)));
+        objectMapper = provider.get();
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
     }
 
     @BeforeClass
@@ -97,8 +128,13 @@ public class TestWindowNode
     @Test
     public void testSerializationRoundtrip()
     {
+<<<<<<< HEAD
         VariableReferenceExpression windowVariable = variableAllocator.newVariable("sum", BIGINT);
         FunctionHandle functionHandle = createTestMetadataManager().getFunctionManager().lookupFunction("sum", fromTypes(BIGINT));
+=======
+        Symbol windowSymbol = symbolAllocator.newSymbol("sum", BIGINT);
+        FunctionHandle functionHandle = createTestMetadataManager().getFunctionManager().lookupFunction(QualifiedName.of("sum"), fromTypes(BIGINT));
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
         WindowNode.Frame frame = new WindowNode.Frame(
                 RANGE,
                 UNBOUNDED_PRECEDING,
@@ -114,10 +150,17 @@ public class TestWindowNode
                 Optional.of(new OrderingScheme(
                         ImmutableList.of(columnB),
                         ImmutableMap.of(columnB, SortOrder.ASC_NULLS_FIRST))));
+<<<<<<< HEAD
         CallExpression call = call("sum", functionHandle, BIGINT, new VariableReferenceExpression(columnC.getName(), BIGINT));
         Map<VariableReferenceExpression, WindowNode.Function> functions = ImmutableMap.of(windowVariable, new WindowNode.Function(call, frame));
         Optional<VariableReferenceExpression> hashVariable = Optional.of(columnB);
         Set<VariableReferenceExpression> prePartitionedInputs = ImmutableSet.of(columnA);
+=======
+        CallExpression call = call(functionHandle, BIGINT, new VariableReferenceExpression(columnC.getName(), BIGINT));
+        Map<Symbol, WindowNode.Function> functions = ImmutableMap.of(windowSymbol, new WindowNode.Function(call, frame));
+        Optional<Symbol> hashSymbol = Optional.of(columnB);
+        Set<Symbol> prePartitionedInputs = ImmutableSet.of(columnA);
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
         WindowNode windowNode = new WindowNode(
                 id,
                 sourceNode,

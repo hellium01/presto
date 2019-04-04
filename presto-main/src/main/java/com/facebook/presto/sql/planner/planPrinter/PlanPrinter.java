@@ -37,7 +37,10 @@ import com.facebook.presto.spi.predicate.Marker;
 import com.facebook.presto.spi.predicate.Range;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.facebook.presto.spi.relation.CallExpression;
+<<<<<<< HEAD
 import com.facebook.presto.spi.relation.ConstantExpression;
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.spi.type.Type;
@@ -600,14 +603,22 @@ public class PlanPrinter
 
             NodeRepresentation nodeOutput = addNode(node, "Window", format("[%s]%s", Joiner.on(", ").join(args), formatHash(node.getHashVariable())));
 
+<<<<<<< HEAD
             for (Map.Entry<VariableReferenceExpression, WindowNode.Function> entry : node.getWindowFunctions().entrySet()) {
+=======
+            for (Map.Entry<Symbol, WindowNode.Function> entry : node.getWindowFunctions().entrySet()) {
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                 CallExpression call = entry.getValue().getFunctionCall();
                 String frameInfo = formatFrame(entry.getValue().getFrame());
 
                 nodeOutput.appendDetailsLine(
                         "%s := %s(%s) %s",
                         entry.getKey(),
+<<<<<<< HEAD
                         call.getDisplayName(),
+=======
+                        call.getFunctionHandle().getSignature().getName(),
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                         Joiner.on(", ").join(call.getArguments().stream().map(formatter::formatRowExpression).collect(toImmutableList())),
                         frameInfo);
             }

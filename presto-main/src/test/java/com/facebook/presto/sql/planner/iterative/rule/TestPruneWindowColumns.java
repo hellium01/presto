@@ -15,7 +15,10 @@ package com.facebook.presto.sql.planner.iterative.rule;
 
 import com.facebook.presto.spi.block.SortOrder;
 import com.facebook.presto.spi.function.FunctionHandle;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.PlanNode;
+=======
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.planner.OrderingScheme;
 import com.facebook.presto.sql.planner.assertions.ExpectedValueProvider;
@@ -24,7 +27,11 @@ import com.facebook.presto.sql.planner.iterative.rule.test.BaseRuleTest;
 import com.facebook.presto.sql.planner.iterative.rule.test.PlanBuilder;
 import com.facebook.presto.sql.planner.plan.WindowNode;
 import com.facebook.presto.sql.tree.Expression;
+<<<<<<< HEAD
 import com.facebook.presto.sql.tree.SymbolReference;
+=======
+import com.facebook.presto.sql.tree.QualifiedName;
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -218,7 +225,11 @@ public class TestPruneWindowColumns
                         ImmutableMap.of(
                                 output1,
                                 new WindowNode.Function(
+<<<<<<< HEAD
                                         call(FUNCTION_NAME, FUNCTION_HANDLE, BIGINT, input1),
+=======
+                                        call(FUNCTION_HANDLE, BIGINT, new VariableReferenceExpression(input1.getName(), BIGINT)),
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                                         new WindowNode.Frame(
                                                 RANGE,
                                                 UNBOUNDED_PRECEDING,
@@ -229,7 +240,11 @@ public class TestPruneWindowColumns
                                                 Optional.of(new SymbolReference(endValue2.getName())).map(Expression::toString))),
                                 output2,
                                 new WindowNode.Function(
+<<<<<<< HEAD
                                         call(FUNCTION_NAME, FUNCTION_HANDLE, BIGINT, input2),
+=======
+                                        call(FUNCTION_HANDLE, BIGINT, new VariableReferenceExpression(input2.getName(), BIGINT)),
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                                         new WindowNode.Frame(
                                                 RANGE,
                                                 UNBOUNDED_PRECEDING,

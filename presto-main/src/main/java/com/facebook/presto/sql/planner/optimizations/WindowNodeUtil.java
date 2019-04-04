@@ -14,9 +14,14 @@
 package com.facebook.presto.sql.planner.optimizations;
 
 import com.facebook.presto.spi.relation.RowExpression;
+<<<<<<< HEAD
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.VariablesExtractor;
+=======
+import com.facebook.presto.sql.planner.Symbol;
+import com.facebook.presto.sql.planner.SymbolsExtractor;
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
 import com.facebook.presto.sql.planner.plan.WindowNode;
 import com.facebook.presto.sql.planner.plan.WindowNode.Frame.BoundType;
 import com.facebook.presto.sql.planner.plan.WindowNode.Frame.WindowType;
@@ -48,7 +53,11 @@ public final class WindowNodeUtil
                 || (parent.getOrderingScheme().isPresent() && parent.getOrderingScheme().get().getOrderBy().stream()
                 .anyMatch(child.getCreatedVariable()::contains))
                 || parent.getWindowFunctions().values().stream()
+<<<<<<< HEAD
                 .map(function -> extractWindowFunctionUniqueVariables(function, types))
+=======
+                .map(WindowNodeUtil::extractWindowFunctionUnique)
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
                 .flatMap(Collection::stream)
                 .anyMatch(child.getCreatedVariable()::contains);
     }
@@ -84,6 +93,7 @@ public final class WindowNodeUtil
     }
 
     // Explicitly limit the following functions for WindowNode.
+<<<<<<< HEAD
     // TODO: Once the arguments in CallExpression are pure RowExpressions, move the method to VariablesExtractor
     public static Set<VariableReferenceExpression> extractWindowFunctionUniqueVariables(WindowNode.Function function, TypeProvider types)
     {
@@ -94,6 +104,18 @@ public final class WindowNodeUtil
             }
             else {
                 builder.addAll(VariablesExtractor.extractAll(argument));
+=======
+    // TODO: Once the arguments in CallExpression are pure RowExpressions, move the method to SymbolsExtractor
+    public static Set<Symbol> extractWindowFunctionUnique(WindowNode.Function function)
+    {
+        ImmutableSet.Builder<Symbol> builder = ImmutableSet.builder();
+        for (RowExpression argument : function.getFunctionCall().getArguments()) {
+            if (isExpression(argument)) {
+                builder.addAll(ImmutableSet.copyOf(SymbolsExtractor.extractAll(castToExpression(argument))));
+            }
+            else {
+                builder.addAll(ImmutableSet.copyOf(SymbolsExtractor.extractAll(argument)));
+>>>>>>> Replace WindowNode::FunctionCall with CallExpression
             }
         }
         return builder.build();
