@@ -11,16 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.trait;
+package com.facebook.presto.trait.traits;
 
-import com.facebook.presto.spi.trait.TraitSet;
-import com.facebook.presto.sql.planner.plan.PlanNode;
-
-import java.util.List;
-
-public interface TraitPropagator
+public class UnmodifiableTraitSet
+    extends TraitSet
 {
-    TraitSet pushDownTraitSet(PlanNode planNode, TraitSet inputTraitSet);
-
-    TraitSet pullUpTraitSet(PlanNode planNode, List<PlanNode> inputs, List<TraitSet> inputTraits);
 }

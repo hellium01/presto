@@ -16,14 +16,15 @@ package com.facebook.presto.trait;
 import com.facebook.presto.Session;
 import com.facebook.presto.matching.Pattern;
 import com.facebook.presto.matching.pattern.TypeOfPattern;
-import com.facebook.presto.spi.trait.TraitSet;
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.iterative.Lookup;
 import com.facebook.presto.sql.planner.plan.PlanNode;
+import com.facebook.presto.trait.traits.TraitSet;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 
 import java.lang.reflect.Modifier;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -32,13 +33,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Multimaps.toMultimap;
 
-public class ComposableTraitPropagator
-        implements TraitPropagator
+public class NodeBasedTraitPropagator
+        implements TraitSetPropagator
 {
+    private final ListMultimap<Class<?>, NodeBasedTraitPropagator.Rule<?>> rulesByRootType;
 
-    private final ListMultimap<Class<?>, ComposableTraitPropagator.Rule<?>> rulesByRootType;
-
-    public ComposableTraitPropagator(List<ComposableTraitPropagator.Rule<?>> rules)
+    public NodeBasedTraitPropagator(List<NodeBasedTraitPropagator.Rule<?>> rules)
     {
         this.rulesByRootType = rules.stream()
                 .peek(rule -> {
@@ -53,18 +53,26 @@ public class ComposableTraitPropagator
     }
 
     @Override
-    public TraitSet pushDownTraitSet(PlanNode planNode, TraitSet inputTraitSet)
+    public TraitSet pushDownTraitSet(Session session, TypeProvider types, PlanNode node, TraitSet inputTraitSet)
     {
-        return null;
+        Iterator<Rule<?>> ruleIterator = getCandidates(node).iterator();
+        while (ruleIterator.hasNext()) {
+            Rule<?> rule = ruleIterator.next();
+            Optional<TraitSet> traitSet = ((Rule) rule).pushDown(node, inputTraitSet, Lookup.noLookup(), session, types);
+            if (traitSet.isPresent()) {
+                return traitSet.get();
+            }
+        }
+        return TraitSet.emptySet();
     }
 
     @Override
-    public TraitSet pullUpTraitSet(PlanNode planNode, List<PlanNode> inputs, List<TraitSet> inputTraits)
+    public TraitSet pullUpTraitSet(Session session, TypeProvider types, PlanNode node, List<PlanNode> inputs, List<TraitSet> inputTraits)
     {
-        return null;
+        return TraitSet.emptySet();
     }
 
-    private Stream<ComposableTraitPropagator.Rule<?>> getCandidates(PlanNode node)
+    private Stream<NodeBasedTraitPropagator.Rule<?>> getCandidates(PlanNode node)
     {
         for (Class<?> superclass = node.getClass().getSuperclass(); superclass != null; superclass = superclass.getSuperclass()) {
             // This is important because rule ordering, given in the constructor, is significant.
@@ -80,6 +88,6 @@ public class ComposableTraitPropagator
 
         Optional<TraitSet> pushDown(T node, TraitSet parentTrait, Lookup lookup, Session session, TypeProvider types);
 
-        Optional<TraitSet> pullUp(T node, TraitSetProvider traitSetProvider, Lookup lookup, Session session, TypeProvider types);
+        Optional<TraitSet> pullUp(T node,  Lookup lookup, Session session, TypeProvider types, List<TraitSet> inputTraits);
     }
 }

@@ -11,26 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.spi.trait;
+package com.facebook.presto.trait.traits;
 
-import java.util.List;
-
-public class TraitSet
+public class LazyCopyTraitSet
+    extends TraitSet
 {
-    private List<Trait> traits;
 
-    public TraitSet merge(TraitSet traitSet)
-    {
-        return emptySet();
-    }
-
-    public static TraitSet emptySet()
-    {
-        return new TraitSet();
-    }
-
-    public <T extends Trait> T getTrait(TraitType<T> rowFilter)
-    {
-        return null;
-    }
 }

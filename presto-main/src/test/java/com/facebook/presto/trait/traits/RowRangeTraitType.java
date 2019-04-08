@@ -11,26 +11,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.spi.trait;
+package com.facebook.presto.trait.traits;
 
-import java.util.List;
-
-public class TraitSet
+public class RowRangeTraitType
+        implements TraitType<RowRangeTrait>
 {
-    private List<Trait> traits;
+    public static final RowRangeTraitType ROW_FILTER = new RowRangeTraitType();
 
-    public TraitSet merge(TraitSet traitSet)
+    public Class<RowRangeTrait> getTraitClass()
     {
-        return emptySet();
-    }
-
-    public static TraitSet emptySet()
-    {
-        return new TraitSet();
-    }
-
-    public <T extends Trait> T getTrait(TraitType<T> rowFilter)
-    {
-        return null;
+        return RowRangeTrait.class;
     }
 }

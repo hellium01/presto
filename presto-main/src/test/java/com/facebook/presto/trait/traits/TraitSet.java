@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.spi.trait;
+package com.facebook.presto.trait.traits;
 
 import java.util.List;
 
@@ -29,8 +29,17 @@ public class TraitSet
         return new TraitSet();
     }
 
-    public <T extends Trait> T getTrait(TraitType<T> rowFilter)
+    public <T extends Trait> T getTrait(TraitType<T> traitType)
     {
         return null;
+    }
+
+    public <T extends Trait> void replaceTrait(TraitType<T> traitType, T trait)
+    {
+    }
+
+    public TraitSet duplicate()
+    {
+        return new LazyCopyTraitSet();
     }
 }

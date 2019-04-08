@@ -13,23 +13,16 @@
  */
 package com.facebook.presto.spi.trait;
 
-import java.util.List;
+import com.facebook.presto.spi.relation.RowExpression;
 
-public class TraitSet
+public class RowRangeTrait
+        implements Trait
 {
-    private List<Trait> traits;
 
-    public TraitSet merge(TraitSet traitSet)
-    {
-        return emptySet();
-    }
+    private RowExpression predicate;
 
-    public static TraitSet emptySet()
-    {
-        return new TraitSet();
-    }
-
-    public <T extends Trait> T getTrait(TraitType<T> rowFilter)
+    @Override
+    public TraitType getType()
     {
         return null;
     }

@@ -11,26 +11,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.spi.trait;
+package com.facebook.presto.trait.traits;
 
-import java.util.List;
+import com.facebook.presto.spi.relation.RowExpression;
 
-public class TraitSet
+public class RowRangeTrait
+    implements Trait
 {
-    private List<Trait> traits;
+    private final RowExpression predicate;
 
-    public TraitSet merge(TraitSet traitSet)
+    public RowRangeTrait(RowExpression predicate)
     {
-        return emptySet();
+        this.predicate = predicate;
     }
 
-    public static TraitSet emptySet()
+    public RowExpression getPredicate()
     {
-        return new TraitSet();
-    }
-
-    public <T extends Trait> T getTrait(TraitType<T> rowFilter)
-    {
-        return null;
+        return predicate;
     }
 }
