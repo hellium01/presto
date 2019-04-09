@@ -22,6 +22,7 @@ import com.facebook.presto.matching.Pattern;
 import com.facebook.presto.sql.planner.PlanNodeIdAllocator;
 import com.facebook.presto.sql.planner.SymbolAllocator;
 import com.facebook.presto.sql.planner.plan.PlanNode;
+import com.facebook.presto.trait.TraitProvider;
 
 import java.util.Optional;
 
@@ -52,6 +53,8 @@ public interface Rule<T>
         Session getSession();
 
         StatsProvider getStatsProvider();
+
+        Optional<TraitProvider> getTraitProvider();
 
         CostProvider getCostProvider();
 

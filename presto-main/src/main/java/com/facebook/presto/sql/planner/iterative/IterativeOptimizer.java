@@ -31,6 +31,9 @@ import com.facebook.presto.sql.planner.SymbolAllocator;
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.optimizations.PlanOptimizer;
 import com.facebook.presto.sql.planner.plan.PlanNode;
+import com.facebook.presto.trait.CachingTraitProvider;
+import com.facebook.presto.trait.TraitPropagator;
+import com.facebook.presto.trait.TraitProvider;
 import com.google.common.collect.ImmutableList;
 import io.airlift.units.Duration;
 
@@ -53,6 +56,7 @@ public class IterativeOptimizer
     private final RuleStatsRecorder stats;
     private final StatsCalculator statsCalculator;
     private final CostCalculator costCalculator;
+    private final Optional<TraitPropagator> traitPropagator = Optional.empty();
     private final List<PlanOptimizer> legacyRules;
     private final RuleIndex ruleIndex;
 
@@ -195,6 +199,7 @@ public class IterativeOptimizer
     {
         StatsProvider statsProvider = new CachingStatsProvider(statsCalculator, Optional.of(context.memo), context.lookup, context.session, context.symbolAllocator.getTypes());
         CostProvider costProvider = new CachingCostProvider(costCalculator, statsProvider, Optional.of(context.memo), context.session, context.symbolAllocator.getTypes());
+        Optional<TraitProvider> traitProvider = traitPropagator.map(traitPropagator1 -> new CachingTraitProvider(traitPropagator1, Optional.of(context.memo), context.lookup, context.session, context.symbolAllocator.getTypes()));
 
         return new Rule.Context()
         {
@@ -232,6 +237,12 @@ public class IterativeOptimizer
             public CostProvider getCostProvider()
             {
                 return costProvider;
+            }
+
+            @Override
+            public Optional<TraitProvider> getTraitProvider()
+            {
+                return traitProvider;
             }
 
             @Override
