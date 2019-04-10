@@ -13,77 +13,58 @@
  */
 package com.facebook.presto.sql.planner.optimizations;
 
-import com.facebook.presto.Session;
-import com.facebook.presto.execution.warnings.WarningCollector;
-import com.facebook.presto.metadata.Metadata;
+import com.facebook.presto.metadata.FunctionManager;
+import com.facebook.presto.spi.function.FunctionHandle;
+import com.facebook.presto.spi.relation.CallExpression;
+import com.facebook.presto.spi.relation.ConstantExpression;
+import com.facebook.presto.spi.relation.InputReferenceExpression;
+import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
 import com.facebook.presto.spi.relation.RowExpression;
-import com.facebook.presto.spi.type.Type;
-import com.facebook.presto.sql.parser.SqlParser;
-import com.facebook.presto.sql.planner.TypeProvider;
-import com.facebook.presto.sql.tree.Expression;
-import com.facebook.presto.sql.tree.NodeRef;
+import com.facebook.presto.spi.relation.RowExpressionVisitor;
+import com.facebook.presto.spi.relation.SpecialFormExpression;
+import com.facebook.presto.spi.relation.VariableReferenceExpression;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Ordering;
+import io.airlift.slice.Slice;
 
-import java.util.HashMap;
-import java.util.Map;
-<<<<<<< HEAD
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
-=======
-import java.util.Map.Entry;
->>>>>>> Move RowExpressionCanonicalizer out of ExpressionEquivalence
 
-import static com.facebook.presto.sql.analyzer.ExpressionAnalyzer.getExpressionTypes;
-import static com.facebook.presto.sql.relational.SqlToRowExpressionTranslator.translate;
-import static java.util.Collections.emptyList;
+import static com.facebook.presto.metadata.OperatorSignatureUtils.mangleOperatorName;
+import static com.facebook.presto.spi.function.OperatorType.EQUAL;
+import static com.facebook.presto.spi.function.OperatorType.GREATER_THAN;
+import static com.facebook.presto.spi.function.OperatorType.GREATER_THAN_OR_EQUAL;
+import static com.facebook.presto.spi.function.OperatorType.IS_DISTINCT_FROM;
+import static com.facebook.presto.spi.function.OperatorType.LESS_THAN;
+import static com.facebook.presto.spi.function.OperatorType.LESS_THAN_OR_EQUAL;
+import static com.facebook.presto.spi.function.OperatorType.NOT_EQUAL;
+import static com.facebook.presto.spi.relation.SpecialFormExpression.Form.AND;
+import static com.facebook.presto.spi.relation.SpecialFormExpression.Form.OR;
+import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
+import static com.facebook.presto.sql.analyzer.TypeSignatureProvider.fromTypes;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static java.lang.Integer.min;
 import static java.util.Objects.requireNonNull;
 
-public class ExpressionEquivalence
+public class RowExpressionCanonicalizer
 {
-    private final Metadata metadata;
-    private final SqlParser sqlParser;
-    private final RowExpressionCanonicalizer rowExpressionCanonicalizer;
+    private static final Ordering<RowExpression> ROW_EXPRESSION_ORDERING = Ordering.from(new RowExpressionComparator());
+    private final CanonicalizationVisitor canonicalizationVisitor;
 
-    public ExpressionEquivalence(Metadata metadata, SqlParser sqlParser)
+    public RowExpressionCanonicalizer(FunctionManager functionManager)
     {
-        this.metadata = requireNonNull(metadata, "metadata is null");
-        this.sqlParser = requireNonNull(sqlParser, "sqlParser is null");
-        this.rowExpressionCanonicalizer = new RowExpressionCanonicalizer(metadata.getFunctionManager());
+        this.canonicalizationVisitor = new CanonicalizationVisitor(requireNonNull(functionManager, "funcionManager is null"));
     }
 
-    public boolean areExpressionsEquivalent(Session session, Expression leftExpression, Expression rightExpression, TypeProvider types)
+    public RowExpression canonicalize(RowExpression input)
     {
-        Map<VariableReferenceExpression, Integer> variableInput = new HashMap<>();
-        int inputId = 0;
-        for (VariableReferenceExpression variable : types.allVariables()) {
-            variableInput.put(variable, inputId);
-            inputId++;
-        }
-        RowExpression leftRowExpression = toRowExpression(session, leftExpression, variableInput, types);
-        RowExpression rightRowExpression = toRowExpression(session, rightExpression, variableInput, types);
-
-        RowExpression canonicalizedLeft = rowExpressionCanonicalizer.canonicalize(leftRowExpression);
-        RowExpression canonicalizedRight = rowExpressionCanonicalizer.canonicalize(rightRowExpression);
-
-        return canonicalizedLeft.equals(canonicalizedRight);
+        return input.accept(canonicalizationVisitor, null);
     }
-
-    private RowExpression toRowExpression(Session session, Expression expression, Map<VariableReferenceExpression, Integer> variableInput, TypeProvider types)
-    {
-        // replace qualified names with input references since row expressions do not support these
-
-        // determine the type of every expression
-        Map<NodeRef<Expression>, Type> expressionTypes = getExpressionTypes(
-                session,
-                metadata,
-                sqlParser,
-                types,
-                expression,
-                emptyList(), /* parameters have already been replaced */
-                WarningCollector.NOOP);
-
-        // convert to row expression
-        return translate(expression, expressionTypes, variableInput, metadata.getFunctionManager(), metadata.getTypeManager(), session, false);
-    }
-<<<<<<< HEAD
 
     private static class CanonicalizationVisitor
             implements RowExpressionVisitor<RowExpression, Void>
@@ -99,19 +80,17 @@ public class ExpressionEquivalence
         public RowExpression visitCall(CallExpression call, Void context)
         {
             call = new CallExpression(
-                    call.getDisplayName(),
                     call.getFunctionHandle(),
                     call.getType(),
                     call.getArguments().stream()
                             .map(expression -> expression.accept(this, context))
                             .collect(toImmutableList()));
 
-            String callName = functionManager.getFunctionMetadata(call.getFunctionHandle()).getName();
+            String callName = call.getFunctionHandle().getSignature().getName();
 
             if (callName.equals(mangleOperatorName(EQUAL)) || callName.equals(mangleOperatorName(NOT_EQUAL)) || callName.equals(mangleOperatorName(IS_DISTINCT_FROM))) {
                 // sort arguments
                 return new CallExpression(
-                        call.getDisplayName(),
                         call.getFunctionHandle(),
                         call.getType(),
                         ROW_EXPRESSION_ORDERING.sortedCopy(call.getArguments()));
@@ -124,7 +103,6 @@ public class ExpressionEquivalence
                         callName.equals(mangleOperatorName(GREATER_THAN)) ? LESS_THAN : LESS_THAN_OR_EQUAL,
                         swapPair(fromTypes(call.getArguments().stream().map(RowExpression::getType).collect(toImmutableList()))));
                 return new CallExpression(
-                        call.getDisplayName(),
                         functionHandle,
                         call.getType(),
                         swapPair(call.getArguments()));
@@ -135,7 +113,7 @@ public class ExpressionEquivalence
 
         public static List<RowExpression> flattenNestedSpecialForms(SpecialFormExpression specialForm)
         {
-            Form form = specialForm.getForm();
+            SpecialFormExpression.Form form = specialForm.getForm();
             ImmutableList.Builder<RowExpression> newArguments = ImmutableList.builder();
             for (RowExpression argument : specialForm.getArguments()) {
                 if (argument instanceof SpecialFormExpression && form.equals(((SpecialFormExpression) argument).getForm())) {
@@ -345,6 +323,4 @@ public class ExpressionEquivalence
         checkArgument(pair.size() == 2, "Expected pair to have two elements");
         return ImmutableList.of(pair.get(1), pair.get(0));
     }
-=======
->>>>>>> Move RowExpressionCanonicalizer out of ExpressionEquivalence
 }
