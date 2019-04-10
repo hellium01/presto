@@ -70,6 +70,11 @@ public final class Expressions
         return call(name, functionHandle, returnType, arguments);
     }
 
+    public static VariableReferenceExpression variable(String name, Type type)
+    {
+        return new VariableReferenceExpression(name, type);
+    }
+
     public static InputReferenceExpression field(int field, Type type)
     {
         return new InputReferenceExpression(field, type);
