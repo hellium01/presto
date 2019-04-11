@@ -14,6 +14,7 @@
 package com.facebook.presto.trait;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -85,6 +86,17 @@ public class TraitSet
             return ImmutableList.of(result.get(result.size() - 1));
         }
         return traitType.deduplicate(result);
+    }
+
+    public <T extends Trait> boolean satisfies(T trait)
+    {
+        TraitType<?> type = trait.getTraitType();
+        if (!traits.containsKey(type)) {
+            return false;
+        }
+        List<T> current = this.get((TraitType<T>) type);
+        return Lists.reverse(current).stream()
+                .anyMatch(t -> t.satisfies(trait));
     }
 
     public TraitSet merge(TraitSet traitSet)

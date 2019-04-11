@@ -15,5 +15,7 @@ package com.facebook.presto.trait;
 
 public interface Trait
 {
+    boolean satisfies(Trait trait);
+
     TraitType<?> getTraitType();
 }

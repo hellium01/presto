@@ -61,7 +61,7 @@ public class RowExpressionCanonicalizer
 
     public RowExpressionCanonicalizer(FunctionManager functionManager)
     {
-        this.canonicalizationVisitor = new CanonicalizationVisitor(requireNonNull(functionManager, "funcionManager is null"));
+        this.canonicalizationVisitor = new CanonicalizationVisitor(requireNonNull(functionManager, "functionManager is null"));
     }
 
     public RowExpression canonicalize(RowExpression input)

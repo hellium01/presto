@@ -24,6 +24,7 @@ import com.facebook.presto.sql.relational.RowExpressionDomainTranslator;
 import com.facebook.presto.sql.relational.StandardFunctionResolution;
 import com.facebook.presto.sql.tree.ArithmeticBinaryExpression;
 import com.facebook.presto.sql.tree.ComparisonExpression;
+import com.facebook.presto.trait.traits.RowFilterTrait;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -43,9 +44,10 @@ import static com.facebook.presto.sql.relational.Expressions.variable;
 import static com.facebook.presto.sql.relational.LogicalRowExpressions.and;
 import static com.facebook.presto.sql.relational.LogicalRowExpressions.extractConjuncts;
 import static com.facebook.presto.sql.relational.RowExpressionUtils.inlineExpressions;
-import static com.facebook.presto.trait.traits.RowFilterTraitType.ROW_FILTER;
 import static com.facebook.presto.trait.TraitSet.emptyTraitSet;
+import static com.facebook.presto.trait.traits.RowFilterTraitType.ROW_FILTER;
 import static com.facebook.presto.trait.traits.TraitUtils.filterTrait;
+import static org.testng.Assert.assertTrue;
 
 public class TestFilterTrait
 {
@@ -64,6 +66,47 @@ public class TestFilterTrait
         resolution = new StandardFunctionResolution(metadata.getFunctionManager());
         canonicalizer = new RowExpressionCanonicalizer(metadata.getFunctionManager());
         determinismEvaluator = new DeterminismEvaluator(metadata.getFunctionManager());
+    }
+
+    @Test
+    public void testFilterSatisfies()
+    {
+        assertSatisfies(
+                filterTrait(
+                        and(
+                                gt(variable("c1", BIGINT), constant(1L, BIGINT)),
+                                eq(variable("c2", BIGINT), constant(2L, BIGINT)))),
+
+                filterTrait(
+                        and(
+                                gt(variable("c1", BIGINT), constant(1L, BIGINT)),
+                                eq(variable("c2", BIGINT), constant(2L, BIGINT)))));
+
+        assertSatisfies(
+                filterTrait(
+                        and(
+                                gt(variable("c1", BIGINT), constant(1L, BIGINT)),
+                                eq(variable("c2", BIGINT), constant(2L, BIGINT)))),
+
+                filterTrait(
+                        and(
+                                eq(variable("c2", BIGINT), constant(2L, BIGINT)),
+                                gt(variable("c1", BIGINT), constant(1L, BIGINT)))));
+        assertSatisfies(
+                filterTrait(
+                        and(
+                                gt(variable("c1", BIGINT), constant(1L, BIGINT)),
+                                eq(variable("c2", BIGINT), constant(2L, BIGINT)))),
+
+                filterTrait(
+                        and(
+                                eq(variable("c2", BIGINT), constant(2L, BIGINT)),
+                                gt(variable("c1", BIGINT), constant(1L, BIGINT)))));
+    }
+
+    private void assertSatisfies(RowFilterTrait left, RowFilterTrait right)
+    {
+        assertTrue(left.satisfies(right));
     }
 
     @Test
