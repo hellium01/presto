@@ -99,4 +99,9 @@ public class TraitSet
     {
         return traits.keySet();
     }
+
+    public TraitSet clone()
+    {
+        return emptyTraitSet().merge(this);
+    }
 }
