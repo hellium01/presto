@@ -73,6 +73,15 @@ public class CollationTrait
         return new CollationTrait(builder.build());
     }
 
+    @Override
+    public boolean satisfies(Trait other)
+    {
+        if (other.getTraitType() != this.getTraitType()) {
+            return false;
+        }
+        return satisfies((CollationTrait) other);
+    }
+
     public boolean satisfies(CollationTrait other)
     {
         // unordered cannot be satisfied by an ordered trait or satisfy an ordered trait
