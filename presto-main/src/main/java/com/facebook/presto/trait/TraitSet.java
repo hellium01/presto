@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class TraitSet
 {
     private Map<TraitType<?>, List<Trait>> traits = new HashMap<>();
@@ -56,6 +58,15 @@ public class TraitSet
         return this;
     }
 
+    public <T extends Trait> TraitSet replace(List<T> traits)
+    {
+        checkArgument(!traits.isEmpty(), "cannot replace with empty list");
+        TraitType<?> traitType = traits.get(0).getTraitType();
+        this.traits.put(traitType, new ArrayList<>());
+        this.traits.get(traitType).addAll(traits);
+        return this;
+    }
+
     public <T extends Trait> T getSingle(TraitType<T> traitType)
     {
         return get(traitType).get(0);
@@ -73,7 +84,7 @@ public class TraitSet
         if (!traitType.isAllowMulti()) {
             return ImmutableList.of(result.get(result.size() - 1));
         }
-        return result;
+        return traitType.deduplicate(result);
     }
 
     public TraitSet merge(TraitSet traitSet)

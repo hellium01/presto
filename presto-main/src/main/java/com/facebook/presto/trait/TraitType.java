@@ -40,4 +40,9 @@ public abstract class TraitType<T extends Trait>
     {
         throw new UnsupportedOperationException();
     }
+
+    public List<T> deduplicate(List<T> traits)
+    {
+        throw new UnsupportedOperationException();
+    }
 }
