@@ -51,6 +51,20 @@ public class ConstantTrait
     }
 
     @Override
+    public boolean satisfies(Trait other)
+    {
+        if (other.getTraitType() != this.getTraitType()) {
+            return false;
+        }
+        return satisfies((ConstantTrait) other);
+    }
+
+    public boolean satisfies(ConstantTrait other)
+    {
+        return this.equals(other);
+    }
+
+    @Override
     public TraitType<?> getTraitType()
     {
         return CONSTANT_TRAIT_TYPE;
