@@ -14,6 +14,10 @@
 package com.facebook.presto.trait.traits;
 
 import com.facebook.presto.spi.relation.RowExpression;
+import com.facebook.presto.spi.relation.VariableReferenceExpression;
+import com.google.common.collect.ImmutableList;
+
+import java.util.List;
 
 public class TraitUtils
 {
@@ -24,5 +28,15 @@ public class TraitUtils
     public static RowFilterTrait filterTrait(RowExpression predicate)
     {
         return new RowFilterTrait(predicate);
+    }
+
+    public static CollationTrait orderTrait(List<VariableReferenceExpression> variables, List<Order> order)
+    {
+        return new CollationTrait(variables, order);
+    }
+
+    public static CollationTrait unordered()
+    {
+        return new CollationTrait(ImmutableList.of(), ImmutableList.of());
     }
 }
