@@ -24,6 +24,7 @@ import com.facebook.presto.sql.relational.RowExpressionDomainTranslator;
 import com.facebook.presto.sql.relational.StandardFunctionResolution;
 import com.facebook.presto.sql.tree.ArithmeticBinaryExpression;
 import com.facebook.presto.sql.tree.ComparisonExpression;
+import com.facebook.presto.trait.traits.PredicateComparator;
 import com.facebook.presto.trait.traits.RowFilterTrait;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -46,14 +47,12 @@ import static com.facebook.presto.sql.relational.LogicalRowExpressions.extractCo
 import static com.facebook.presto.sql.relational.RowExpressionUtils.inlineExpressions;
 import static com.facebook.presto.trait.TraitSet.emptyTraitSet;
 import static com.facebook.presto.trait.traits.RowFilterTraitType.ROW_FILTER;
-import static com.facebook.presto.trait.traits.TraitUtils.filterTrait;
 import static org.testng.Assert.assertTrue;
 
 public class TestFilterTrait
 {
     private StandardFunctionResolution resolution;
     private Metadata metadata;
-    private RowExpressionDomainTranslator domainTranslator;
     private RowExpressionCanonicalizer canonicalizer;
     private DeterminismEvaluator determinismEvaluator;
 
@@ -62,7 +61,6 @@ public class TestFilterTrait
     public void setUp()
     {
         metadata = createTestMetadataManager();
-        domainTranslator = new RowExpressionDomainTranslator(metadata.getFunctionManager());
         resolution = new StandardFunctionResolution(metadata.getFunctionManager());
         canonicalizer = new RowExpressionCanonicalizer(metadata.getFunctionManager());
         determinismEvaluator = new DeterminismEvaluator(metadata.getFunctionManager());
@@ -192,5 +190,10 @@ public class TestFilterTrait
     private RowExpressionDomainTranslator.ExtractionResult fromPredicate(RowExpression originalPredicate)
     {
         return RowExpressionDomainTranslator.fromPredicate(metadata, TEST_SESSION, originalPredicate);
+    }
+
+    private RowFilterTrait filterTrait(RowExpression predicate)
+    {
+        return new RowFilterTrait(predicate, new PredicateComparator(metadata, TEST_SESSION));
     }
 }

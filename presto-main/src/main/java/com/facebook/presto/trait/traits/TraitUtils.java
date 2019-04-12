@@ -38,11 +38,6 @@ public class TraitUtils
     {
     }
 
-    public static RowFilterTrait filterTrait(RowExpression predicate)
-    {
-        return new RowFilterTrait(predicate);
-    }
-
     public static CollationTrait orderTrait(List<VariableReferenceExpression> variables, List<Order> order)
     {
         return new CollationTrait(variables, order);

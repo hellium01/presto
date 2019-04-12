@@ -13,26 +13,22 @@
  */
 package com.facebook.presto.trait.traits;
 
-import com.facebook.presto.metadata.MetadataManager;
 import com.facebook.presto.spi.relation.RowExpression;
-import com.facebook.presto.sql.planner.optimizations.RowExpressionCanonicalizer;
 import com.facebook.presto.trait.Trait;
 import com.facebook.presto.trait.TraitType;
 
-import java.util.List;
-
-import static com.facebook.presto.sql.relational.LogicalRowExpressions.extractConjuncts;
 import static com.facebook.presto.trait.traits.RowFilterTraitType.ROW_FILTER;
 
 public class RowFilterTrait
         implements Trait
 {
-    private final RowExpressionCanonicalizer canonicalizer = new RowExpressionCanonicalizer(MetadataManager.createTestMetadataManager().getFunctionManager());
-    private RowExpression predicate;
+    private final PredicateComparator comparator;
+    private final RowExpression predicate;
 
-    public RowFilterTrait(RowExpression predicate)
+    public RowFilterTrait(RowExpression predicate, PredicateComparator comparator)
     {
         this.predicate = predicate;
+        this.comparator = comparator;
     }
 
     @Override
@@ -52,11 +48,8 @@ public class RowFilterTrait
 
     public boolean satisfies(RowFilterTrait trait)
     {
-        // check if boolean rowExpression satisfies other will be
-        // optimize
-        List<RowExpression> source = extractConjuncts(canonicalizer.canonicalize(this.predicate));
-        List<RowExpression> target = extractConjuncts(canonicalizer.canonicalize(trait.getPredicate()));
-        return target.stream().allMatch(source::contains);
+        // check if current predicate is more specific than other (what is true in this will be always true in other).
+        return comparator.checkLeftSatisfiesRight(this.getPredicate(), trait.getPredicate());
     }
 
     public RowExpression getPredicate()
