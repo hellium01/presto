@@ -27,8 +27,10 @@ import com.facebook.presto.spi.relation.SpecialFormExpression;
 import com.facebook.presto.spi.type.DecimalType;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.analyzer.FeaturesConfig;
+import com.facebook.presto.sql.planner.optimizations.RowExpressionCanonicalizer;
 import com.facebook.presto.sql.tree.ArithmeticBinaryExpression;
 import com.facebook.presto.sql.tree.QualifiedName;
+import com.facebook.presto.testing.assertions.Assert;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
@@ -85,14 +87,13 @@ import static io.airlift.slice.Slices.utf8Slice;
 import static java.lang.Float.floatToIntBits;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class TestDomainExtractor
 {
-    private RowExpression C_BIGINT;
-    private RowExpression C_DOUBLE;
+    private static final RowExpression C_BIGINT = variable("x1", BIGINT);
+    private static final RowExpression C_DOUBLE = variable("x2", DOUBLE);
     private static final RowExpression C_VARCHAR = variable("x3", VARCHAR);
     private static final RowExpression C_BOOLEAN = variable("x4", BOOLEAN);
     private static final RowExpression C_BIGINT_1 = variable("x5", BIGINT);
@@ -115,6 +116,7 @@ public class TestDomainExtractor
     private static final RowExpression C_SMALLINT = variable("x22", SMALLINT);
     private static final RowExpression C_TINYINT = variable("x23", TINYINT);
     private static final RowExpression C_REAL = variable("x24", REAL);
+    private static final RowExpression C_COLOR_1 = variable("x25", COLOR);
 
     private static final long TIMESTAMP_VALUE = new DateTime(2013, 3, 30, 1, 5, 0, 0, DateTimeZone.UTC).getMillis();
     private static final long DATE_VALUE = TimeUnit.MILLISECONDS.toDays(new DateTime(2001, 1, 22, 0, 0, 0, 0, DateTimeZone.UTC).getMillis());
@@ -123,14 +125,17 @@ public class TestDomainExtractor
 
     private Metadata metadata;
     private DomainExtractor domainTranslator;
+    private RowExpressionCanonicalizer canonicalizer;
+
+    private RowExpression opBigint;
 
     @BeforeClass
     public void setup()
     {
         metadata = createTestMetadataManager();
         domainTranslator = new DomainExtractor(metadata.getFunctionManager());
-        C_BIGINT = add(variable("x1", BIGINT), constant(1, BIGINT));
-        C_DOUBLE = cast(variable("x2", BIGINT), DOUBLE);
+        opBigint = add(C_BIGINT, constant(1, BIGINT));
+        canonicalizer = new RowExpressionCanonicalizer(metadata.getFunctionManager());
     }
 
     @AfterClass(alwaysRun = true)
@@ -162,7 +167,7 @@ public class TestDomainExtractor
     public void testRoundTrip()
     {
         TupleDomain<RowExpression> tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder()
-                .put(C_BIGINT, Domain.singleValue(BIGINT, 1L))
+                .put(opBigint, Domain.singleValue(BIGINT, 1L))
                 .put(C_DOUBLE, Domain.onlyNull(DOUBLE))
                 .put(C_VARCHAR, Domain.notNull(VARCHAR))
                 .put(C_BOOLEAN, Domain.singleValue(BOOLEAN, true))
@@ -186,8 +191,8 @@ public class TestDomainExtractor
                         .subtract(ValueSet.ofRanges(
                                 Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L), Range.equal(BIGINT, 3L))), false);
 
-        TupleDomain<RowExpression> tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder().put(C_BIGINT, testDomain).build());
-        assertEquals(toPredicate(tupleDomain), not(bigintIn(C_BIGINT, ImmutableList.of(1L, 2L, 3L))));
+        TupleDomain<RowExpression> tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder().put(opBigint, testDomain).build());
+        assertEquals(toPredicate(tupleDomain), not(bigintIn(opBigint, ImmutableList.of(1L, 2L, 3L))));
 
         testDomain = Domain.create(
                 ValueSet.ofRanges(
@@ -195,8 +200,8 @@ public class TestDomainExtractor
                         ValueSet.all(BIGINT)
                                 .subtract(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L), Range.equal(BIGINT, 3L)))), false);
 
-        tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder().put(C_BIGINT, testDomain).build());
-        assertEquals(toPredicate(tupleDomain), and(lessThan(C_BIGINT, bigintLiteral(4L)), not(bigintIn(C_BIGINT, ImmutableList.of(1L, 2L, 3L)))));
+        tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder().put(opBigint, testDomain).build());
+        assertEquals(toPredicate(tupleDomain), and(lessThan(opBigint, bigintLiteral(4L)), not(bigintIn(opBigint, ImmutableList.of(1L, 2L, 3L)))));
 
         testDomain = Domain.create(ValueSet.ofRanges(
                 Range.range(BIGINT, 1L, true, 3L, true),
@@ -204,9 +209,9 @@ public class TestDomainExtractor
                 Range.range(BIGINT, 9L, true, 11L, true)),
                 false);
 
-        tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder().put(C_BIGINT, testDomain).build());
+        tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder().put(opBigint, testDomain).build());
         assertEquals(toPredicate(tupleDomain),
-                or(between(C_BIGINT, bigintLiteral(1L), bigintLiteral(3L)), (between(C_BIGINT, bigintLiteral(5L), bigintLiteral(7L))), (between(C_BIGINT, bigintLiteral(9L), bigintLiteral(11L)))));
+                or(between(opBigint, bigintLiteral(1L), bigintLiteral(3L)), (between(opBigint, bigintLiteral(5L), bigintLiteral(7L))), (between(opBigint, bigintLiteral(9L), bigintLiteral(11L)))));
 
         testDomain = Domain.create(
                 ValueSet.ofRanges(
@@ -215,8 +220,8 @@ public class TestDomainExtractor
                                 .subtract(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L), Range.equal(BIGINT, 3L))))
                         .union(ValueSet.ofRanges(Range.range(BIGINT, 7L, true, 9L, true))), false);
 
-        tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder().put(C_BIGINT, testDomain).build());
-        assertEquals(toPredicate(tupleDomain), or(and(lessThan(C_BIGINT, bigintLiteral(4L)), not(bigintIn(C_BIGINT, ImmutableList.of(1L, 2L, 3L)))), between(C_BIGINT, bigintLiteral(7L), bigintLiteral(9L))));
+        tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder().put(opBigint, testDomain).build());
+        assertEquals(toPredicate(tupleDomain), or(and(lessThan(opBigint, bigintLiteral(4L)), not(bigintIn(opBigint, ImmutableList.of(1L, 2L, 3L)))), between(opBigint, bigintLiteral(7L), bigintLiteral(9L))));
 
         testDomain = Domain.create(
                 ValueSet.ofRanges(Range.lessThan(BIGINT, 4L))
@@ -224,18 +229,18 @@ public class TestDomainExtractor
                                 .subtract(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L), Range.equal(BIGINT, 3L))))
                         .union(ValueSet.ofRanges(Range.range(BIGINT, 7L, false, 9L, false), Range.range(BIGINT, 11L, false, 13L, false))), false);
 
-        tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder().put(C_BIGINT, testDomain).build());
+        tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder().put(opBigint, testDomain).build());
         assertEquals(toPredicate(tupleDomain), or(
-                and(lessThan(C_BIGINT, bigintLiteral(4L)), not(bigintIn(C_BIGINT, ImmutableList.of(1L, 2L, 3L)))),
-                and(greaterThan(C_BIGINT, bigintLiteral(7L)), lessThan(C_BIGINT, bigintLiteral(9L))),
-                and(greaterThan(C_BIGINT, bigintLiteral(11L)), lessThan(C_BIGINT, bigintLiteral(13L)))));
+                and(lessThan(opBigint, bigintLiteral(4L)), not(bigintIn(opBigint, ImmutableList.of(1L, 2L, 3L)))),
+                and(greaterThan(opBigint, bigintLiteral(7L)), lessThan(opBigint, bigintLiteral(9L))),
+                and(greaterThan(opBigint, bigintLiteral(11L)), lessThan(opBigint, bigintLiteral(13L)))));
     }
 
     @Test
     public void testToPredicateNone()
     {
         TupleDomain<RowExpression> tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder()
-                .put(C_BIGINT, Domain.singleValue(BIGINT, 1L))
+                .put(opBigint, Domain.singleValue(BIGINT, 1L))
                 .put(C_DOUBLE, Domain.onlyNull(DOUBLE))
                 .put(C_VARCHAR, Domain.notNull(VARCHAR))
                 .put(C_BOOLEAN, Domain.none(BOOLEAN))
@@ -248,7 +253,7 @@ public class TestDomainExtractor
     public void testToPredicateAllIgnored()
     {
         TupleDomain<RowExpression> tupleDomain = withColumnDomains(ImmutableMap.<RowExpression, Domain>builder()
-                .put(C_BIGINT, Domain.singleValue(BIGINT, 1L))
+                .put(opBigint, Domain.singleValue(BIGINT, 1L))
                 .put(C_DOUBLE, Domain.onlyNull(DOUBLE))
                 .put(C_VARCHAR, Domain.notNull(VARCHAR))
                 .put(C_BOOLEAN, Domain.all(BOOLEAN))
@@ -257,7 +262,7 @@ public class TestDomainExtractor
         DomainExtractor.ExtractionResult result = fromPredicate(toPredicate(tupleDomain));
         assertEquals(result.getRemainingExpression(), TRUE);
         assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.<RowExpression, Domain>builder()
-                .put(C_BIGINT, Domain.singleValue(BIGINT, 1L))
+                .put(opBigint, Domain.singleValue(BIGINT, 1L))
                 .put(C_DOUBLE, Domain.onlyNull(DOUBLE))
                 .put(C_VARCHAR, Domain.notNull(VARCHAR))
                 .build()));
@@ -268,41 +273,41 @@ public class TestDomainExtractor
     {
         TupleDomain<RowExpression> tupleDomain;
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.notNull(BIGINT)));
-        assertEquals(toPredicate(tupleDomain), isNotNull(C_BIGINT));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.notNull(BIGINT)));
+        assertEquals(toPredicate(tupleDomain), isNotNull(opBigint));
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.onlyNull(BIGINT)));
-        assertEquals(toPredicate(tupleDomain), isNull(C_BIGINT));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.onlyNull(BIGINT)));
+        assertEquals(toPredicate(tupleDomain), isNull(opBigint));
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.none(BIGINT)));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.none(BIGINT)));
         assertEquals(toPredicate(tupleDomain), FALSE);
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.all(BIGINT)));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.all(BIGINT)));
         assertEquals(toPredicate(tupleDomain), TRUE);
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 1L)), false)));
-        assertEquals(toPredicate(tupleDomain), greaterThan(C_BIGINT, bigintLiteral(1L)));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 1L)), false)));
+        assertEquals(toPredicate(tupleDomain), greaterThan(opBigint, bigintLiteral(1L)));
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThanOrEqual(BIGINT, 1L)), false)));
-        assertEquals(toPredicate(tupleDomain), greaterThanOrEqual(C_BIGINT, bigintLiteral(1L)));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.greaterThanOrEqual(BIGINT, 1L)), false)));
+        assertEquals(toPredicate(tupleDomain), greaterThanOrEqual(opBigint, bigintLiteral(1L)));
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L)), false)));
-        assertEquals(toPredicate(tupleDomain), lessThan(C_BIGINT, bigintLiteral(1L)));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L)), false)));
+        assertEquals(toPredicate(tupleDomain), lessThan(opBigint, bigintLiteral(1L)));
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.range(BIGINT, 0L, false, 1L, true)), false)));
-        assertEquals(toPredicate(tupleDomain), and(greaterThan(C_BIGINT, bigintLiteral(0L)), lessThanOrEqual(C_BIGINT, bigintLiteral(1L))));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.range(BIGINT, 0L, false, 1L, true)), false)));
+        assertEquals(toPredicate(tupleDomain), and(greaterThan(opBigint, bigintLiteral(0L)), lessThanOrEqual(opBigint, bigintLiteral(1L))));
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThanOrEqual(BIGINT, 1L)), false)));
-        assertEquals(toPredicate(tupleDomain), lessThanOrEqual(C_BIGINT, bigintLiteral(1L)));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThanOrEqual(BIGINT, 1L)), false)));
+        assertEquals(toPredicate(tupleDomain), lessThanOrEqual(opBigint, bigintLiteral(1L)));
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.singleValue(BIGINT, 1L)));
-        assertEquals(toPredicate(tupleDomain), equal(C_BIGINT, bigintLiteral(1L)));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.singleValue(BIGINT, 1L)));
+        assertEquals(toPredicate(tupleDomain), equal(opBigint, bigintLiteral(1L)));
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L)), false)));
-        assertEquals(toPredicate(tupleDomain), bigintIn(C_BIGINT, ImmutableList.of(1L, 2L)));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L)), false)));
+        assertEquals(toPredicate(tupleDomain), bigintIn(opBigint, ImmutableList.of(1L, 2L)));
 
-        tupleDomain = withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L)), true)));
-        assertEquals(toPredicate(tupleDomain), or(lessThan(C_BIGINT, bigintLiteral(1L)), isNull(C_BIGINT)));
+        tupleDomain = withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L)), true)));
+        assertEquals(toPredicate(tupleDomain), or(lessThan(opBigint, bigintLiteral(1L)), isNull(opBigint)));
 
         tupleDomain = withColumnDomains(ImmutableMap.of(C_COLOR, Domain.create(ValueSet.of(COLOR, COLOR_VALUE_1), true)));
         assertEquals(toPredicate(tupleDomain), or(equal(C_COLOR, colorLiteral(COLOR_VALUE_1)), isNull(C_COLOR)));
@@ -320,118 +325,118 @@ public class TestDomainExtractor
     @Test
     public void testFromUnknownPredicate()
     {
-        assertUnsupportedPredicate(unprocessableExpression1(C_BIGINT));
-        assertUnsupportedPredicate(not(unprocessableExpression1(C_BIGINT)));
+        assertUnsupportedPredicate(unprocessableExpression1(opBigint));
+        assertUnsupportedPredicate(not(unprocessableExpression1(opBigint)));
     }
 
     @Test
     public void testFromAndPredicate()
     {
         RowExpression originalPredicate = and(
-                and(greaterThan(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT)),
-                and(lessThan(C_BIGINT, bigintLiteral(5L)), unprocessableExpression2(C_BIGINT)));
+                and(greaterThan(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint)),
+                and(lessThan(opBigint, bigintLiteral(5L)), unprocessableExpression2(opBigint)));
         DomainExtractor.ExtractionResult result = fromPredicate(originalPredicate);
-        assertEquals(result.getRemainingExpression(), and(unprocessableExpression1(C_BIGINT), unprocessableExpression2(C_BIGINT)));
-        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.range(BIGINT, 1L, false, 5L, false)), false))));
+        assertEquals(result.getRemainingExpression(), and(unprocessableExpression1(opBigint), unprocessableExpression2(opBigint)));
+        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.range(BIGINT, 1L, false, 5L, false)), false))));
 
         // Test complements
         assertUnsupportedPredicate(not(and(
-                and(greaterThan(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT)),
-                and(lessThan(C_BIGINT, bigintLiteral(5L)), unprocessableExpression2(C_BIGINT)))));
+                and(greaterThan(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint)),
+                and(lessThan(opBigint, bigintLiteral(5L)), unprocessableExpression2(opBigint)))));
 
         originalPredicate = not(and(
-                not(and(greaterThan(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT))),
-                not(and(lessThan(C_BIGINT, bigintLiteral(5L)), unprocessableExpression2(C_BIGINT)))));
+                not(and(greaterThan(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint))),
+                not(and(lessThan(opBigint, bigintLiteral(5L)), unprocessableExpression2(opBigint)))));
         result = fromPredicate(originalPredicate);
         assertEquals(result.getRemainingExpression(), originalPredicate);
-        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.notNull(BIGINT))));
+        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(opBigint, Domain.notNull(BIGINT))));
     }
 
     @Test
     public void testFromOrPredicate()
     {
         RowExpression originalPredicate = or(
-                and(greaterThan(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT)),
-                and(lessThan(C_BIGINT, bigintLiteral(5L)), unprocessableExpression2(C_BIGINT)));
+                and(greaterThan(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint)),
+                and(lessThan(opBigint, bigintLiteral(5L)), unprocessableExpression2(opBigint)));
         DomainExtractor.ExtractionResult result = fromPredicate(originalPredicate);
         assertEquals(result.getRemainingExpression(), originalPredicate);
-        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.notNull(BIGINT))));
+        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(opBigint, Domain.notNull(BIGINT))));
 
         originalPredicate = or(
-                and(equal(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT)),
-                and(equal(C_BIGINT, bigintLiteral(2L)), unprocessableExpression2(C_BIGINT)));
+                and(equal(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint)),
+                and(equal(opBigint, bigintLiteral(2L)), unprocessableExpression2(opBigint)));
         result = fromPredicate(originalPredicate);
         assertEquals(result.getRemainingExpression(), originalPredicate);
-        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L)), false))));
+        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L)), false))));
 
         // Same unprocessableExpression means that we can do more extraction
         // If both sides are operating on the same single symbol
         originalPredicate = or(
-                and(equal(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT)),
-                and(equal(C_BIGINT, bigintLiteral(2L)), unprocessableExpression1(C_BIGINT)));
+                and(equal(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint)),
+                and(equal(opBigint, bigintLiteral(2L)), unprocessableExpression1(opBigint)));
         result = fromPredicate(originalPredicate);
-        assertEquals(result.getRemainingExpression(), unprocessableExpression1(C_BIGINT));
-        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L)), false))));
+        assertEquals(result.getRemainingExpression(), unprocessableExpression1(opBigint));
+        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L)), false))));
 
         // And not if they have different symbols
         assertUnsupportedPredicate(or(
-                and(equal(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT)),
-                and(equal(C_DOUBLE, doubleLiteral(2.0)), unprocessableExpression1(C_BIGINT))));
+                and(equal(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint)),
+                and(equal(C_DOUBLE, doubleLiteral(2.0)), unprocessableExpression1(opBigint))));
 
         // We can make another optimization if one side is the super set of the other side
         originalPredicate = or(
-                and(greaterThan(C_BIGINT, bigintLiteral(1L)), greaterThan(C_DOUBLE, doubleLiteral(1.0)), unprocessableExpression1(C_BIGINT)),
-                and(greaterThan(C_BIGINT, bigintLiteral(2L)), greaterThan(C_DOUBLE, doubleLiteral(2.0)), unprocessableExpression1(C_BIGINT)));
+                and(greaterThan(opBigint, bigintLiteral(1L)), greaterThan(C_DOUBLE, doubleLiteral(1.0)), unprocessableExpression1(opBigint)),
+                and(greaterThan(opBigint, bigintLiteral(2L)), greaterThan(C_DOUBLE, doubleLiteral(2.0)), unprocessableExpression1(opBigint)));
         result = fromPredicate(originalPredicate);
-        assertEquals(result.getRemainingExpression(), unprocessableExpression1(C_BIGINT));
+        assertEquals(result.getRemainingExpression(), unprocessableExpression1(opBigint));
         assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(
-                C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 1L)), false),
+                opBigint, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 1L)), false),
                 C_DOUBLE, Domain.create(ValueSet.ofRanges(Range.greaterThan(DOUBLE, 1.0)), false))));
 
         // We can't make those inferences if the unprocessableExpressions are non-deterministic
         originalPredicate = or(
-                and(equal(C_BIGINT, bigintLiteral(1L)), randPredicate(C_BIGINT)),
-                and(equal(C_BIGINT, bigintLiteral(2L)), randPredicate(C_BIGINT)));
+                and(equal(opBigint, bigintLiteral(1L)), randPredicate(opBigint)),
+                and(equal(opBigint, bigintLiteral(2L)), randPredicate(opBigint)));
         result = fromPredicate(originalPredicate);
         assertEquals(result.getRemainingExpression(), originalPredicate);
-        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L)), false))));
+        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L)), false))));
 
         // Test complements
         originalPredicate = not(or(
-                and(greaterThan(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT)),
-                and(lessThan(C_BIGINT, bigintLiteral(5L)), unprocessableExpression2(C_BIGINT))));
+                and(greaterThan(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint)),
+                and(lessThan(opBigint, bigintLiteral(5L)), unprocessableExpression2(opBigint))));
         result = fromPredicate(originalPredicate);
         assertEquals(result.getRemainingExpression(), and(
-                not(and(greaterThan(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT))),
-                not(and(lessThan(C_BIGINT, bigintLiteral(5L)), unprocessableExpression2(C_BIGINT)))));
+                not(and(greaterThan(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint))),
+                not(and(lessThan(opBigint, bigintLiteral(5L)), unprocessableExpression2(opBigint)))));
         assertTrue(result.getTupleDomain().isAll());
 
         originalPredicate = not(or(
-                not(and(greaterThan(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT))),
-                not(and(lessThan(C_BIGINT, bigintLiteral(5L)), unprocessableExpression2(C_BIGINT)))));
+                not(and(greaterThan(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint))),
+                not(and(lessThan(opBigint, bigintLiteral(5L)), unprocessableExpression2(opBigint)))));
         result = fromPredicate(originalPredicate);
-        assertEquals(result.getRemainingExpression(), and(unprocessableExpression1(C_BIGINT), unprocessableExpression2(C_BIGINT)));
-        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.range(BIGINT, 1L, false, 5L, false)), false))));
+        assertEquals(result.getRemainingExpression(), and(unprocessableExpression1(opBigint), unprocessableExpression2(opBigint)));
+        assertEquals(result.getTupleDomain(), withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.range(BIGINT, 1L, false, 5L, false)), false))));
     }
 
     @Test
     public void testFromNotPredicate()
     {
-        assertUnsupportedPredicate(not(and(equal(C_BIGINT, bigintLiteral(1L)), unprocessableExpression1(C_BIGINT))));
-        assertUnsupportedPredicate(not(unprocessableExpression1(C_BIGINT)));
+        assertUnsupportedPredicate(not(and(equal(opBigint, bigintLiteral(1L)), unprocessableExpression1(opBigint))));
+        assertUnsupportedPredicate(not(unprocessableExpression1(opBigint)));
 
         assertPredicateIsAlwaysFalse(not(TRUE));
 
         assertPredicateTranslates(
-                not(equal(C_BIGINT, bigintLiteral(1L))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L), Range.greaterThan(BIGINT, 1L)), false))));
+                not(equal(opBigint, bigintLiteral(1L))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L), Range.greaterThan(BIGINT, 1L)), false))));
     }
 
     @Test
     public void testFromUnprocessableComparison()
     {
-        assertUnsupportedPredicate(greaterThan(unprocessableExpression1(C_BIGINT), unprocessableExpression2(C_BIGINT)));
-        assertUnsupportedPredicate(not(greaterThan(unprocessableExpression1(C_BIGINT), unprocessableExpression2(C_BIGINT))));
+        assertUnsupportedPredicate(greaterThan(unprocessableExpression1(opBigint), unprocessableExpression2(opBigint)));
+        assertUnsupportedPredicate(not(greaterThan(unprocessableExpression1(opBigint), unprocessableExpression2(opBigint))));
     }
 
     @Test
@@ -439,32 +444,32 @@ public class TestDomainExtractor
     {
         // Test out the extraction of all basic comparisons
         assertPredicateTranslates(
-                greaterThan(C_BIGINT, bigintLiteral(2L)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 2L)), false))));
+                greaterThan(opBigint, bigintLiteral(2L)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                greaterThanOrEqual(C_BIGINT, bigintLiteral(2L)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThanOrEqual(BIGINT, 2L)), false))));
+                greaterThanOrEqual(opBigint, bigintLiteral(2L)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.greaterThanOrEqual(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                lessThan(C_BIGINT, bigintLiteral(2L)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L)), false))));
+                lessThan(opBigint, bigintLiteral(2L)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                lessThanOrEqual(C_BIGINT, bigintLiteral(2L)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThanOrEqual(BIGINT, 2L)), false))));
+                lessThanOrEqual(opBigint, bigintLiteral(2L)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThanOrEqual(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                equal(C_BIGINT, bigintLiteral(2L)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 2L)), false))));
+                equal(opBigint, bigintLiteral(2L)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                notEqual(C_BIGINT, bigintLiteral(2L)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L), Range.greaterThan(BIGINT, 2L)), false))));
+                notEqual(opBigint, bigintLiteral(2L)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L), Range.greaterThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                isDistinctFrom(C_BIGINT, bigintLiteral(2L)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L), Range.greaterThan(BIGINT, 2L)), true))));
+                isDistinctFrom(opBigint, bigintLiteral(2L)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L), Range.greaterThan(BIGINT, 2L)), true))));
 
         assertPredicateTranslates(
                 equal(C_COLOR, colorLiteral(COLOR_VALUE_1)),
@@ -480,32 +485,32 @@ public class TestDomainExtractor
 
         // Test complement
         assertPredicateTranslates(
-                not(greaterThan(C_BIGINT, bigintLiteral(2L))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThanOrEqual(BIGINT, 2L)), false))));
+                not(greaterThan(opBigint, bigintLiteral(2L))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThanOrEqual(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                not(greaterThanOrEqual(C_BIGINT, bigintLiteral(2L))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L)), false))));
+                not(greaterThanOrEqual(opBigint, bigintLiteral(2L))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                not(lessThan(C_BIGINT, bigintLiteral(2L))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThanOrEqual(BIGINT, 2L)), false))));
+                not(lessThan(opBigint, bigintLiteral(2L))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.greaterThanOrEqual(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                not(lessThanOrEqual(C_BIGINT, bigintLiteral(2L))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 2L)), false))));
+                not(lessThanOrEqual(opBigint, bigintLiteral(2L))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                not(equal(C_BIGINT, bigintLiteral(2L))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L), Range.greaterThan(BIGINT, 2L)), false))));
+                not(equal(opBigint, bigintLiteral(2L))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L), Range.greaterThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                not(notEqual(C_BIGINT, bigintLiteral(2L))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 2L)), false))));
+                not(notEqual(opBigint, bigintLiteral(2L))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                not(isDistinctFrom(C_BIGINT, bigintLiteral(2L))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 2L)), false))));
+                not(isDistinctFrom(opBigint, bigintLiteral(2L))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
                 not(equal(C_COLOR, colorLiteral(COLOR_VALUE_1))),
@@ -525,85 +530,85 @@ public class TestDomainExtractor
     {
         // Test out the extraction of all basic comparisons where the reference literal ordering is flipped
         assertPredicateTranslates(
-                greaterThan(bigintLiteral(2L), C_BIGINT),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L)), false))));
+                greaterThan(bigintLiteral(2L), opBigint),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                greaterThanOrEqual(bigintLiteral(2L), C_BIGINT),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThanOrEqual(BIGINT, 2L)), false))));
+                greaterThanOrEqual(bigintLiteral(2L), opBigint),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThanOrEqual(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                lessThan(bigintLiteral(2L), C_BIGINT),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 2L)), false))));
+                lessThan(bigintLiteral(2L), opBigint),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
-                lessThanOrEqual(bigintLiteral(2L), C_BIGINT),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThanOrEqual(BIGINT, 2L)), false))));
+                lessThanOrEqual(bigintLiteral(2L), opBigint),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.greaterThanOrEqual(BIGINT, 2L)), false))));
 
-        assertPredicateTranslates(equal(bigintLiteral(2L), C_BIGINT),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 2L)), false))));
+        assertPredicateTranslates(equal(bigintLiteral(2L), opBigint),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(equal(colorLiteral(COLOR_VALUE_1), C_COLOR),
                 withColumnDomains(ImmutableMap.of(C_COLOR, Domain.create(ValueSet.of(COLOR, COLOR_VALUE_1), false))));
 
-        assertPredicateTranslates(notEqual(bigintLiteral(2L), C_BIGINT),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L), Range.greaterThan(BIGINT, 2L)), false))));
+        assertPredicateTranslates(notEqual(bigintLiteral(2L), opBigint),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L), Range.greaterThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
                 notEqual(colorLiteral(COLOR_VALUE_1), C_COLOR),
                 withColumnDomains(ImmutableMap.of(C_COLOR, Domain.create(ValueSet.of(COLOR, COLOR_VALUE_1).complement(), false))));
 
-        assertPredicateTranslates(isDistinctFrom(bigintLiteral(2L), C_BIGINT),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L), Range.greaterThan(BIGINT, 2L)), true))));
+        assertPredicateTranslates(isDistinctFrom(bigintLiteral(2L), opBigint),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 2L), Range.greaterThan(BIGINT, 2L)), true))));
 
         assertPredicateTranslates(
                 isDistinctFrom(colorLiteral(COLOR_VALUE_1), C_COLOR),
                 withColumnDomains(ImmutableMap.of(C_COLOR, Domain.create(ValueSet.of(COLOR, COLOR_VALUE_1).complement(), true))));
 
         assertPredicateTranslates(
-                isDistinctFrom(nullLiteral(BIGINT), C_BIGINT),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.notNull(BIGINT))));
+                isDistinctFrom(nullLiteral(BIGINT), opBigint),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.notNull(BIGINT))));
     }
 
     @Test
     public void testFromBasicComparisonsWithNulls()
     {
         // Test out the extraction of all basic comparisons with null literals
-        assertPredicateIsAlwaysFalse(greaterThan(C_BIGINT, nullLiteral(BIGINT)));
+        assertPredicateIsAlwaysFalse(greaterThan(opBigint, nullLiteral(BIGINT)));
 
         assertPredicateTranslates(
                 greaterThan(C_VARCHAR, nullLiteral(VARCHAR)),
                 withColumnDomains(ImmutableMap.of(C_VARCHAR, Domain.create(ValueSet.none(VARCHAR), false))));
 
-        assertPredicateIsAlwaysFalse(greaterThanOrEqual(C_BIGINT, nullLiteral(BIGINT)));
-        assertPredicateIsAlwaysFalse(lessThan(C_BIGINT, nullLiteral(BIGINT)));
-        assertPredicateIsAlwaysFalse(lessThanOrEqual(C_BIGINT, nullLiteral(BIGINT)));
-        assertPredicateIsAlwaysFalse(equal(C_BIGINT, nullLiteral(BIGINT)));
+        assertPredicateIsAlwaysFalse(greaterThanOrEqual(opBigint, nullLiteral(BIGINT)));
+        assertPredicateIsAlwaysFalse(lessThan(opBigint, nullLiteral(BIGINT)));
+        assertPredicateIsAlwaysFalse(lessThanOrEqual(opBigint, nullLiteral(BIGINT)));
+        assertPredicateIsAlwaysFalse(equal(opBigint, nullLiteral(BIGINT)));
         assertPredicateIsAlwaysFalse(equal(C_COLOR, nullLiteral(COLOR)));
-        assertPredicateIsAlwaysFalse(notEqual(C_BIGINT, nullLiteral(BIGINT)));
+        assertPredicateIsAlwaysFalse(notEqual(opBigint, nullLiteral(BIGINT)));
         assertPredicateIsAlwaysFalse(notEqual(C_COLOR, nullLiteral(COLOR)));
 
         assertPredicateTranslates(
-                isDistinctFrom(C_BIGINT, nullLiteral(BIGINT)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.notNull(BIGINT))));
+                isDistinctFrom(opBigint, nullLiteral(BIGINT)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.notNull(BIGINT))));
 
         assertPredicateTranslates(
                 isDistinctFrom(C_COLOR, nullLiteral(COLOR)),
                 withColumnDomains(ImmutableMap.of(C_COLOR, Domain.notNull(COLOR))));
 
         // Test complements
-        assertPredicateIsAlwaysFalse(not(greaterThan(C_BIGINT, nullLiteral(BIGINT))));
-        assertPredicateIsAlwaysFalse(not(greaterThanOrEqual(C_BIGINT, nullLiteral(BIGINT))));
-        assertPredicateIsAlwaysFalse(not(lessThan(C_BIGINT, nullLiteral(BIGINT))));
-        assertPredicateIsAlwaysFalse(not(lessThanOrEqual(C_BIGINT, nullLiteral(BIGINT))));
-        assertPredicateIsAlwaysFalse(not(equal(C_BIGINT, nullLiteral(BIGINT))));
+        assertPredicateIsAlwaysFalse(not(greaterThan(opBigint, nullLiteral(BIGINT))));
+        assertPredicateIsAlwaysFalse(not(greaterThanOrEqual(opBigint, nullLiteral(BIGINT))));
+        assertPredicateIsAlwaysFalse(not(lessThan(opBigint, nullLiteral(BIGINT))));
+        assertPredicateIsAlwaysFalse(not(lessThanOrEqual(opBigint, nullLiteral(BIGINT))));
+        assertPredicateIsAlwaysFalse(not(equal(opBigint, nullLiteral(BIGINT))));
         assertPredicateIsAlwaysFalse(not(equal(C_COLOR, nullLiteral(COLOR))));
-        assertPredicateIsAlwaysFalse(not(notEqual(C_BIGINT, nullLiteral(BIGINT))));
+        assertPredicateIsAlwaysFalse(not(notEqual(opBigint, nullLiteral(BIGINT))));
         assertPredicateIsAlwaysFalse(not(notEqual(C_COLOR, nullLiteral(COLOR))));
 
         assertPredicateTranslates(
-                not(isDistinctFrom(C_BIGINT, nullLiteral(BIGINT))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.onlyNull(BIGINT))));
+                not(isDistinctFrom(opBigint, nullLiteral(BIGINT))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.onlyNull(BIGINT))));
 
         assertPredicateTranslates(
                 not(isDistinctFrom(C_COLOR, nullLiteral(COLOR))),
@@ -631,11 +636,11 @@ public class TestDomainExtractor
                 doubleLiteral(12345.56)));
 
         assertUnsupportedPredicate(equal(
-                cast(C_BIGINT, DOUBLE),
+                cast(opBigint, DOUBLE),
                 doubleLiteral(12345.56)));
 
         assertUnsupportedPredicate(equal(
-                cast(C_BIGINT, REAL),
+                cast(opBigint, REAL),
                 realLiteral(12345.56f)));
 
         assertUnsupportedPredicate(equal(
@@ -782,7 +787,8 @@ public class TestDomainExtractor
     @Test
     public void testFromUnprocessableInPredicate()
     {
-        assertUnsupportedPredicate(in(unprocessableExpression1(C_BIGINT), ImmutableList.of(TRUE)));
+        // following is supported since it is always true
+        // assertUnsupportedPredicate(in(unprocessableExpression1(opBigint), ImmutableList.of(TRUE)));
         assertUnsupportedPredicate(in(C_BOOLEAN, ImmutableList.of(unprocessableExpression1(C_BOOLEAN))));
         assertUnsupportedPredicate(
                 in(C_BOOLEAN, ImmutableList.of(TRUE, unprocessableExpression1(C_BOOLEAN))));
@@ -793,71 +799,81 @@ public class TestDomainExtractor
     public void testFromInPredicate()
     {
         assertPredicateTranslates(
-                bigintIn(C_BIGINT, ImmutableList.of(1L)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.singleValue(BIGINT, 1L))));
+                bigintIn(opBigint, ImmutableList.of(1L)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.singleValue(BIGINT, 1L))));
 
         assertPredicateTranslates(
                 in(C_COLOR, ImmutableList.of(colorLiteral(COLOR_VALUE_1))),
                 withColumnDomains(ImmutableMap.of(C_COLOR, Domain.singleValue(COLOR, COLOR_VALUE_1))));
 
         assertPredicateTranslates(
-                bigintIn(C_BIGINT, ImmutableList.of(1L, 2L)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L)), false))));
+                bigintIn(opBigint, ImmutableList.of(1L, 2L)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.equal(BIGINT, 1L), Range.equal(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
                 in(C_COLOR, ImmutableList.of(colorLiteral(COLOR_VALUE_1), colorLiteral(COLOR_VALUE_2))),
                 withColumnDomains(ImmutableMap.of(C_COLOR, Domain.create(ValueSet.of(COLOR, COLOR_VALUE_1, COLOR_VALUE_2), false))));
 
         assertPredicateTranslates(
-                not(bigintIn(C_BIGINT, ImmutableList.of(1L, 2L))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L), Range.range(BIGINT, 1L, false, 2L, false), Range.greaterThan(BIGINT, 2L)), false))));
+                not(bigintIn(opBigint, ImmutableList.of(1L, 2L))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L), Range.range(BIGINT, 1L, false, 2L, false), Range.greaterThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
                 not(in(C_COLOR, ImmutableList.of(colorLiteral(COLOR_VALUE_1), colorLiteral(COLOR_VALUE_2)))),
                 withColumnDomains(ImmutableMap.of(C_COLOR, Domain.create(ValueSet.of(COLOR, COLOR_VALUE_1, COLOR_VALUE_2).complement(), false))));
+
+        assertPredicateTranslates(
+                not(in(C_COLOR, ImmutableList.of(colorLiteral(COLOR_VALUE_1), C_COLOR_1, colorLiteral(COLOR_VALUE_2)))),
+                withColumnDomains(ImmutableMap.of(C_COLOR, Domain.create(ValueSet.of(COLOR, COLOR_VALUE_1, COLOR_VALUE_2).complement(), false))),
+                not(equal(C_COLOR, C_COLOR_1)));
+
+        assertPredicateTranslates(
+                not(in(C_COLOR, ImmutableList.of(colorLiteral(COLOR_VALUE_1), C_COLOR_1, colorLiteral(COLOR_VALUE_2)))),
+                withColumnDomains(ImmutableMap.of(C_COLOR, Domain.create(ValueSet.of(COLOR, COLOR_VALUE_1, COLOR_VALUE_2).complement(), false))),
+                not(equal(C_COLOR, C_COLOR_1)));
     }
 
     @Test
     public void testFromBetweenPredicate()
     {
         assertPredicateTranslates(
-                between(C_BIGINT, bigintLiteral(1L), bigintLiteral(2L)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.range(BIGINT, 1L, true, 2L, true)), false))));
+                between(opBigint, bigintLiteral(1L), bigintLiteral(2L)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.range(BIGINT, 1L, true, 2L, true)), false))));
 
         assertPredicateTranslates(
                 between(cast(C_INTEGER, DOUBLE), cast(bigintLiteral(1L), DOUBLE), doubleLiteral(2.1)),
                 withColumnDomains(ImmutableMap.of(C_INTEGER, Domain.create(ValueSet.ofRanges(Range.range(INTEGER, 1L, true, 2L, true)), false))));
 
-        assertPredicateIsAlwaysFalse(between(C_BIGINT, bigintLiteral(1L), nullLiteral(BIGINT)));
+        assertPredicateIsAlwaysFalse(between(opBigint, bigintLiteral(1L), nullLiteral(BIGINT)));
 
         // Test complements
         assertPredicateTranslates(
-                not(between(C_BIGINT, bigintLiteral(1L), bigintLiteral(2L))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L), Range.greaterThan(BIGINT, 2L)), false))));
+                not(between(opBigint, bigintLiteral(1L), bigintLiteral(2L))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L), Range.greaterThan(BIGINT, 2L)), false))));
 
         assertPredicateTranslates(
                 not(between(cast(C_INTEGER, DOUBLE), cast(bigintLiteral(1L), DOUBLE), doubleLiteral(2.1))),
                 withColumnDomains(ImmutableMap.of(C_INTEGER, Domain.create(ValueSet.ofRanges(Range.lessThan(INTEGER, 1L), Range.greaterThan(INTEGER, 2L)), false))));
 
         assertPredicateTranslates(
-                not(between(C_BIGINT, bigintLiteral(1L), nullLiteral(BIGINT))),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L)), false))));
+                not(between(opBigint, bigintLiteral(1L), nullLiteral(BIGINT))),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.create(ValueSet.ofRanges(Range.lessThan(BIGINT, 1L)), false))));
     }
 
     @Test
     public void testFromIsNullPredicate()
     {
         assertPredicateTranslates(
-                isNull(C_BIGINT),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.onlyNull(BIGINT))));
+                isNull(opBigint),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.onlyNull(BIGINT))));
 
         assertPredicateTranslates(
                 isNull(C_HYPER_LOG_LOG),
                 withColumnDomains(ImmutableMap.of(C_HYPER_LOG_LOG, Domain.onlyNull(HYPER_LOG_LOG))));
 
         assertPredicateTranslates(
-                not(isNull(C_BIGINT)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.notNull(BIGINT))));
+                not(isNull(opBigint)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.notNull(BIGINT))));
 
         assertPredicateTranslates(
                 not(isNull(C_HYPER_LOG_LOG)),
@@ -868,16 +884,16 @@ public class TestDomainExtractor
     public void testFromIsNotNullPredicate()
     {
         assertPredicateTranslates(
-                isNotNull(C_BIGINT),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.notNull(BIGINT))));
+                isNotNull(opBigint),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.notNull(BIGINT))));
 
         assertPredicateTranslates(
                 isNotNull(C_HYPER_LOG_LOG),
                 withColumnDomains(ImmutableMap.of(C_HYPER_LOG_LOG, Domain.notNull(HYPER_LOG_LOG))));
 
         assertPredicateTranslates(
-                not(isNotNull(C_BIGINT)),
-                withColumnDomains(ImmutableMap.of(C_BIGINT, Domain.onlyNull(BIGINT))));
+                not(isNotNull(opBigint)),
+                withColumnDomains(ImmutableMap.of(opBigint, Domain.onlyNull(BIGINT))));
 
         assertPredicateTranslates(
                 not(isNotNull(C_HYPER_LOG_LOG)),
@@ -919,17 +935,17 @@ public class TestDomainExtractor
     {
         RowExpression expression = and(
                 greaterThan(C_DOUBLE, doubleLiteral(0)),
-                greaterThan(C_BIGINT, bigintLiteral(0)));
+                greaterThan(opBigint, bigintLiteral(0)));
         assertPredicateTranslates(
                 expression,
                 withColumnDomains(ImmutableMap.of(
-                        C_BIGINT, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 0L)), false),
+                        opBigint, Domain.create(ValueSet.ofRanges(Range.greaterThan(BIGINT, 0L)), false),
                         C_DOUBLE, Domain.create(ValueSet.ofRanges(Range.greaterThan(DOUBLE, .0)), false))));
 
         assertEquals(
                 toPredicate(fromPredicate(expression).getTupleDomain()),
                 and(
-                        greaterThan(C_BIGINT, bigintLiteral(0)),
+                        greaterThan(opBigint, bigintLiteral(0)),
                         greaterThan(C_DOUBLE, doubleLiteral(0))));
     }
 
@@ -947,7 +963,7 @@ public class TestDomainExtractor
         testNumericTypeTranslationChain(
                 new NumericValues<>(C_DECIMAL_26_5, longDecimal("-999999999999999999999.99999"), longDecimal("-22.00000"), longDecimal("-44.55569"), longDecimal("23.00000"), longDecimal("44.55567"), longDecimal("999999999999999999999.99999")),
                 new NumericValues<>(C_DECIMAL_23_4, longDecimal("-9999999999999999999.9999"), longDecimal("-22.0000"), longDecimal("-44.5557"), longDecimal("23.0000"), longDecimal("44.5556"), longDecimal("9999999999999999999.9999")),
-                new NumericValues<>(C_BIGINT, Long.MIN_VALUE, -22L, -45L, 23L, 44L, Long.MAX_VALUE),
+                new NumericValues<>(opBigint, Long.MIN_VALUE, -22L, -45L, 23L, 44L, Long.MAX_VALUE),
                 new NumericValues<>(C_DECIMAL_21_3, longDecimal("-999999999999999999.999"), longDecimal("-22.000"), longDecimal("-44.556"), longDecimal("23.000"), longDecimal("44.555"), longDecimal("999999999999999999.999")),
                 new NumericValues<>(C_DECIMAL_12_2, shortDecimal("-9999999999.99"), shortDecimal("-22.00"), shortDecimal("-44.56"), shortDecimal("23.00"), shortDecimal("44.55"), shortDecimal("9999999999.99")),
                 new NumericValues<>(C_INTEGER, (long) Integer.MIN_VALUE, -22L, -45L, 23L, 44L, (long) Integer.MAX_VALUE),
@@ -1134,6 +1150,13 @@ public class TestDomainExtractor
     {
         DomainExtractor.ExtractionResult result = fromPredicate(expression);
         assertEquals(result.getRemainingExpression(), TRUE);
+        assertEquals(result.getTupleDomain(), tupleDomain);
+    }
+
+    private void assertPredicateTranslates(RowExpression expression, TupleDomain<RowExpression> tupleDomain, RowExpression remaining)
+    {
+        DomainExtractor.ExtractionResult result = fromPredicate(expression);
+        assertEquals(result.getRemainingExpression(), remaining);
         assertEquals(result.getTupleDomain(), tupleDomain);
     }
 
@@ -1342,6 +1365,19 @@ public class TestDomainExtractor
         if (!actual.equals(expected)) {
             fail(format("for comparison [%s] expected %s but found %s", expression.toString(), expected.toString(SESSION), actual.toString(SESSION)));
         }
+    }
+
+    private void assertEquals(RowExpression actual, RowExpression expected)
+    {
+        Assert.assertEquals(canonicalizer.canonicalize(actual), canonicalizer.canonicalize(expected));
+    }
+
+    private void assertEquals(TupleDomain<RowExpression> actual, TupleDomain<RowExpression> expected)
+    {
+        Assert.assertEquals(actual, expected,
+                format("\nExpected Domain :%s\nActual Domain   :%s",
+                        expected.toString(TEST_SESSION.toConnectorSession()),
+                        actual.toString(TEST_SESSION.toConnectorSession())));
     }
 
     private static class NumericValues<T>

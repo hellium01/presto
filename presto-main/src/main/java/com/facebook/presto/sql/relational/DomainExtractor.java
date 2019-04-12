@@ -317,6 +317,9 @@ public class DomainExtractor
             switch (node.getForm()) {
                 case AND:
                 case OR: {
+                    if (node.getArguments().size() > 2) {
+                        return logicalRowExpressions.combineConjuncts(node.getArguments()).accept(this, complement);
+                    }
                     return visitBinaryLogic(node, complement);
                 }
                 case IN: {
@@ -328,22 +331,22 @@ public class DomainExtractor
                             .collect(partitioningBy(value -> value instanceof ConstantExpression && value.getType() == target.getType()));
 
                     // only contains constant
-                    if (values.containsKey(true) && (!values.containsKey(false) || values.get(false).isEmpty())) {
-                        return resultOf(
-                                target,
-                                complementIfNecessary(
-                                        Domain.multipleValues(
-                                                target.getType(),
-                                                values.get(true)
-                                                        .stream()
-                                                        .map(value -> ((ConstantExpression) value).getValue())
-                                                        .collect(toImmutableList())),
-                                        complement));
+                    if (values.containsKey(true) && !values.isEmpty() && (!values.containsKey(false) || values.get(false).isEmpty())) {
+                        // has to handle complement specifically here since complement of in should still not be null aware
+                        ValueSet valueSet = ValueSet.copyOf(target.getType(), values.get(true)
+                                .stream()
+                                .map(value -> ((ConstantExpression) value).getValue())
+                                .collect(toImmutableList()));
+                        if (complement) {
+                            valueSet = valueSet.complement();
+                        }
+
+                        return resultOf(target, Domain.create(valueSet, false));
                     }
 
                     ImmutableList.Builder<RowExpression> disjuncts = ImmutableList.builder();
                     int numDisjuncts = 0;
-                    if (values.containsKey(true)) {
+                    if (values.containsKey(true) && !values.get(true).isEmpty()) {
                         numDisjuncts++;
                         disjuncts.add(in(target, values.get(true)));
                     }
@@ -369,7 +372,7 @@ public class DomainExtractor
                 case IS_NULL: {
                     RowExpression target = node.getArguments().get(0);
                     Domain domain = complementIfNecessary(Domain.onlyNull(target.getType()), complement);
-                    return resultOf(optimize(target), domain);
+                    return resultOf(target, domain);
                 }
                 default:
                     return resultOf(complementIfNecessary(node, complement));
