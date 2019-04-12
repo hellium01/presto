@@ -1225,6 +1225,7 @@ public class TestExpressionInterpreter
     @Test
     public void testLike()
     {
+        assertOptimizedEquals("regexp_extract('c1213', 'c1')", "'c1'");
         assertOptimizedEquals("'a' LIKE 'a'", "true");
         assertOptimizedEquals("'' LIKE 'a'", "false");
         assertOptimizedEquals("'abc' LIKE 'a'", "false");
