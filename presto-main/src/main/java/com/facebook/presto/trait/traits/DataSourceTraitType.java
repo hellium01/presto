@@ -13,6 +13,15 @@
  */
 package com.facebook.presto.trait.traits;
 
+import com.facebook.presto.trait.TraitType;
+
 public class DataSourceTraitType
+        extends TraitType<DataSourceTrait>
 {
+    public static DataSourceTraitType DATA_SOURCE_TRAIT = new DataSourceTraitType();
+
+    public DataSourceTraitType()
+    {
+        super(false, true);
+    }
 }
