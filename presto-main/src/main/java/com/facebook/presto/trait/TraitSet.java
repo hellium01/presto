@@ -99,6 +99,12 @@ public class TraitSet
                 .anyMatch(t -> t.satisfies(trait));
     }
 
+    public <T extends Trait> boolean satisfies(Collection<T> traits)
+    {
+        return traits.stream()
+                .allMatch(this::satisfies);
+    }
+
     public TraitSet merge(TraitSet traitSet)
     {
         traitSet.listTraits()
@@ -112,6 +118,7 @@ public class TraitSet
         return traits.keySet();
     }
 
+    @Override
     public TraitSet clone()
     {
         return emptyTraitSet().merge(this);
