@@ -25,6 +25,7 @@ import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.relational.StandardFunctionResolution;
 import com.facebook.presto.sql.tree.ArithmeticBinaryExpression;
 import com.facebook.presto.sql.tree.QualifiedName;
+import com.facebook.presto.trait.BasicTraitSet;
 import com.facebook.presto.trait.TraitSet;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -65,7 +66,7 @@ public class TestConstantTrait
     @Test
     public void testMultipleConstant()
     {
-        TraitSet traits = TraitSet.emptyTraitSet();
+        TraitSet traits = BasicTraitSet.emptyTraitSet();
         traits.add(constantTrait("c1", BIGINT, 1L));
         traits.add(constantTrait("c2", BIGINT, 1L));
         traits.add(constantTrait("c2", BIGINT, 4L));
@@ -78,7 +79,7 @@ public class TestConstantTrait
     @Test
     public void testTransform()
     {
-        TraitSet traits = TraitSet.emptyTraitSet();
+        TraitSet traits = BasicTraitSet.emptyTraitSet();
         traits.add(constantTrait("c1", BIGINT, 1L));
         traits.add(constantTrait("c2", BIGINT, 1L));
         traits.add(constantTrait("c2", BIGINT, 4L));

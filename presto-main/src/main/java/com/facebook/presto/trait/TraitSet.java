@@ -13,114 +13,29 @@
  */
 package com.facebook.presto.trait;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-public class TraitSet
+public interface TraitSet
 {
-    private Map<TraitType<?>, List<Trait>> traits = new HashMap<>();
+    TraitSet add(Trait trait);
 
-    public static TraitSet emptyTraitSet()
-    {
-        return new TraitSet();
-    }
+    TraitSet addAll(List<? extends Trait> traits);
 
-    public TraitSet add(Trait trait)
-    {
-        TraitType<?> traitType = trait.getTraitType();
-        traits.putIfAbsent(traitType, new ArrayList<>());
-        traits.get(traitType).add(trait);
-        return this;
-    }
+    <T extends Trait> BasicTraitSet replace(T trait);
 
-    public TraitSet addAll(List<? extends Trait> traits)
-    {
-        if (traits.isEmpty()) {
-            return this;
-        }
-        traits.forEach(trait -> add(trait));
-        return this;
-    }
+    <T extends Trait> TraitSet replace(List<T> traits);
 
-    public <T extends Trait> TraitSet replace(T trait)
-    {
-        TraitType<?> traitType = trait.getTraitType();
-        traits.put(traitType, new ArrayList<>());
-        traits.get(traitType).add(trait);
-        return this;
-    }
+    <T extends Trait> T getSingle(TraitType<T> traitType);
 
-    public <T extends Trait> TraitSet replace(List<T> traits)
-    {
-        checkArgument(!traits.isEmpty(), "cannot replace with empty list");
-        TraitType<?> traitType = traits.get(0).getTraitType();
-        this.traits.put(traitType, new ArrayList<>());
-        this.traits.get(traitType).addAll(traits);
-        return this;
-    }
+    <T extends Trait> List<T> get(TraitType<T> traitType);
 
-    public <T extends Trait> T getSingle(TraitType<T> traitType)
-    {
-        return get(traitType).get(0);
-    }
+    <T extends Trait> boolean satisfies(T trait);
 
-    public <T extends Trait> List<T> get(TraitType<T> traitType)
-    {
-        List<T> result = (List<T>) traits.getOrDefault(traitType, Collections.emptyList());
-        if (result.isEmpty()) {
-            return result;
-        }
-        if (traitType.isMergable()) {
-            return ImmutableList.of(traitType.merge(result));
-        }
-        if (!traitType.isAllowMulti()) {
-            return ImmutableList.of(result.get(result.size() - 1));
-        }
-        return traitType.deduplicate(result);
-    }
+    <T extends Trait> boolean satisfies(Collection<T> traits);
 
-    public <T extends Trait> boolean satisfies(T trait)
-    {
-        TraitType<?> type = trait.getTraitType();
-        if (!traits.containsKey(type)) {
-            return false;
-        }
-        List<T> current = this.get((TraitType<T>) type);
-        return Lists.reverse(current).stream()
-                .anyMatch(t -> t.satisfies(trait));
-    }
+    TraitSet merge(TraitSet traitSet);
 
-    public <T extends Trait> boolean satisfies(Collection<T> traits)
-    {
-        return traits.stream()
-                .allMatch(this::satisfies);
-    }
-
-    public TraitSet merge(TraitSet traitSet)
-    {
-        traitSet.listTraits()
-                .stream()
-                .forEach(traitType -> traitSet.addAll(traitSet.get(traitType)));
-        return this;
-    }
-
-    public Collection<TraitType<?>> listTraits()
-    {
-        return traits.keySet();
-    }
-
-    @Override
-    public TraitSet clone()
-    {
-        return emptyTraitSet().merge(this);
-    }
+    Set<TraitType<?>> listTraits();
 }

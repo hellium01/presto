@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.trait.traits;
 
+import com.facebook.presto.trait.BasicTraitSet;
 import com.facebook.presto.trait.TraitSet;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -36,7 +37,7 @@ public class TestCollationTrait
     @Test
     public void testMultiPassOrdering()
     {
-        TraitSet traits = TraitSet.emptyTraitSet();
+        TraitSet traits = BasicTraitSet.emptyTraitSet();
         CollationTrait t1 = orderTrait(
                 ImmutableList.of(variable("c1", BIGINT), variable("c2", BIGINT)),
                 ImmutableList.of(ASC_NULLS_FIRST, ASC_NULLS_FIRST));

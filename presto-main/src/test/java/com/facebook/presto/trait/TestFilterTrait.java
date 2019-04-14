@@ -45,7 +45,7 @@ import static com.facebook.presto.sql.relational.Expressions.variable;
 import static com.facebook.presto.sql.relational.LogicalRowExpressions.and;
 import static com.facebook.presto.sql.relational.LogicalRowExpressions.extractConjuncts;
 import static com.facebook.presto.sql.relational.RowExpressionUtils.inlineExpressions;
-import static com.facebook.presto.trait.TraitSet.emptyTraitSet;
+import static com.facebook.presto.trait.BasicTraitSet.emptyTraitSet;
 import static com.facebook.presto.trait.traits.RowFilterTraitType.ROW_FILTER;
 import static org.testng.Assert.assertTrue;
 
