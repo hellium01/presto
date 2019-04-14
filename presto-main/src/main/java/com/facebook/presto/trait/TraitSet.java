@@ -15,6 +15,7 @@ package com.facebook.presto.trait;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface TraitSet
@@ -23,11 +24,11 @@ public interface TraitSet
 
     TraitSet addAll(List<? extends Trait> traits);
 
-    <T extends Trait> BasicTraitSet replace(T trait);
+    <T extends Trait> TraitSet replace(T trait);
 
     <T extends Trait> TraitSet replace(List<T> traits);
 
-    <T extends Trait> T getSingle(TraitType<T> traitType);
+    <T extends Trait> Optional<T> getSingle(TraitType<T> traitType);
 
     <T extends Trait> List<T> get(TraitType<T> traitType);
 
@@ -35,7 +36,13 @@ public interface TraitSet
 
     <T extends Trait> boolean satisfies(Collection<T> traits);
 
-    TraitSet merge(TraitSet traitSet);
+    default TraitSet merge(TraitSet other)
+    {
+        other.listTraits()
+                .stream()
+                .forEach(traitType -> addAll(other.get(traitType)));
+        return this;
+    }
 
     Set<TraitType<?>> listTraits();
 }

@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -56,7 +57,7 @@ public class BasicTraitSet
     }
 
     @Override
-    public <T extends Trait> BasicTraitSet replace(T trait)
+    public <T extends Trait> TraitSet replace(T trait)
     {
         TraitType<?> traitType = trait.getTraitType();
         traits.put(traitType, new ArrayList<>());
@@ -75,9 +76,13 @@ public class BasicTraitSet
     }
 
     @Override
-    public <T extends Trait> T getSingle(TraitType<T> traitType)
+    public <T extends Trait> Optional<T> getSingle(TraitType<T> traitType)
     {
-        return get(traitType).get(0);
+        List<T> all = get(traitType);
+        if (all.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(get(traitType).get(0));
     }
 
     @Override
@@ -116,15 +121,6 @@ public class BasicTraitSet
     }
 
     @Override
-    public TraitSet merge(TraitSet traitSet)
-    {
-        traitSet.listTraits()
-                .stream()
-                .forEach(traitType -> traitSet.addAll(traitSet.get(traitType)));
-        return this;
-    }
-
-    @Override
     public Set<TraitType<?>> listTraits()
     {
         return traits.keySet();
@@ -133,6 +129,6 @@ public class BasicTraitSet
     @Override
     public TraitSet clone()
     {
-        return emptyTraitSet().merge(this);
+        return new LazyCopyTraitSet(this);
     }
 }
