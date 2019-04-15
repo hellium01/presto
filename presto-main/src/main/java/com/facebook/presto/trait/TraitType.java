@@ -36,11 +36,21 @@ public abstract class TraitType<T extends Trait>
         return allowMulti;
     }
 
+    /**
+     * If trait type is mergable, it needs to implement this method to combine multiple traits into single value.
+     * @param list of traits of same type.
+     * @return merged trait value.
+     */
     public T merge(List<T> traits)
     {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * If trait type allows multiple values, it needs to implement this method to deduplicate.
+     * @param list of traits of same type.
+     * @return deduplicated list of traits in same order
+     */
     public List<T> deduplicate(List<T> traits)
     {
         throw new UnsupportedOperationException();

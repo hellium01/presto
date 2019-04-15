@@ -15,6 +15,11 @@ package com.facebook.presto.trait;
 
 public interface Trait
 {
+    /**
+     * If trait is more specific than other, return true.
+     * @param other trait
+     * @return true if current trait is more specific for other.
+     */
     boolean satisfies(Trait other);
 
     TraitType<?> getTraitType();

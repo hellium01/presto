@@ -86,7 +86,7 @@ public class TestPredicateComparator
     {
         RowExpression rowExpressionMoreSpecific = translator.translate(expression(predicateMoreSpecific), types);
         RowExpression rowExpressionLessSpecific = translator.translate(expression(predicateLessSpecific), types);
-        PredicateComparator comparator = new PredicateComparator(metadata, TEST_SESSION);
+        InterpretedPredicateComparator comparator = new InterpretedPredicateComparator(metadata, TEST_SESSION);
         assertTrue(comparator.checkLeftSatisfiesRight(rowExpressionMoreSpecific, rowExpressionLessSpecific));
     }
 
@@ -94,7 +94,7 @@ public class TestPredicateComparator
     {
         RowExpression rowExpressionMoreSpecific = translator.translate(expression(predicateMoreSpecific), types);
         RowExpression rowExpressionLessSpecific = translator.translate(expression(predicateLessSpecific), types);
-        PredicateComparator comparator = new PredicateComparator(metadata, TEST_SESSION);
+        InterpretedPredicateComparator comparator = new InterpretedPredicateComparator(metadata, TEST_SESSION);
         assertFalse(comparator.checkLeftSatisfiesRight(rowExpressionMoreSpecific, rowExpressionLessSpecific));
     }
 

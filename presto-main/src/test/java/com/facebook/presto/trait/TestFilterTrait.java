@@ -24,7 +24,7 @@ import com.facebook.presto.sql.relational.RowExpressionDomainTranslator;
 import com.facebook.presto.sql.relational.StandardFunctionResolution;
 import com.facebook.presto.sql.tree.ArithmeticBinaryExpression;
 import com.facebook.presto.sql.tree.ComparisonExpression;
-import com.facebook.presto.trait.traits.PredicateComparator;
+import com.facebook.presto.trait.traits.InterpretedPredicateComparator;
 import com.facebook.presto.trait.traits.RowFilterTrait;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -194,6 +194,6 @@ public class TestFilterTrait
 
     private RowFilterTrait filterTrait(RowExpression predicate)
     {
-        return new RowFilterTrait(predicate, new PredicateComparator(metadata, TEST_SESSION));
+        return new RowFilterTrait(predicate, new InterpretedPredicateComparator(metadata, TEST_SESSION));
     }
 }
