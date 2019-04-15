@@ -38,6 +38,9 @@ public interface TraitSet
 
     default TraitSet merge(TraitSet other)
     {
+        if (this == other) {
+            return this;
+        }
         other.listTraits()
                 .stream()
                 .forEach(traitType -> addAll(other.get(traitType)));

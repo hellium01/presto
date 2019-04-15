@@ -13,16 +13,43 @@
  */
 package com.facebook.presto.trait.propagator;
 
+import com.facebook.presto.Session;
+import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.plan.PlanNode;
+import com.facebook.presto.trait.TraitSet;
 import com.facebook.presto.trait.TraitType;
+
+import java.util.Set;
 
 public interface TraitPropagator
 {
-    interface Rule<T extends PlanNode, V extends TraitType>
-    {
-    }
+    /**
+     * Pull up provided output from planNode's input. Can be only a subset of traits and the result is merged with
+     * existing value.
+     * @param planNode
+     * @param traitProvider
+     * @param context
+     * @param selectedTraitTypes
+     * @return
+     */
+    TraitSet pullUp(PlanNode planNode, TraitProvider traitProvider, Context context, Set<TraitType> selectedTraitTypes);
+
+    /**
+     * Push down preferred input from planNode's output. Will update in place in trait returned by traitProvider.
+     * @param planNode
+     * @param traitProvider
+     * @param context
+     * @param selectedTraitTypes
+     * @return
+     */
+    void pushDown(PlanNode planNode, TraitProvider traitProvider, Context context, Set<TraitType> selectedTraitTypes);
 
     interface Context
     {
+        Session getSession();
+
+        TypeProvider getTypes();
+
+        TraitProvider getTraitProvider();
     }
 }

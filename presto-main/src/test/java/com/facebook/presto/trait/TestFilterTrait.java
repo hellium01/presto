@@ -126,7 +126,7 @@ public class TestFilterTrait
                                 eq(add(variable("c2", BIGINT), variable("c3", BIGINT)),
                                         constant(2L, BIGINT)),
                                 eq(variable("c5", BIGINT), constant(1L, BIGINT)))));
-        RowExpression predicate = traitSet.getSingle(ROW_FILTER).getPredicate();
+        RowExpression predicate = traitSet.getSingle(ROW_FILTER).get().getPredicate();
         List<RowExpression> conjuncts = extractConjuncts(predicate);
         RowExpressionDomainTranslator.ExtractionResult result = fromPredicate(predicate);
         traitSet.listTraits();
@@ -151,7 +151,7 @@ public class TestFilterTrait
                                 eq(add(variable("c2", BIGINT), variable("c3", BIGINT)),
                                         constant(2L, BIGINT)),
                                 eq(variable("c5", BIGINT), constant(1L, BIGINT)))));
-        RowExpression predicate = traitSet.getSingle(ROW_FILTER).getPredicate();
+        RowExpression predicate = traitSet.getSingle(ROW_FILTER).get().getPredicate();
         // simulate push through project
         RowExpression transformed = transform(predicate, ImmutableMap.of(variable("c2", BIGINT), variable("c5", BIGINT)), ImmutableSet.of(new Symbol("c5"), new Symbol("c1")));
         traitSet.replace(filterTrait(transformed));

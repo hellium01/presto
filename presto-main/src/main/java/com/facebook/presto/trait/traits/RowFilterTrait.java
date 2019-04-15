@@ -31,6 +31,11 @@ public class RowFilterTrait
         this.comparator = comparator;
     }
 
+    public RowFilterTrait newPredicate(RowExpression predicate)
+    {
+        return new RowFilterTrait(predicate, comparator);
+    }
+
     @Override
     public TraitType<?> getTraitType()
     {
