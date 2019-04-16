@@ -22,5 +22,7 @@ public interface Trait
      */
     boolean satisfies(Trait other);
 
+    boolean isEnforced();
+
     TraitType<?> getTraitType();
 }

@@ -33,6 +33,6 @@ public class RowFilterTraitType
     @Override
     public RowFilterTrait merge(List<RowFilterTrait> traits)
     {
-        return new RowFilterTrait(and(traits.stream().map(RowFilterTrait::getPredicate).collect(toImmutableList())));
+        return traits.get(traits.size()-1).newPredicate(and(traits.stream().map(RowFilterTrait::getPredicate).collect(toImmutableList())));
     }
 }

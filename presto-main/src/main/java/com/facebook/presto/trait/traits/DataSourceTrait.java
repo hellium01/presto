@@ -44,6 +44,12 @@ public class DataSourceTrait
     }
 
     @Override
+    public boolean isEnforced()
+    {
+        return true;
+    }
+
+    @Override
     public TraitType<?> getTraitType()
     {
         return DATA_SOURCE_TRAIT;

@@ -107,6 +107,12 @@ public class CollationTrait
     }
 
     @Override
+    public boolean isEnforced()
+    {
+        return orderMap.values().stream().allMatch(Order::isStrict);
+    }
+
+    @Override
     public TraitType<?> getTraitType()
     {
         return COLLATION_TRAIT_TYPE;
