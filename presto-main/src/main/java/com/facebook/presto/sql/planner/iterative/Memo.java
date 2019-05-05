@@ -21,8 +21,14 @@ import com.facebook.presto.spi.plan.PlanNodeIdAllocator;
 =======
 import com.facebook.presto.sql.planner.PlanNodeIdAllocator;
 import com.facebook.presto.sql.planner.plan.PlanNode;
+import com.facebook.presto.sql.planner.plan.PlanNodeId;
 import com.facebook.presto.trait.TraitSet;
+<<<<<<< HEAD
 >>>>>>> Update Trait Propagator
+=======
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+>>>>>>> Add planNode to memo reference
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 
@@ -75,6 +81,7 @@ public class Memo
     private final int rootGroup;
 
     private final Map<Integer, Group> groups = new HashMap<>();
+    private final BiMap<PlanNodeId, Integer> planNodes = HashBiMap.create();
 
     private int nextGroupId = ROOT_GROUP_REF + 1;
 
@@ -135,6 +142,7 @@ public class Memo
 
         incrementReferenceCounts(node, group);
         getGroup(group).membership = node;
+        planNodes.forcePut(node.getId(), group);
         decrementReferenceCounts(old, group);
         evictStatisticsAndCost(group);
 
@@ -221,6 +229,7 @@ public class Memo
     {
         checkArgument(getGroup(group).incomingReferences.isEmpty(), "Cannot delete group that has incoming references");
         PlanNode deletedNode = groups.remove(group).membership;
+        planNodes.inverse().remove(group);
         decrementReferenceCounts(deletedNode, group);
     }
 
@@ -245,6 +254,7 @@ public class Memo
         PlanNode rewritten = insertChildrenAndRewrite(node);
 
         groups.put(group, Group.withMember(rewritten));
+        planNodes.forcePut(rewritten.getId(), group);
         incrementReferenceCounts(rewritten, group);
 
         return group;
