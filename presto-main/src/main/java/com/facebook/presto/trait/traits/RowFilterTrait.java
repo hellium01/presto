@@ -51,6 +51,12 @@ public class RowFilterTrait
         return satisfies((RowFilterTrait) trait);
     }
 
+    @Override
+    public boolean isEnforced()
+    {
+        return true;
+    }
+
     public boolean satisfies(RowFilterTrait trait)
     {
         // check if current predicate is more specific than other (what is true in this will be always true in other).

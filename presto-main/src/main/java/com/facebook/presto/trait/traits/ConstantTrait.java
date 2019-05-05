@@ -65,6 +65,12 @@ public class ConstantTrait
     }
 
     @Override
+    public boolean isEnforced()
+    {
+        return true;
+    }
+
+    @Override
     public TraitType<?> getTraitType()
     {
         return CONSTANT_TRAIT_TYPE;
