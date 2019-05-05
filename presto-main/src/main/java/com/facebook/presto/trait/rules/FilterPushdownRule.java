@@ -55,7 +55,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 public class FilterPushdownRule
-        implements RuleBasedTraitPropagator.PushdownRule<RowFilterTrait, PlanNode>
+        implements RuleBasedTraitPropagator.PushDownRule<RowFilterTrait, PlanNode>
 {
     private final RowExpressionCanonicalizer canonicalizer;
     private final Metadata metadata;
@@ -78,9 +78,15 @@ public class FilterPushdownRule
     }
 
     @Override
-    public TraitSet pullUp(PlanNode planNode, TraitProvider traitProvider, TraitPropagator.Context context)
+    public Class<PlanNode> getPlanNodeType()
     {
-        return planNode.accept(new PullupVisitor(
+        return PlanNode.class;
+    }
+
+    @Override
+    public void pushDown(PlanNode planNode, TraitProvider traitProvider, TraitPropagator.Context context)
+    {
+        planNode.accept(new PushDownVisitor(
                 context.getSession(),
                 context.getTypes(),
                 metadata,
@@ -90,14 +96,14 @@ public class FilterPushdownRule
                 determinismEvaluator), traitProvider);
     }
 
-    private static class PullupVisitor
+    private static class PushDownVisitor
             extends PlanVisitor<TraitSet, TraitProvider>
     {
         private final TypeProvider types;
         private final TraitProvider provider;
         private final TransformationUtils transformer;
 
-        public PullupVisitor(
+        public PushDownVisitor(
                 Session session,
                 TypeProvider types,
                 Metadata metadata,

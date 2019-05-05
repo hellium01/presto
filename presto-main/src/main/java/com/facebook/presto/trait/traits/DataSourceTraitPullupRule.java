@@ -24,12 +24,18 @@ import static com.facebook.presto.trait.BasicTraitSet.emptyTraitSet;
 import static com.facebook.presto.trait.traits.DataSourceTraitType.DATA_SOURCE_TRAIT;
 
 public class DataSourceTraitPullupRule
-        implements RuleBasedTraitPropagator.PullupRule<DataSourceTrait, PlanNode>
+        implements RuleBasedTraitPropagator.PullUpRule<DataSourceTrait, PlanNode>
 {
     @Override
     public TraitType<DataSourceTrait> getTraitType()
     {
         return DATA_SOURCE_TRAIT;
+    }
+
+    @Override
+    public Class<PlanNode> getPlanNodeType()
+    {
+        return PlanNode.class;
     }
 
     @Override

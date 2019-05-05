@@ -15,6 +15,7 @@ package com.facebook.presto.trait.propagator;
 
 import com.facebook.presto.Session;
 import com.facebook.presto.sql.planner.TypeProvider;
+import com.facebook.presto.sql.planner.iterative.Memo;
 import com.facebook.presto.sql.planner.plan.PlanNode;
 import com.facebook.presto.trait.TraitSet;
 import com.facebook.presto.trait.TraitType;
@@ -26,6 +27,7 @@ public interface TraitPropagator
     /**
      * Pull up provided output from planNode's input. Can be only a subset of traits and the result is merged with
      * existing value.
+     *
      * @param planNode
      * @param traitProvider
      * @param context
@@ -36,6 +38,7 @@ public interface TraitPropagator
 
     /**
      * Push down preferred input from planNode's output. Will update in place in trait returned by traitProvider.
+     *
      * @param planNode
      * @param traitProvider
      * @param context
@@ -50,6 +53,6 @@ public interface TraitPropagator
 
         TypeProvider getTypes();
 
-        TraitProvider getTraitProvider();
+        Memo getMemo();
     }
 }

@@ -55,7 +55,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 public class FilterPullupRule
-        implements RuleBasedTraitPropagator.PullupRule<RowFilterTrait, PlanNode>
+        implements RuleBasedTraitPropagator.PullUpRule<RowFilterTrait, PlanNode>
 {
     private final RowExpressionCanonicalizer canonicalizer;
     private final Metadata metadata;
@@ -78,9 +78,15 @@ public class FilterPullupRule
     }
 
     @Override
+    public Class<PlanNode> getPlanNodeType()
+    {
+        return PlanNode.class;
+    }
+
+    @Override
     public TraitSet pullUp(PlanNode planNode, TraitProvider traitProvider, TraitPropagator.Context context)
     {
-        return planNode.accept(new PullupVisitor(
+        return planNode.accept(new PullUpVisitor(
                 context.getSession(),
                 context.getTypes(),
                 metadata,
@@ -90,14 +96,14 @@ public class FilterPullupRule
                 determinismEvaluator), traitProvider);
     }
 
-    private static class PullupVisitor
+    private static class PullUpVisitor
             extends PlanVisitor<TraitSet, TraitProvider>
     {
         private final TypeProvider types;
         private final TraitProvider provider;
         private final TransformationUtils transformer;
 
-        public PullupVisitor(
+        public PullUpVisitor(
                 Session session,
                 TypeProvider types,
                 Metadata metadata,

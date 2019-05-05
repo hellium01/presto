@@ -15,8 +15,14 @@ package com.facebook.presto.sql.planner.iterative;
 
 import com.facebook.presto.cost.PlanCostEstimate;
 import com.facebook.presto.cost.PlanNodeStatsEstimate;
+<<<<<<< HEAD
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.PlanNodeIdAllocator;
+=======
+import com.facebook.presto.sql.planner.PlanNodeIdAllocator;
+import com.facebook.presto.sql.planner.plan.PlanNode;
+import com.facebook.presto.trait.TraitSet;
+>>>>>>> Update Trait Propagator
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 
@@ -165,6 +171,16 @@ public class Memo
         return Optional.ofNullable(getGroup(group).cost);
     }
 
+    public Optional<TraitSet> getPreferredTraitSet(int group)
+    {
+        return Optional.of(getGroup(group).preferredOutput);
+    }
+
+    public Optional<TraitSet> getProvidedTraitSet(int group)
+    {
+        return Optional.of(getGroup(group).providedOutput);
+    }
+
     public void storeCost(int group, PlanCostEstimate cost)
     {
         getGroup(group).cost = requireNonNull(cost, "cost is null");
@@ -244,6 +260,11 @@ public class Memo
         return groups.size();
     }
 
+    public void addProvidedTrait(int groupId, TraitSet newTraitSet)
+    {
+        getGroup(groupId).providedOutput = newTraitSet;
+    }
+
     private static final class Group
     {
         static Group withMember(PlanNode member)
@@ -257,6 +278,10 @@ public class Memo
         private PlanNodeStatsEstimate stats;
         @Nullable
         private PlanCostEstimate cost;
+        @Nullable
+        private TraitSet preferredOutput;
+        @Nullable
+        private TraitSet providedOutput;
 
         private Group(PlanNode member)
         {
