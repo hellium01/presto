@@ -28,7 +28,6 @@ import com.facebook.presto.sql.planner.plan.PlanVisitor;
 import com.facebook.presto.sql.relational.DeterminismEvaluator;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.NodeRef;
-import com.facebook.presto.trait.TraitSet;
 import com.facebook.presto.trait.TraitType;
 import com.facebook.presto.trait.propagator.RuleBasedTraitPropagator;
 import com.facebook.presto.trait.propagator.TraitPropagator;
@@ -48,7 +47,6 @@ import static com.facebook.presto.sql.planner.SymbolsExtractor.extractAll;
 import static com.facebook.presto.sql.relational.LogicalRowExpressions.extractConjuncts;
 import static com.facebook.presto.sql.relational.RowExpressionUtils.inlineExpressions;
 import static com.facebook.presto.sql.relational.SqlToRowExpressionTranslator.translate;
-import static com.facebook.presto.trait.BasicTraitSet.emptyTraitSet;
 import static com.facebook.presto.trait.traits.RowFilterTraitType.ROW_FILTER;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Collections.emptyList;
@@ -84,7 +82,7 @@ public class FilterPullupRule
     }
 
     @Override
-    public TraitSet pullUp(PlanNode planNode, TraitProvider traitProvider, TraitPropagator.Context context)
+    public List<RowFilterTrait> pullUp(PlanNode planNode, TraitProvider traitProvider, TraitPropagator.Context context)
     {
         return planNode.accept(new PullUpVisitor(
                 context.getSession(),
@@ -97,7 +95,7 @@ public class FilterPullupRule
     }
 
     private static class PullUpVisitor
-            extends PlanVisitor<TraitSet, TraitProvider>
+            extends PlanVisitor<List<RowFilterTrait>, TraitProvider>
     {
         private final TypeProvider types;
         private final TraitProvider provider;
@@ -118,9 +116,12 @@ public class FilterPullupRule
         }
 
         @Override
-        protected TraitSet visitPlan(PlanNode node, TraitProvider traits)
+        protected List<RowFilterTrait> visitPlan(PlanNode node, TraitProvider traits)
         {
-            return emptyTraitSet();
+            node.getSources().stream()
+                    .map(source -> traits.providedOutput(source, ROW_FILTER))
+                    .flatMap(List::stream)
+                    .collect(toImmutableList());
         }
     }
 

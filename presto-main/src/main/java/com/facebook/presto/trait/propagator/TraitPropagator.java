@@ -15,7 +15,6 @@ package com.facebook.presto.trait.propagator;
 
 import com.facebook.presto.Session;
 import com.facebook.presto.sql.planner.TypeProvider;
-import com.facebook.presto.sql.planner.iterative.Memo;
 import com.facebook.presto.sql.planner.plan.PlanNode;
 import com.facebook.presto.trait.TraitSet;
 import com.facebook.presto.trait.TraitType;
@@ -52,7 +51,5 @@ public interface TraitPropagator
         Session getSession();
 
         TypeProvider getTypes();
-
-        Memo getMemo();
     }
 }

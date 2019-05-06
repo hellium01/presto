@@ -22,13 +22,13 @@ import java.util.List;
 
 public interface TraitProvider
 {
-    TraitSet preferredOutput(PlanNode node);
+    TraitSet expectedOutput(PlanNode node);
 
     TraitSet providedOutput(PlanNode node);
 
-    default <T extends Trait> List<T> preferredOutput(PlanNode node, TraitType<T> type)
+    default <T extends Trait> List<T> expectedOutput(PlanNode node, TraitType<T> type)
     {
-        return preferredOutput(node).get(type);
+        return expectedOutput(node).get(type);
     }
 
     default <T extends Trait> List<T> providedOutput(PlanNode node, TraitType<T> type)

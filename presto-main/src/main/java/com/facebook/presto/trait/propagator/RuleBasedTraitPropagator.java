@@ -31,14 +31,14 @@ import static java.util.function.Function.identity;
 public class RuleBasedTraitPropagator
         implements TraitPropagator
 {
-    private final ListMultimap<TraitType<?>, PushDownRule<?, ?>> pushdownRulesByTraitType;
-    private final ListMultimap<TraitType<?>, PullUpRule<?, ?>> pullupRulesByTraitType;
+    private final ListMultimap<TraitType<?>, PushDownRule<?, ?>> pushDownRulesByTraitType;
+    private final ListMultimap<TraitType<?>, PullUpRule<?, ?>> pullUpRulesByTraitType;
 
     public RuleBasedTraitPropagator(List<PushDownRule<?, ?>> pushDownRules, List<PullUpRule<?, ?>> pullUpRules)
     {
-        this.pushdownRulesByTraitType = pushDownRules.stream()
+        this.pushDownRulesByTraitType = pushDownRules.stream()
                 .collect(toMultimap(PushDownRule::getTraitType, identity(), ArrayListMultimap::create));
-        this.pullupRulesByTraitType = pullUpRules.stream()
+        this.pullUpRulesByTraitType = pullUpRules.stream()
                 .collect(toMultimap(PullUpRule::getTraitType, identity(), ArrayListMultimap::create));
     }
 
@@ -48,10 +48,10 @@ public class RuleBasedTraitPropagator
         TraitSet traitSet = traitProvider.providedOutput(planNode);
         checkArgument(planNode instanceof GroupReference, "planNode must be a groupReference");
         selectedTraitTypes.stream()
-                .flatMap(traitType -> pullupRulesByTraitType.get(traitType).stream())
+                .flatMap(traitType -> pullUpRulesByTraitType.get(traitType).stream())
                 .filter(rule -> rule.getPlanNodeType().isInstance(planNode))
                 .map(rule -> pullUp(rule, planNode, traitProvider, context))
-                .forEach(newTraitSet -> traitSet.merge(newTraitSet));
+                .forEach(newTraitSet -> traitSet.addAll(newTraitSet));
         return traitSet;
     }
 
@@ -59,12 +59,12 @@ public class RuleBasedTraitPropagator
     public void pushDown(PlanNode planNode, TraitProvider traitProvider, Context context, Set<TraitType> selectedTraitTypes)
     {
         selectedTraitTypes.stream()
-                .flatMap(traitType -> pushdownRulesByTraitType.get(traitType).stream())
+                .flatMap(traitType -> pushDownRulesByTraitType.get(traitType).stream())
                 .filter(rule -> rule.getPlanNodeType().isInstance(planNode))
                 .forEach(rule -> pushDown(rule, planNode, traitProvider, context));
     }
 
-    private static <T extends Trait, P extends PlanNode> TraitSet pullUp(PullUpRule<T, P> rule, PlanNode planNode, TraitProvider traitProvider, Context context)
+    private static <T extends Trait, P extends PlanNode> List<T> pullUp(PullUpRule<T, P> rule, PlanNode planNode, TraitProvider traitProvider, Context context)
     {
         return rule.pullUp((P) planNode, traitProvider, context);
     }
@@ -89,6 +89,6 @@ public class RuleBasedTraitPropagator
 
         Class<P> getPlanNodeType();
 
-        TraitSet pullUp(P planNode, TraitProvider traitProvider, Context context);
+        List<T> pullUp(P planNode, TraitProvider traitProvider, Context context);
     }
 }

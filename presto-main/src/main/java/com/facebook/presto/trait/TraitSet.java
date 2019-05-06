@@ -48,4 +48,9 @@ public interface TraitSet
     }
 
     Set<TraitType<?>> listTraits();
+
+    default boolean isEmpty()
+    {
+        return listTraits().isEmpty();
+    }
 }

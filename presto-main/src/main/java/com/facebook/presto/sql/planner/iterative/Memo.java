@@ -113,6 +113,14 @@ public class Memo
         return getNode(groupReference.getGroupId());
     }
 
+    public int getGroup(PlanNode node)
+    {
+        if (node instanceof GroupReference) {
+            return ((GroupReference) node).getGroupId();
+        }
+        return planNodes.get(node);
+    }
+
     public PlanNode extract()
     {
         return extract(getNode(rootGroup));
@@ -179,7 +187,7 @@ public class Memo
         return Optional.ofNullable(getGroup(group).cost);
     }
 
-    public Optional<TraitSet> getPreferredTraitSet(int group)
+    public Optional<TraitSet> getExpectedTraitSet(int group)
     {
         return Optional.of(getGroup(group).preferredOutput);
     }
