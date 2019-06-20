@@ -11,26 +11,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.sql.planner.plan;
+package com.facebook.presto.spi.plan;
 
-import com.facebook.presto.spi.plan.Assignments;
-import com.facebook.presto.spi.plan.PlanNode;
-import com.facebook.presto.spi.plan.PlanNodeId;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 
 import javax.annotation.concurrent.Immutable;
 
 import java.util.List;
 
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 @Immutable
 public class ProjectNode
-        extends InternalPlanNode
+        extends PlanNode
 {
     private final PlanNode source;
     private final Assignments assignments;
@@ -65,7 +62,7 @@ public class ProjectNode
     @Override
     public List<PlanNode> getSources()
     {
-        return ImmutableList.of(source);
+        return unmodifiableList(singletonList(source));
     }
 
     @JsonProperty
@@ -75,7 +72,7 @@ public class ProjectNode
     }
 
     @Override
-    public <R, C> R accept(InternalPlanVisitor<R, C> visitor, C context)
+    public <R, C> R accept(PlanVisitor<R, C> visitor, C context)
     {
         return visitor.visitProject(this, context);
     }
@@ -83,6 +80,10 @@ public class ProjectNode
     @Override
     public PlanNode replaceChildren(List<PlanNode> newChildren)
     {
-        return new ProjectNode(getId(), Iterables.getOnlyElement(newChildren), assignments);
+        // ProjectNode only expects a single upstream PlanNode
+        if (newChildren == null || newChildren.size() != 1) {
+            throw new IllegalArgumentException("Expect exactly one child to replace");
+        }
+        return new ProjectNode(getId(), newChildren.get(0), assignments);
     }
 }
