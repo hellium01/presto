@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.sql.planner.plan;
 
+import com.facebook.presto.spi.plan.Assignments;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.google.common.collect.ImmutableCollection;
 import org.testng.annotations.Test;

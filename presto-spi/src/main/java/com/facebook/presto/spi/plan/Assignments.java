@@ -11,17 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.sql.planner.plan;
+package com.facebook.presto.spi.plan;
 
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
-import com.facebook.presto.sql.planner.Symbol;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +30,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toMap;
 
 public class Assignments
 {
@@ -74,12 +72,22 @@ public class Assignments
     @JsonCreator
     public Assignments(@JsonProperty("assignments") Map<VariableReferenceExpression, RowExpression> assignments)
     {
-        this.assignments = ImmutableMap.copyOf(requireNonNull(assignments, "assignments is null"));
+        requireNonNull(assignments, "assignments is null");
+        this.assignments = Collections.unmodifiableMap(
+                assignments.entrySet()
+                        .stream()
+                        .collect(toMap(
+                                Entry::getKey,
+                                Entry::getValue,
+                                (existingValue, newValue) -> {
+                                    throw new IllegalStateException(String.format("Duplicate key %s", existingValue));
+                                },
+                                LinkedHashMap::new)));
     }
 
     public List<VariableReferenceExpression> getOutputs()
     {
-        return ImmutableList.copyOf(assignments.keySet());
+        return Collections.unmodifiableList(new ArrayList<>(assignments.keySet()));
     }
 
     @JsonProperty("assignments")
@@ -115,11 +123,6 @@ public class Assignments
     public Collection<RowExpression> getExpressions()
     {
         return assignments.values();
-    }
-
-    public Set<Symbol> getSymbols()
-    {
-        return assignments.keySet().stream().map(VariableReferenceExpression::getName).map(Symbol::new).collect(toImmutableSet());
     }
 
     public Set<VariableReferenceExpression> getVariables()
@@ -214,6 +217,13 @@ public class Assignments
         public Assignments build()
         {
             return new Assignments(assignments);
+        }
+    }
+
+    private static void checkState(boolean test, String errorMessage, Object... arguments)
+    {
+        if (!test) {
+            throw new IllegalStateException(String.format(errorMessage, arguments));
         }
     }
 }
