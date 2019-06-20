@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +29,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toList;
 
 public class Assignments
 {
@@ -67,27 +68,24 @@ public class Assignments
         return builder().put(variable1, expression1).put(variable2, expression2).build();
     }
 
+    private final List<VariableReferenceExpression> outputVariables;
     private final Map<VariableReferenceExpression, RowExpression> assignments;
 
     @JsonCreator
-    public Assignments(@JsonProperty("assignments") Map<VariableReferenceExpression, RowExpression> assignments)
+    public Assignments(
+            @JsonProperty("outputVariables") List<VariableReferenceExpression> outputVariables,
+            @JsonProperty("assignments") Map<VariableReferenceExpression, RowExpression> assignments)
     {
+        requireNonNull(outputVariables, "outputVariables is null");
         requireNonNull(assignments, "assignments is null");
-        this.assignments = Collections.unmodifiableMap(
-                assignments.entrySet()
-                        .stream()
-                        .collect(toMap(
-                                Entry::getKey,
-                                Entry::getValue,
-                                (existingValue, newValue) -> {
-                                    throw new IllegalStateException(String.format("Duplicate key %s", existingValue));
-                                },
-                                LinkedHashMap::new)));
+        this.outputVariables = unmodifiableList(new ArrayList<>(outputVariables));
+        this.assignments = unmodifiableMap(new LinkedHashMap<>(assignments));
     }
 
+    @JsonProperty("outputVariables")
     public List<VariableReferenceExpression> getOutputs()
     {
-        return Collections.unmodifiableList(new ArrayList<>(assignments.keySet()));
+        return outputVariables;
     }
 
     @JsonProperty("assignments")
@@ -216,7 +214,7 @@ public class Assignments
 
         public Assignments build()
         {
-            return new Assignments(assignments);
+            return new Assignments(assignments.keySet().stream().collect(toList()), assignments);
         }
     }
 
