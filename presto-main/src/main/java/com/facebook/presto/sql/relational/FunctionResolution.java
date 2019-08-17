@@ -223,6 +223,12 @@ public final class FunctionResolution
     }
 
     @Override
+    public Optional<OperatorType> getOperator(FunctionHandle functionHandle)
+    {
+        return functionManager.getFunctionMetadata(functionHandle).getOperatorType();
+    }
+
+    @Override
     public FunctionHandle subscriptFunction(Type baseType, Type indexType)
     {
         return functionManager.lookupFunction(SUBSCRIPT.getFunctionName().getSuffix(), fromTypes(baseType, indexType));

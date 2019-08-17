@@ -16,6 +16,7 @@ package com.facebook.presto.spi.function;
 import com.facebook.presto.spi.type.Type;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface StandardFunctionResolution
 {
@@ -40,6 +41,8 @@ public interface StandardFunctionResolution
     FunctionHandle comparisonFunction(OperatorType operator, Type leftType, Type rightType);
 
     boolean isComparisonFunction(FunctionHandle functionHandle);
+
+    Optional<OperatorType> getOperator(FunctionHandle functionHandle);
 
     FunctionHandle betweenFunction(Type valueType, Type lowerBoundType, Type upperBoundType);
 
