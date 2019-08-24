@@ -14,6 +14,7 @@
 
 package com.facebook.presto.sql.planner.optimizations;
 
+import com.facebook.presto.spi.plan.AggregationNode;
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.LimitNode;
 import com.facebook.presto.spi.plan.PlanNode;
@@ -23,7 +24,6 @@ import com.facebook.presto.sql.ExpressionUtils;
 import com.facebook.presto.sql.planner.PlanVariableAllocator;
 import com.facebook.presto.sql.planner.VariablesExtractor;
 import com.facebook.presto.sql.planner.iterative.Lookup;
-import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.Assignments;
 import com.facebook.presto.sql.planner.plan.EnforceSingleRowNode;
 import com.facebook.presto.sql.planner.plan.InternalPlanVisitor;
@@ -44,7 +44,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.facebook.presto.sql.planner.plan.AggregationNode.singleGroupingSet;
+import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils.hasEmptyGroupingSet;
+import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils.singleGroupingSet;
 import static com.facebook.presto.sql.planner.plan.AssignmentUtils.identitiesAsSymbolReferences;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToExpression;
 import static com.facebook.presto.sql.relational.OriginalExpressionUtils.castToRowExpression;
@@ -200,7 +201,7 @@ public class PlanNodeDecorrelator
         @Override
         public Optional<DecorrelationResult> visitAggregation(AggregationNode node, Void context)
         {
-            if (node.hasEmptyGroupingSet()) {
+            if (hasEmptyGroupingSet(node)) {
                 return Optional.empty();
             }
 
@@ -228,7 +229,7 @@ public class PlanNodeDecorrelator
                     decorrelatedAggregation.getId(),
                     decorrelatedAggregation.getSource(),
                     decorrelatedAggregation.getAggregations(),
-                    AggregationNode.singleGroupingSet(ImmutableList.<VariableReferenceExpression>builder()
+                    AggregationNodeUtils.singleGroupingSet(ImmutableList.<VariableReferenceExpression>builder()
                             .addAll(node.getGroupingKeys())
                             .addAll(variablesToAdd)
                             .build()),
@@ -237,7 +238,7 @@ public class PlanNodeDecorrelator
                     decorrelatedAggregation.getHashVariable(),
                     decorrelatedAggregation.getGroupIdVariable());
 
-            boolean atMostSingleRow = newAggregation.getGroupingSetCount() == 1
+            boolean atMostSingleRow = newAggregation.getGroupingSets().getGroupingSetCount() == 1
                     && constantVariables.containsAll(newAggregation.getGroupingKeys());
 
             return Optional.of(new DecorrelationResult(

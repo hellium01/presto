@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.sql.planner.plan;
 
+import com.facebook.presto.spi.plan.AggregationNode;
 import com.facebook.presto.spi.plan.PlanVisitor;
 import com.facebook.presto.sql.planner.iterative.GroupReference;
 

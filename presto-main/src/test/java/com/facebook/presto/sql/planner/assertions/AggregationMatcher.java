@@ -16,11 +16,11 @@ package com.facebook.presto.sql.planner.assertions;
 import com.facebook.presto.Session;
 import com.facebook.presto.cost.StatsProvider;
 import com.facebook.presto.metadata.Metadata;
+import com.facebook.presto.spi.plan.AggregationNode;
+import com.facebook.presto.spi.plan.AggregationNode.Step;
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.planner.Symbol;
-import com.facebook.presto.sql.planner.plan.AggregationNode;
-import com.facebook.presto.sql.planner.plan.AggregationNode.Step;
 
 import java.util.Collection;
 import java.util.List;
@@ -74,11 +74,11 @@ public class AggregationMatcher
             return NO_MATCH;
         }
 
-        if (groupingSets.getGroupingSetCount() != aggregationNode.getGroupingSetCount()) {
+        if (groupingSets.getGroupingSetCount() != aggregationNode.getGroupingSets().getGroupingSetCount()) {
             return NO_MATCH;
         }
 
-        if (!groupingSets.getGlobalGroupingSets().equals(aggregationNode.getGlobalGroupingSets())) {
+        if (!groupingSets.getGlobalGroupingSets().equals(aggregationNode.getGroupingSets().getGlobalGroupingSets())) {
             return NO_MATCH;
         }
 

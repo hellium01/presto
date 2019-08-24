@@ -27,6 +27,7 @@ import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.TableHandle;
 import com.facebook.presto.spi.function.FunctionHandle;
+import com.facebook.presto.spi.plan.AggregationNode;
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.LimitNode;
 import com.facebook.presto.spi.plan.OrderingScheme;
@@ -52,7 +53,6 @@ import com.facebook.presto.sql.planner.SubPlan;
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.planner.iterative.GroupReference;
 import com.facebook.presto.sql.planner.optimizations.JoinNodeUtils;
-import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.ApplyNode;
 import com.facebook.presto.sql.planner.plan.AssignUniqueId;
 import com.facebook.presto.sql.planner.plan.Assignments;
@@ -116,6 +116,7 @@ import static com.facebook.presto.execution.StageInfo.getAllStages;
 import static com.facebook.presto.metadata.CastType.CAST;
 import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.SINGLE_DISTRIBUTION;
+import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils.isStreamable;
 import static com.facebook.presto.sql.planner.planPrinter.PlanNodeStatsSummarizer.aggregateStageStats;
 import static com.facebook.presto.sql.planner.planPrinter.TextRenderer.formatDouble;
 import static com.facebook.presto.sql.planner.planPrinter.TextRenderer.formatPositions;
@@ -474,7 +475,7 @@ public class PlanPrinter
             if (node.getStep() != AggregationNode.Step.SINGLE) {
                 type = format("(%s)", node.getStep().toString());
             }
-            if (node.isStreamable()) {
+            if (isStreamable(node)) {
                 type = format("%s(STREAMING)", type);
             }
             String key = "";

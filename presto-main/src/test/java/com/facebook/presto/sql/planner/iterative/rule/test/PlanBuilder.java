@@ -24,6 +24,9 @@ import com.facebook.presto.spi.TableHandle;
 import com.facebook.presto.spi.block.SortOrder;
 import com.facebook.presto.spi.function.FunctionHandle;
 import com.facebook.presto.spi.function.OperatorType;
+import com.facebook.presto.spi.plan.AggregationNode;
+import com.facebook.presto.spi.plan.AggregationNode.Aggregation;
+import com.facebook.presto.spi.plan.AggregationNode.Step;
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.LimitNode;
 import com.facebook.presto.spi.plan.Ordering;
@@ -49,9 +52,7 @@ import com.facebook.presto.sql.planner.TestingConnectorIndexHandle;
 import com.facebook.presto.sql.planner.TestingConnectorTransactionHandle;
 import com.facebook.presto.sql.planner.TestingWriterTarget;
 import com.facebook.presto.sql.planner.TypeProvider;
-import com.facebook.presto.sql.planner.plan.AggregationNode;
-import com.facebook.presto.sql.planner.plan.AggregationNode.Aggregation;
-import com.facebook.presto.sql.planner.plan.AggregationNode.Step;
+import com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils;
 import com.facebook.presto.sql.planner.plan.ApplyNode;
 import com.facebook.presto.sql.planner.plan.AssignUniqueId;
 import com.facebook.presto.sql.planner.plan.Assignments;
@@ -374,13 +375,13 @@ public class PlanBuilder
 
         public AggregationBuilder globalGrouping()
         {
-            groupingSets(AggregationNode.singleGroupingSet(ImmutableList.of()));
+            groupingSets(AggregationNodeUtils.singleGroupingSet(ImmutableList.of()));
             return this;
         }
 
         public AggregationBuilder singleGroupingSet(VariableReferenceExpression... variables)
         {
-            groupingSets(AggregationNode.singleGroupingSet(ImmutableList.copyOf(variables)));
+            groupingSets(AggregationNodeUtils.singleGroupingSet(ImmutableList.copyOf(variables)));
             return this;
         }
 

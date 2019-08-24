@@ -111,6 +111,9 @@ import com.facebook.presto.spi.block.SortOrder;
 import com.facebook.presto.spi.function.FunctionHandle;
 import com.facebook.presto.spi.function.FunctionMetadata;
 import com.facebook.presto.spi.function.OperatorType;
+import com.facebook.presto.spi.plan.AggregationNode;
+import com.facebook.presto.spi.plan.AggregationNode.Aggregation;
+import com.facebook.presto.spi.plan.AggregationNode.Step;
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.LimitNode;
 import com.facebook.presto.spi.plan.OrderingScheme;
@@ -140,9 +143,6 @@ import com.facebook.presto.sql.gen.OrderingCompiler;
 import com.facebook.presto.sql.gen.PageFunctionCompiler;
 import com.facebook.presto.sql.parser.SqlParser;
 import com.facebook.presto.sql.planner.optimizations.IndexJoinOptimizer;
-import com.facebook.presto.sql.planner.plan.AggregationNode;
-import com.facebook.presto.sql.planner.plan.AggregationNode.Aggregation;
-import com.facebook.presto.sql.planner.plan.AggregationNode.Step;
 import com.facebook.presto.sql.planner.plan.AssignUniqueId;
 import com.facebook.presto.sql.planner.plan.Assignments;
 import com.facebook.presto.sql.planner.plan.DeleteNode;
@@ -235,6 +235,8 @@ import static com.facebook.presto.operator.TableWriterOperator.TableWriterOperat
 import static com.facebook.presto.operator.UnnestOperator.UnnestOperatorFactory;
 import static com.facebook.presto.operator.WindowFunctionDefinition.window;
 import static com.facebook.presto.spi.StandardErrorCode.COMPILER_ERROR;
+import static com.facebook.presto.spi.plan.AggregationNode.Step.FINAL;
+import static com.facebook.presto.spi.plan.AggregationNode.Step.PARTIAL;
 import static com.facebook.presto.spi.relation.LogicalRowExpressions.TRUE_CONSTANT;
 import static com.facebook.presto.spi.relation.RowExpressionNodeInliner.replaceExpression;
 import static com.facebook.presto.spi.type.BigintType.BIGINT;
@@ -246,8 +248,8 @@ import static com.facebook.presto.sql.planner.SystemPartitioningHandle.FIXED_ARB
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.FIXED_BROADCAST_DISTRIBUTION;
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.SCALED_WRITER_DISTRIBUTION;
 import static com.facebook.presto.sql.planner.SystemPartitioningHandle.SINGLE_DISTRIBUTION;
-import static com.facebook.presto.sql.planner.plan.AggregationNode.Step.FINAL;
-import static com.facebook.presto.sql.planner.plan.AggregationNode.Step.PARTIAL;
+import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils.hasDefaultOutput;
+import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils.isStreamable;
 import static com.facebook.presto.sql.planner.plan.AssignmentUtils.identityAssignments;
 import static com.facebook.presto.sql.planner.plan.JoinNode.Type.FULL;
 import static com.facebook.presto.sql.planner.plan.JoinNode.Type.INNER;
@@ -2596,15 +2598,15 @@ public class LocalExecutionPlanner
             OperatorFactory operatorFactory = createHashAggregationOperatorFactory(
                     node.getId(),
                     node.getAggregations(),
-                    node.getGlobalGroupingSets(),
+                    node.getGroupingSets().getGlobalGroupingSets(),
                     node.getGroupingKeys(),
                     node.getStep(),
                     node.getHashVariable(),
                     node.getGroupIdVariable(),
                     source,
-                    node.hasDefaultOutput(),
+                    hasDefaultOutput(node),
                     spillEnabled,
-                    node.isStreamable(),
+                    isStreamable(node),
                     unspillMemoryLimit,
                     context,
                     0,

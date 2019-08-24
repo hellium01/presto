@@ -17,6 +17,7 @@ import com.facebook.presto.Session;
 import com.facebook.presto.execution.warnings.WarningCollector;
 import com.facebook.presto.spi.ConnectorId;
 import com.facebook.presto.spi.ConnectorPlanOptimizer;
+import com.facebook.presto.spi.plan.AggregationNode;
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.LimitNode;
 import com.facebook.presto.spi.plan.PlanNode;
@@ -49,6 +50,7 @@ public class ApplyConnectorOptimization
 {
     static final Set<Class<? extends PlanNode>> CONNECTOR_ACCESSIBLE_PLAN_NODES = ImmutableSet.of(
             FilterNode.class,
+            AggregationNode.class,
             TableScanNode.class,
             LimitNode.class,
             TopNNode.class,

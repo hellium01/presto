@@ -13,13 +13,13 @@
  */
 package com.facebook.presto.sql.planner.optimizations;
 
+import com.facebook.presto.spi.plan.AggregationNode;
 import com.facebook.presto.spi.plan.FilterNode;
 import com.facebook.presto.spi.plan.LimitNode;
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.plan.ValuesNode;
 import com.facebook.presto.sql.planner.iterative.GroupReference;
 import com.facebook.presto.sql.planner.iterative.Lookup;
-import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.EnforceSingleRowNode;
 import com.facebook.presto.sql.planner.plan.ExchangeNode;
 import com.facebook.presto.sql.planner.plan.InternalPlanVisitor;
@@ -27,6 +27,7 @@ import com.facebook.presto.sql.planner.plan.ProjectNode;
 import com.google.common.collect.Range;
 
 import static com.facebook.presto.sql.planner.iterative.Lookup.noLookup;
+import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils.hasEmptyGroupingSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
@@ -103,7 +104,7 @@ public final class QueryCardinalityUtil
         @Override
         public Range<Long> visitAggregation(AggregationNode node, Void context)
         {
-            if (node.hasEmptyGroupingSet()) {
+            if (hasEmptyGroupingSet(node)) {
                 return Range.singleton(1L);
             }
             return Range.atLeast(0L);

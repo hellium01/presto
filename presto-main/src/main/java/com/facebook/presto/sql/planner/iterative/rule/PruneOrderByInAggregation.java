@@ -16,15 +16,16 @@ package com.facebook.presto.sql.planner.iterative.rule;
 import com.facebook.presto.matching.Captures;
 import com.facebook.presto.matching.Pattern;
 import com.facebook.presto.metadata.FunctionManager;
+import com.facebook.presto.spi.plan.AggregationNode;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.facebook.presto.sql.planner.iterative.Rule;
-import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 import java.util.Optional;
 
-import static com.facebook.presto.sql.planner.plan.AggregationNode.Aggregation;
+import static com.facebook.presto.spi.plan.AggregationNode.Aggregation;
+import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils.hasOrderings;
 import static com.facebook.presto.sql.planner.plan.Patterns.aggregation;
 import static java.util.Objects.requireNonNull;
 
@@ -48,7 +49,7 @@ public class PruneOrderByInAggregation
     @Override
     public Result apply(AggregationNode node, Captures captures, Context context)
     {
-        if (!node.hasOrderings()) {
+        if (!hasOrderings(node)) {
             return Result.empty();
         }
 

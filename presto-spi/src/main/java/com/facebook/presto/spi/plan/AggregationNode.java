@@ -11,39 +11,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.sql.planner.plan;
+package com.facebook.presto.spi.plan;
 
-import com.facebook.presto.metadata.FunctionManager;
-import com.facebook.presto.operator.aggregation.InternalAggregationFunction;
 import com.facebook.presto.spi.function.FunctionHandle;
-import com.facebook.presto.spi.plan.OrderingScheme;
-import com.facebook.presto.spi.plan.PlanNode;
-import com.facebook.presto.spi.plan.PlanNodeId;
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.RowExpression;
 import com.facebook.presto.spi.relation.VariableReferenceExpression;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 
 import javax.annotation.concurrent.Immutable;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.facebook.presto.sql.planner.plan.AggregationNode.Step.SINGLE;
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.facebook.presto.spi.plan.AggregationNode.Step.SINGLE;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
 
 @Immutable
-public class AggregationNode
-        extends InternalPlanNode
+public final class AggregationNode
+        extends PlanNode
 {
     private final PlanNode source;
     private final Map<VariableReferenceExpression, Aggregation> aggregations;
@@ -68,7 +65,7 @@ public class AggregationNode
         super(id);
 
         this.source = source;
-        this.aggregations = ImmutableMap.copyOf(requireNonNull(aggregations, "aggregations is null"));
+        this.aggregations = unmodifiableMap(new HashMap<>(requireNonNull(aggregations, "aggregations is null")));
 
         requireNonNull(groupingSets, "groupingSets is null");
         groupIdVariable.ifPresent(variable -> checkArgument(groupingSets.getGroupingKeys().contains(variable), "Grouping columns does not contain groupId column"));
@@ -86,14 +83,14 @@ public class AggregationNode
 
         requireNonNull(preGroupedVariables, "preGroupedVariables is null");
         checkArgument(preGroupedVariables.isEmpty() || groupingSets.getGroupingKeys().containsAll(preGroupedVariables), "Pre-grouped variables must be a subset of the grouping keys");
-        this.preGroupedVariables = ImmutableList.copyOf(preGroupedVariables);
+        this.preGroupedVariables = unmodifiableList(new ArrayList<>(preGroupedVariables));
 
-        ImmutableList.Builder<VariableReferenceExpression> outputs = ImmutableList.builder();
+        List<VariableReferenceExpression> outputs = new ArrayList<>();
         outputs.addAll(groupingSets.getGroupingKeys());
         hashVariable.ifPresent(outputs::add);
         outputs.addAll(aggregations.keySet());
 
-        this.outputs = outputs.build();
+        this.outputs = unmodifiableList(outputs);
     }
 
     public List<VariableReferenceExpression> getGroupingKeys()
@@ -107,33 +104,10 @@ public class AggregationNode
         return groupingSets;
     }
 
-    /**
-     * @return whether this node should produce default output in case of no input pages.
-     * For example for query:
-     * <p>
-     * SELECT count(*) FROM nation WHERE nationkey < 0
-     * <p>
-     * A default output of "0" is expected to be produced by FINAL aggregation operator.
-     */
-    public boolean hasDefaultOutput()
-    {
-        return hasEmptyGroupingSet() && (step.isOutputPartial() || step.equals(SINGLE));
-    }
-
-    public boolean hasEmptyGroupingSet()
-    {
-        return !groupingSets.getGlobalGroupingSets().isEmpty();
-    }
-
-    public boolean hasNonEmptyGroupingSet()
-    {
-        return groupingSets.getGroupingSetCount() > groupingSets.getGlobalGroupingSets().size();
-    }
-
     @Override
     public List<PlanNode> getSources()
     {
-        return ImmutableList.of(source);
+        return singletonList(source);
     }
 
     @Override
@@ -152,16 +126,6 @@ public class AggregationNode
     public List<VariableReferenceExpression> getPreGroupedVariables()
     {
         return preGroupedVariables;
-    }
-
-    public int getGroupingSetCount()
-    {
-        return groupingSets.getGroupingSetCount();
-    }
-
-    public Set<Integer> getGlobalGroupingSets()
-    {
-        return groupingSets.getGlobalGroupingSets();
     }
 
     @JsonProperty
@@ -188,15 +152,8 @@ public class AggregationNode
         return groupIdVariable;
     }
 
-    public boolean hasOrderings()
-    {
-        return aggregations.values().stream()
-                .map(Aggregation::getOrderBy)
-                .anyMatch(Optional::isPresent);
-    }
-
     @Override
-    public <R, C> R accept(InternalPlanVisitor<R, C> visitor, C context)
+    public <R, C> R accept(PlanVisitor<R, C> visitor, C context)
     {
         return visitor.visitAggregation(this, context);
     }
@@ -204,67 +161,7 @@ public class AggregationNode
     @Override
     public PlanNode replaceChildren(List<PlanNode> newChildren)
     {
-        return new AggregationNode(getId(), Iterables.getOnlyElement(newChildren), aggregations, groupingSets, preGroupedVariables, step, hashVariable, groupIdVariable);
-    }
-
-    public boolean isDecomposable(FunctionManager functionManager)
-    {
-        boolean hasOrderBy = getAggregations().values().stream()
-                .map(Aggregation::getOrderBy)
-                .anyMatch(Optional::isPresent);
-
-        boolean hasDistinct = getAggregations().values().stream()
-                .anyMatch(Aggregation::isDistinct);
-
-        boolean decomposableFunctions = getAggregations().values().stream()
-                .map(Aggregation::getFunctionHandle)
-                .map(functionManager::getAggregateFunctionImplementation)
-                .allMatch(InternalAggregationFunction::isDecomposable);
-
-        return !hasOrderBy && !hasDistinct && decomposableFunctions;
-    }
-
-    public boolean hasSingleNodeExecutionPreference(FunctionManager functionManager)
-    {
-        // There are two kinds of aggregations the have single node execution preference:
-        //
-        // 1. aggregations with only empty grouping sets like
-        //
-        // SELECT count(*) FROM lineitem;
-        //
-        // there is no need for distributed aggregation. Single node FINAL aggregation will suffice,
-        // since all input have to be aggregated into one line output.
-        //
-        // 2. aggregations that must produce default output and are not decomposable, we can not distribute them.
-        return (hasEmptyGroupingSet() && !hasNonEmptyGroupingSet()) || (hasDefaultOutput() && !isDecomposable(functionManager));
-    }
-
-    public boolean isStreamable()
-    {
-        return !preGroupedVariables.isEmpty() && groupingSets.getGroupingSetCount() == 1 && groupingSets.getGlobalGroupingSets().isEmpty();
-    }
-
-    public static GroupingSetDescriptor globalAggregation()
-    {
-        return singleGroupingSet(ImmutableList.of());
-    }
-
-    public static GroupingSetDescriptor singleGroupingSet(List<VariableReferenceExpression> groupingKeys)
-    {
-        Set<Integer> globalGroupingSets;
-        if (groupingKeys.isEmpty()) {
-            globalGroupingSets = ImmutableSet.of(0);
-        }
-        else {
-            globalGroupingSets = ImmutableSet.of();
-        }
-
-        return new GroupingSetDescriptor(groupingKeys, 1, globalGroupingSets);
-    }
-
-    public static GroupingSetDescriptor groupingSets(List<VariableReferenceExpression> groupingKeys, int groupingSetCount, Set<Integer> globalGroupingSets)
-    {
-        return new GroupingSetDescriptor(groupingKeys, groupingSetCount, globalGroupingSets);
+        return new AggregationNode(getId(), getOnlyElement(newChildren), aggregations, groupingSets, preGroupedVariables, step, hashVariable, groupIdVariable);
     }
 
     public static class GroupingSetDescriptor
@@ -286,9 +183,9 @@ public class AggregationNode
                 checkArgument(!globalGroupingSets.isEmpty(), "no grouping keys implies at least one global grouping set, but none provided");
             }
 
-            this.groupingKeys = ImmutableList.copyOf(groupingKeys);
+            this.groupingKeys = unmodifiableList(new ArrayList<>(groupingKeys));
             this.groupingSetCount = groupingSetCount;
-            this.globalGroupingSets = ImmutableSet.copyOf(globalGroupingSets);
+            this.globalGroupingSets = unmodifiableSet(new HashSet<>(globalGroupingSets));
         }
 
         @JsonProperty
@@ -455,6 +352,19 @@ public class AggregationNode
         public int hashCode()
         {
             return Objects.hash(call, filter, orderingScheme, isDistinct, mask);
+        }
+    }
+
+    private static PlanNode getOnlyElement(List<PlanNode> list)
+    {
+        checkArgument(list.size() == 1, "Must has exactly one element");
+        return list.get(0);
+    }
+
+    private static void checkArgument(boolean condition, String message)
+    {
+        if (!condition) {
+            throw new IllegalArgumentException(message);
         }
     }
 }

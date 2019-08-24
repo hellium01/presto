@@ -17,7 +17,7 @@ import com.facebook.presto.sql.planner.iterative.rule.RewriteSpatialPartitioning
 import com.facebook.presto.sql.planner.iterative.rule.test.BaseRuleTest;
 import com.facebook.presto.sql.planner.iterative.rule.test.PlanBuilder;
 import com.facebook.presto.sql.planner.iterative.rule.test.RuleAssert;
-import com.facebook.presto.sql.planner.plan.AggregationNode;
+import com.facebook.presto.spi.plan.AggregationNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.testng.annotations.Test;

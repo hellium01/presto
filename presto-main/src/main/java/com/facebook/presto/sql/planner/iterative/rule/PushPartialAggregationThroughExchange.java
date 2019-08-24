@@ -19,6 +19,7 @@ import com.facebook.presto.matching.Pattern;
 import com.facebook.presto.metadata.FunctionManager;
 import com.facebook.presto.operator.aggregation.InternalAggregationFunction;
 import com.facebook.presto.spi.function.FunctionHandle;
+import com.facebook.presto.spi.plan.AggregationNode;
 import com.facebook.presto.spi.plan.PlanNode;
 import com.facebook.presto.spi.relation.CallExpression;
 import com.facebook.presto.spi.relation.LambdaDefinitionExpression;
@@ -28,7 +29,6 @@ import com.facebook.presto.sql.planner.Partitioning;
 import com.facebook.presto.sql.planner.PartitioningScheme;
 import com.facebook.presto.sql.planner.iterative.Rule;
 import com.facebook.presto.sql.planner.optimizations.SymbolMapper;
-import com.facebook.presto.sql.planner.plan.AggregationNode;
 import com.facebook.presto.sql.planner.plan.Assignments;
 import com.facebook.presto.sql.planner.plan.ExchangeNode;
 import com.facebook.presto.sql.planner.plan.ProjectNode;
@@ -43,9 +43,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.facebook.presto.SystemSessionProperties.preferPartialAggregation;
-import static com.facebook.presto.sql.planner.plan.AggregationNode.Step.FINAL;
-import static com.facebook.presto.sql.planner.plan.AggregationNode.Step.PARTIAL;
-import static com.facebook.presto.sql.planner.plan.AggregationNode.Step.SINGLE;
+import static com.facebook.presto.spi.plan.AggregationNode.Step.FINAL;
+import static com.facebook.presto.spi.plan.AggregationNode.Step.PARTIAL;
+import static com.facebook.presto.spi.plan.AggregationNode.Step.SINGLE;
+import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils.hasEmptyGroupingSet;
+import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils.hasNonEmptyGroupingSet;
+import static com.facebook.presto.sql.planner.optimizations.AggregationNodeUtils.isDecomposable;
 import static com.facebook.presto.sql.planner.plan.ExchangeNode.Type.GATHER;
 import static com.facebook.presto.sql.planner.plan.ExchangeNode.Type.REPARTITION;
 import static com.facebook.presto.sql.planner.plan.Patterns.aggregation;
@@ -85,11 +88,11 @@ public class PushPartialAggregationThroughExchange
     {
         ExchangeNode exchangeNode = captures.get(EXCHANGE_NODE);
 
-        boolean decomposable = aggregationNode.isDecomposable(functionManager);
+        boolean decomposable = isDecomposable(aggregationNode, functionManager);
 
         if (aggregationNode.getStep().equals(SINGLE) &&
-                aggregationNode.hasEmptyGroupingSet() &&
-                aggregationNode.hasNonEmptyGroupingSet() &&
+                hasEmptyGroupingSet(aggregationNode) &&
+                hasNonEmptyGroupingSet(aggregationNode) &&
                 exchangeNode.getType() == REPARTITION) {
             // single-step aggregation w/ empty grouping sets in a partitioned stage, so we need a partial that will produce
             // the default intermediates for the empty grouping set that will be routed to the appropriate final aggregation.
