@@ -44,6 +44,11 @@ public class RowExpressionTreeTranslator<T, C>
         return expression.accept(new RowExpressionTreeTranslator<>(translator).visitor, context);
     }
 
+    public TranslatedExpression<T> translate(RowExpression expression, C context)
+    {
+        return expression.accept(this.visitor, context);
+    }
+
     private class TranslatingVisitor
             implements RowExpressionVisitor<TranslatedExpression<T>, C>
     {
