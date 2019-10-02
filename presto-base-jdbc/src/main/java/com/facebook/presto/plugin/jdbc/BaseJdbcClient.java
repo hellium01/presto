@@ -13,6 +13,9 @@
  */
 package com.facebook.presto.plugin.jdbc;
 
+import com.facebook.presto.plugin.jdbc.optimization.JdbcSql;
+import com.facebook.presto.plugin.jdbc.optimization.RowExpressionToSqlTranslator;
+import com.facebook.presto.plugin.jdbc.optimization.function.OperatorTranslators;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ConnectorSession;
@@ -22,7 +25,10 @@ import com.facebook.presto.spi.FixedSplitSource;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.TableNotFoundException;
+import com.facebook.presto.spi.function.FunctionMetadata;
+import com.facebook.presto.spi.function.FunctionMetadataManager;
 import com.facebook.presto.spi.predicate.TupleDomain;
+import com.facebook.presto.spi.relation.translator.FunctionTranslator;
 import com.facebook.presto.spi.statistics.TableStatistics;
 import com.facebook.presto.spi.type.CharType;
 import com.facebook.presto.spi.type.DecimalType;
@@ -134,6 +140,18 @@ public class BaseJdbcClient
             throws Exception
     {
         connectionFactory.close();
+    }
+
+    @Override
+    public Set<Class<?>> getFunctionTranslators()
+    {
+        return ImmutableSet.of(OperatorTranslators.class);
+    }
+
+    @Override
+    public RowExpressionToSqlTranslator getRowExpressionToSqlTranslator(FunctionMetadataManager functionMetadataManager, Map<FunctionMetadata, FunctionTranslator<JdbcSql>> functionTranslators)
+    {
+        return new RowExpressionToSqlTranslator(functionMetadataManager, functionTranslators, identifierQuote);
     }
 
     @Override

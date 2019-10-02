@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.plugin.jdbc.optimization;
 
+import com.facebook.presto.plugin.jdbc.JdbcClient;
 import com.facebook.presto.spi.ConnectorPlanOptimizer;
 import com.facebook.presto.spi.connector.ConnectorPlanOptimizerProvider;
 import com.facebook.presto.spi.function.FunctionMetadataManager;
@@ -20,6 +21,7 @@ import com.facebook.presto.spi.function.StandardFunctionResolution;
 import com.facebook.presto.spi.relation.DeterminismEvaluator;
 import com.facebook.presto.spi.relation.ExpressionOptimizer;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 
 import java.util.Set;
 
@@ -32,8 +34,11 @@ public class JdbcPlanOptimizerProvider
     private final StandardFunctionResolution functionResolution;
     private final DeterminismEvaluator determinismEvaluator;
     private final ExpressionOptimizer expressionOptimizer;
+    private final JdbcClient jdbcClient;
 
+    @Inject
     public JdbcPlanOptimizerProvider(
+            JdbcClient jdbcClient,
             FunctionMetadataManager functionManager,
             StandardFunctionResolution functionResolution,
             DeterminismEvaluator determinismEvaluator,
@@ -44,15 +49,26 @@ public class JdbcPlanOptimizerProvider
         this.functionResolution = requireNonNull(functionResolution, "functionResolution is null");
         this.determinismEvaluator = requireNonNull(determinismEvaluator, "determinismEvaluator is null");
         this.expressionOptimizer = requireNonNull(expressionOptimizer, "expressionOptimizer is null");
+        this.jdbcClient = jdbcClient;
     }
 
     @Override
-    public Set<ConnectorPlanOptimizer> getConnectorPlanOptimizers()
+    public Set<ConnectorPlanOptimizer> getConnectorPlanOptimizers(Context context)
     {
+        RowExpressionToSqlTranslator translator = jdbcClient.getRowExpressionToSqlTranslator(
+                functionManager,
+                context.getFunctionTranslatorMapping(JdbcSql.class));
         return ImmutableSet.of(new JdbcComputePushdown(
                 functionManager,
                 functionResolution,
                 determinismEvaluator,
-                expressionOptimizer));
+                expressionOptimizer,
+                translator));
+    }
+
+    @Override
+    public Set<Class<?>> getFunctionTranslators()
+    {
+        return jdbcClient.getFunctionTranslators();
     }
 }

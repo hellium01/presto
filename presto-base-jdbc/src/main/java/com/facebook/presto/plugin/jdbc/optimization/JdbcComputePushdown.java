@@ -28,6 +28,8 @@ import com.facebook.presto.spi.plan.PlanVisitor;
 import com.facebook.presto.spi.plan.TableScanNode;
 import com.facebook.presto.spi.relation.DeterminismEvaluator;
 import com.facebook.presto.spi.relation.ExpressionOptimizer;
+import com.facebook.presto.spi.relation.translator.RowExpressionTreeTranslator;
+import com.facebook.presto.spi.relation.translator.TranslatedExpression;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Optional;
@@ -38,14 +40,17 @@ public class JdbcComputePushdown
         implements ConnectorPlanOptimizer
 {
     private final ExpressionOptimizer expressionOptimizer;
+    private final RowExpressionToSqlTranslator rowExpressionToSqlTranslator;
 
     public JdbcComputePushdown(
             FunctionMetadataManager functionMetadataManager,
             StandardFunctionResolution functionResolution,
             DeterminismEvaluator determinismEvaluator,
-            ExpressionOptimizer expressionOptimizer)
+            ExpressionOptimizer expressionOptimizer,
+            RowExpressionToSqlTranslator rowExpressionToSqlTranslator)
     {
         this.expressionOptimizer = expressionOptimizer;
+        this.rowExpressionToSqlTranslator = rowExpressionToSqlTranslator;
     }
 
     @Override
@@ -99,6 +104,7 @@ public class JdbcComputePushdown
             TableScanNode oldTableScanNode = (TableScanNode) node.getSource();
             TableHandle oldTableHandle = oldTableScanNode.getTable();
             JdbcTableHandle oldConnectorTable = (JdbcTableHandle) oldTableHandle.getConnectorHandle();
+            TranslatedExpression<JdbcSql> jdbcSqlTranslatedExpression = RowExpressionTreeTranslator.translateWith(node.getPredicate(), rowExpressionToSqlTranslator, oldTableScanNode.getAssignments());
 
             // TODO: remove dependency on oldTableLayoutHandle, currently it needs oldTableLayoutHandle to get predicate
             if (!oldTableHandle.getLayout().isPresent()) {

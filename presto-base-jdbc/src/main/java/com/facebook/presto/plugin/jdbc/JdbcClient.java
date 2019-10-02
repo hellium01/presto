@@ -13,13 +13,18 @@
  */
 package com.facebook.presto.plugin.jdbc;
 
+import com.facebook.presto.plugin.jdbc.optimization.JdbcSql;
+import com.facebook.presto.plugin.jdbc.optimization.RowExpressionToSqlTranslator;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplitSource;
 import com.facebook.presto.spi.ConnectorTableMetadata;
 import com.facebook.presto.spi.SchemaTableName;
+import com.facebook.presto.spi.function.FunctionMetadata;
+import com.facebook.presto.spi.function.FunctionMetadataManager;
 import com.facebook.presto.spi.predicate.TupleDomain;
+import com.facebook.presto.spi.relation.translator.FunctionTranslator;
 import com.facebook.presto.spi.statistics.TableStatistics;
 
 import javax.annotation.Nullable;
@@ -28,6 +33,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -37,6 +43,10 @@ public interface JdbcClient
     {
         return getSchemaNames(identity).contains(schema);
     }
+
+    Set<Class<?>> getFunctionTranslators();
+
+    RowExpressionToSqlTranslator getRowExpressionToSqlTranslator(FunctionMetadataManager functionMetadataManager, Map<FunctionMetadata, FunctionTranslator<JdbcSql>> functionTranslators);
 
     Set<String> getSchemaNames(JdbcIdentity identity);
 
