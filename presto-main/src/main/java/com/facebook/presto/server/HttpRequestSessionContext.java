@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.server;
 
+import com.facebook.airlift.log.Logger;
 import com.facebook.presto.Session.ResourceEstimateBuilder;
 import com.facebook.presto.spi.security.Identity;
 import com.facebook.presto.spi.security.SelectedRole;
@@ -21,6 +22,8 @@ import com.facebook.presto.sql.parser.ParsingException;
 import com.facebook.presto.sql.parser.ParsingOptions;
 import com.facebook.presto.sql.parser.SqlParser;
 import com.facebook.presto.transaction.TransactionId;
+import com.facebook.presto.util.EscapedSplitter;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -74,6 +77,7 @@ public final class HttpRequestSessionContext
         implements SessionContext
 {
     private static final Splitter DOT_SPLITTER = Splitter.on('.');
+    private static final Logger log = Logger.get(HttpRequestSessionContext.class);
 
     private final String catalog;
     private final String schema;
@@ -172,6 +176,15 @@ public final class HttpRequestSessionContext
                 .collect(toImmutableList());
     }
 
+    private static List<String> splitCredentialHeader(Enumeration<String> headers)
+    {
+        EscapedSplitter splitter = EscapedSplitter.on(',').escapeQuoted('\'').trimResults().omitEmptyStrings();
+        return Collections.list(headers).stream()
+                .map(splitter::splitToList)
+                .flatMap(Collection::stream)
+                .collect(toImmutableList());
+    }
+
     private static Map<String, String> parseSessionHeaders(HttpServletRequest servletRequest)
     {
         return parseProperty(servletRequest, PRESTO_SESSION);
@@ -190,7 +203,7 @@ public final class HttpRequestSessionContext
 
     private static Map<String, String> parseExtraCredentials(HttpServletRequest servletRequest)
     {
-        return parseProperty(servletRequest, PRESTO_EXTRA_CREDENTIAL);
+        return parseCredentialProperty(servletRequest, PRESTO_EXTRA_CREDENTIAL);
     }
 
     private static Map<String, String> parseProperty(HttpServletRequest servletRequest, String headerName)
@@ -200,6 +213,17 @@ public final class HttpRequestSessionContext
             List<String> nameValue = Splitter.on('=').trimResults().splitToList(header);
             assertRequest(nameValue.size() == 2, "Invalid %s header", headerName);
             properties.put(nameValue.get(0), nameValue.get(1));
+        }
+        return properties;
+    }
+
+    private static Map<String, String> parseCredentialProperty(HttpServletRequest servletRequest, String headerName)
+    {
+        Map<String, String> properties = new HashMap<>();
+        for (String header : splitCredentialHeader(servletRequest.getHeaders(headerName))) {
+            List<String> nameValue = EscapedSplitter.on('=').escapeQuoted('\'').trimResults().splitToList(header);
+            assertRequest(nameValue.size() == 2, "Invalid %s header", headerName);
+            properties.put(nameValue.get(0), CharMatcher.is('\'').trimFrom(nameValue.get(1)));
         }
         return properties;
     }
